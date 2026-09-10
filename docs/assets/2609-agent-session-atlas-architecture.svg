@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="948" viewBox="0 0 1280 948" role="img" aria-labelledby="title desc">
+<title id="title">에이전트 세션 분석 서비스 배포 아키텍처</title>
+<desc id="desc">GitHub 조직 공개 저장소에서 Vercel Hobby로 배포한다. 로컬 전송기는 5분마다 원본 JSON 배치를 Next.js에 전송하고 서버가 마스킹 후 Private Blob에 저장한다. 로컬 대기 파일은 서버 접수증 확인 후 삭제한다. Vercel Workflow와 Functions가 비동기 분석을 실행하고 Neon Postgres에 지표와 결과를 저장한다. OpenRouter는 허용한 축약 근거로 AI 설명을 생성한다. 하루 한 번 Cron 또는 수동 요청이 접수된 데이터를 대상으로 분석을 기동한다.</desc>
+<rect width="1280" height="948" fill="#FFFFFF"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#3B5BA5"/></marker></defs>
+<text x="24" y="44" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="28" font-weight="600" fill="#16213E" text-anchor="start">에이전트 세션 분석</text>
+<text x="24" y="76" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">Vercel 중심의 개인 MVP · 수집 후에는 PC가 꺼져 있어도 분석</text>
+<rect x="24" y="100" width="272" height="94" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/github.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="44" y="120" width="28" height="28" aria-hidden="true" fill="#16213E"><title>GitHub</title><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
+<text x="84" y="142" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">GitHub · org public</text>
+<text x="44" y="173" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">PR 미리보기 · main 운영 배포</text>
+<rect x="324" y="100" width="620" height="824" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/vercel.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="348" y="120" width="28" height="28" aria-hidden="true" fill="#16213E"><title>Vercel</title><path d="m12 1.608 12 20.784H0Z" /></svg>
+<text x="390" y="142" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="22" font-weight="600" fill="#16213E" text-anchor="start">Vercel Hobby</text>
+<text x="348" y="174" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">웹 · API · 분석 · 파일을 한 프로젝트에서 운영</text>
+<path d="M296 148 H324" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<rect x="24" y="218" width="272" height="706" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<text x="44" y="252" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">사용자 장비</text>
+<rect x="44" y="284" width="232" height="126" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/react.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 100 100" x="62" y="302" width="28" height="28" aria-hidden="true"><g clip-path="url(#icon3-a)"><path fill="#61dafb" d="M50.307 58.816a8.816 8.816 0 1 0 0-17.632 8.816 8.816 0 0 0 0 17.632" /><path stroke="#61dafb" stroke-width="5" d="M50.307 68.063c26.126 0 47.306-8.087 47.306-18.063s-21.18-18.062-47.306-18.062C24.18 31.938 3 40.024 3 50s21.18 18.063 47.307 18.063Z" /><path stroke="#61dafb" stroke-width="5" d="M34.664 59.031C47.727 81.658 65.321 95.957 73.96 90.97c8.64-4.988 5.053-27.374-8.01-50C52.885 18.342 35.291 4.043 26.652 9.03s-5.052 27.374 8.011 50Z" /><path stroke="#61dafb" stroke-width="5" d="M34.664 40.969c-13.063 22.626-16.65 45.012-8.01 50 8.638 4.988 26.232-9.311 39.295-31.938s16.65-45.012 8.01-50c-8.638-4.988-26.232 9.311-39.295 31.938Z" /></g><defs><clipPath id="icon3-a"><path fill="#fff" d="M0 0h100v100H0z" /></clipPath></defs></svg>
+<text x="100" y="326" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">브라우저</text>
+<text x="62" y="358" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">원격 대시보드 접속</text>
+<text x="62" y="389" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">결과 조회 · 파일 선택</text>
+<rect x="44" y="492" width="232" height="180" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/openai.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 100 100" x="62" y="508" width="28" height="28" aria-hidden="true"><g clip-path="url(#icon4-a)"><path fill="#193718" d="M93.06 40.937c1.25-3.438 1.563-6.875 1.25-10.313-.312-3.437-1.562-6.875-3.125-10-2.812-4.687-6.875-8.437-11.562-10.625-5-2.187-10.313-2.812-15.625-1.562-2.5-2.5-5.313-4.688-8.438-6.25S48.685-.001 45.248-.001c-5.313 0-10.625 1.563-15 4.688a24.16 24.16 0 0 0-9.063 12.5c-3.75.937-6.875 2.5-10 4.374-2.812 2.188-5 5-6.875 7.813-2.812 4.688-3.75 10-3.125 15.313a27.2 27.2 0 0 0 6.25 14.375c-1.25 3.437-1.562 6.874-1.25 10.312s1.563 6.875 3.125 10c2.813 4.688 6.875 8.438 11.563 10.625 5 2.188 10.312 2.813 15.625 1.563 2.5 2.5 5.312 4.687 8.437 6.25s6.875 2.187 10.313 2.187c5.312 0 10.625-1.562 15-4.687s7.5-7.5 9.062-12.5c3.438-.626 6.875-2.188 9.688-4.376 2.812-2.187 5.312-4.687 6.875-7.812 2.812-4.687 3.75-10 3.125-15.312-.625-5.313-2.5-10.313-5.938-14.375m-37.5 52.5c-5 0-8.75-1.563-12.187-4.376 0 0 .312-.312.625-.312l20-11.562c.625-.313.937-.626 1.25-1.25.312-.626.312-.938.312-1.563V46.249l8.438 5v23.125c.312 10.938-8.438 19.063-18.438 19.063M15.248 76.249c-2.188-3.75-3.125-8.125-2.188-12.5 0 0 .313.312.625.312l20 11.563c.625.313.938.313 1.563.313s1.25 0 1.562-.313l24.375-14.062v9.687L40.873 83.124c-4.375 2.5-9.375 3.125-14.063 1.875-5-1.25-9.062-4.375-11.562-8.75M9.935 32.812c2.188-3.75 5.625-6.563 9.688-8.125v23.75c0 .625 0 1.25.312 1.562.313.625.625.938 1.25 1.25L45.56 65.311l-8.437 5-20-11.562c-4.375-2.5-7.5-6.562-8.75-11.25s-.938-10.312 1.562-14.687m69.063 15.937L54.623 34.687l8.437-5 20 11.562c3.125 1.875 5.625 4.375 7.188 7.5s2.5 6.563 2.187 10.313c-.312 3.437-1.562 6.874-3.75 9.687s-5 5-8.437 6.25v-23.75c0-.625 0-1.25-.313-1.562 0 0-.312-.625-.937-.938m8.437-12.5s-.312-.312-.625-.312l-20-11.563c-.625-.312-.937-.312-1.562-.312s-1.25 0-1.563.312L39.31 38.437v-9.688l20.313-11.875c3.125-1.875 6.562-2.5 10.312-2.5 3.438 0 6.875 1.25 10 3.437 2.813 2.188 5.313 5 6.563 8.125s1.562 6.876.937 10.313m-52.5 17.5-8.437-5V25.311c0-3.437.937-7.187 2.812-10 1.875-3.124 4.688-5.312 7.813-6.874 3.125-1.563 6.875-2.188 10.312-1.563 3.438.313 6.875 1.875 9.688 4.063 0 0-.313.312-.625.312l-20 11.562c-.625.313-.938.625-1.25 1.25s-.313.938-.313 1.563zm4.375-10 10.938-6.25 10.937 6.25v12.5l-10.937 6.25-10.938-6.25z" /></g><defs><clipPath id="icon4-a"><path fill="#fff" d="M0 0h100v100H0z" /></clipPath></defs></svg>
+<text x="102" y="532" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">로컬 전송기</text>
+<text x="62" y="566" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">Codex 기록 읽기</text>
+<text x="62" y="596" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">all · 프로젝트 제외 설정</text>
+<text x="62" y="642" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">5분 실행 · JSON 보관</text>
+<text x="44" y="786" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">후속 어댑터</text>
+<text x="44" y="819" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">Claude Code · Hermes</text>
+<text x="44" y="875" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">서버 ACK까지 로컬 보관</text>
+<rect x="348" y="284" width="572" height="126" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/nextdotjs.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="368" y="302" width="28" height="28" aria-hidden="true" fill="#16213E"><title>Next.js</title><path d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z" /></svg>
+<text x="408" y="326" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">Next.js · Web + API</text>
+<text x="368" y="358" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">대시보드 · JSON 수신 · 마스킹 ON · 조회</text>
+<text x="368" y="389" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">배포 주소: *.vercel.app · HTTPS 자동 제공</text>
+<path d="M276 330 H348" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="312" y="315" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">HTTPS</text>
+<path d="M276 552 H312 V380 H348" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<rect x="348" y="516" width="244" height="156" rx="12" fill="#F0FDF4" stroke="#3F8E55" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/vercel.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="368" y="534" width="28" height="28" aria-hidden="true" fill="#166534"><title>Vercel</title><path d="m12 1.608 12 20.784H0Z" /></svg>
+<text x="408" y="558" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">Private Blob</text>
+<text x="368" y="592" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">마스킹한 JSON 배치</text>
+<text x="368" y="622" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">JSON · 7일 보관</text>
+<text x="368" y="652" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">파일별 접근 권한 검사</text>
+<rect x="684" y="516" width="236" height="242" rx="12" fill="#FFF7ED" stroke="#C98A2B" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/vercel.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="704" y="534" width="28" height="28" aria-hidden="true" fill="#9A620A"><title>Vercel</title><path d="m12 1.608 12 20.784H0Z" /></svg>
+<text x="744" y="558" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">Workflow</text>
+<text x="704" y="592" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">Functions에서 단계 실행</text>
+<text x="704" y="626" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">① 파싱 · 지표 저장</text>
+<text x="704" y="660" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">② AI 설명 · 결과 검증</text>
+<text x="704" y="694" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">대기 · 재시도 · 재개</text>
+<text x="704" y="732" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#9A620A" text-anchor="start">단계별 240초 내 종료</text>
+<path d="M800 410 V516" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="814" y="470" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">수동 분석</text>
+<path d="M470 410 V516" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="484" y="470" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">마스킹 후 저장</text>
+<path d="M684 600 H592" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="638" y="586" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">원본 읽기</text>
+<rect x="348" y="798" width="244" height="100" rx="12" fill="#FFF7ED" stroke="#C98A2B" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/clock.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" x="368" y="813" width="28" height="28" aria-hidden="true">
+  <path d="M0 0h24v24H0z" fill="none" />
+  <g fill="none" stroke="#111827" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="m15 16l-2.414-2.414A2 2 0 0 1 12 12.172V6" />
+  </g>
+</svg>
+<text x="408" y="837" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">Cron · 하루 1회</text>
+<text x="368" y="874" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#9A620A" text-anchor="start">신규 분석 · 복구 · 정리</text>
+<path d="M592 848 H800 V758" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="676" y="834" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">신규 · 누락 분석</text>
+<rect x="972" y="218" width="284" height="706" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<text x="996" y="252" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">연결 서비스</text>
+<text x="996" y="287" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">DB와 AI는 별도 운영사</text>
+<rect x="996" y="366" width="236" height="168" rx="12" fill="#F0FDF4" stroke="#3F8E55" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/neon.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="1016" y="386" width="28" height="28" aria-hidden="true" fill="#166534"><title>Neon</title><path d="M24 0V24l-9.365-8.045V24H0V0ZM2.942 21.087h8.751V9.563l9.365 8.204V2.919L2.942 2.914Z" /></svg>
+<text x="1056" y="409" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">Neon Postgres</text>
+<text x="1016" y="445" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">세션 · 지표 · 분석 상태</text>
+<text x="1016" y="478" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">Vercel Marketplace 연결</text>
+<text x="1016" y="509" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">Free · DB 0.5 GB</text>
+<path d="M920 330 H956 V424 H996" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<path d="M920 622 H958 V486 H996" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="970" y="608" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">결과</text>
+<rect x="996" y="660" width="236" height="176" rx="12" fill="#FBF5FF" stroke="#8B3DFF" stroke-width="1"/>
+<!-- Embedded from ../../assets/icons/openrouter.svg; see ../../assets/icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" x="1016" y="680" width="28" height="28" aria-hidden="true" fill="#6B21A8"><title>OpenRouter</title><path d="M16.778 1.844v1.919q-.569-.026-1.138-.032-.708-.008-1.415.037c-1.93.126-4.023.728-6.149 2.237-2.911 2.066-2.731 1.95-4.14 2.75-.396.223-1.342.574-2.185.798-.841.225-1.753.333-1.751.333v4.229s.768.108 1.61.333c.842.224 1.789.575 2.185.799 1.41.798 1.228.683 4.14 2.75 2.126 1.509 4.22 2.11 6.148 2.236.88.058 1.716.041 2.555.005v1.918l7.222-4.168-7.222-4.17v2.176c-.86.038-1.611.065-2.278.021-1.364-.09-2.417-.357-3.979-1.465-2.244-1.593-2.866-2.027-3.68-2.508.889-.518 1.449-.906 3.822-2.59 1.56-1.109 2.614-1.377 3.978-1.466.667-.044 1.418-.017 2.278.02v2.176L24 6.014Z" /></svg>
+<text x="1056" y="704" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600" fill="#16213E" text-anchor="start">OpenRouter</text>
+<text x="1016" y="740" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">무료 모델 · GPU 불필요</text>
+<text x="1016" y="772" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="400" fill="#16213E" text-anchor="start">축약 근거만 외부 전송</text>
+<text x="1016" y="810" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#6B21A8" text-anchor="start">허용 Provider만 호출</text>
+<path d="M920 714 H996" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="958" y="700" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">AI 요청</text>
+<text x="996" y="880" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="18" font-weight="600" fill="#16213E" text-anchor="start">공개 코드 · 비공개 세션</text>
+</svg>

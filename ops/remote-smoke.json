@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-10T22:11:26.907Z",
+  "at": "2026-09-10T22:28:02.041Z",
   "url": "https://agent-session-atlas.vercel.app",
   "checks": [
     "GitHub provider configured",
@@ -8,7 +8,7 @@
     "owned session listed",
     "single-session workflow accepted",
     "remote AI completion + metrics + masking",
-    "selected and all-session workflow accepted"
+    "selected and all-session workflows completed with result reuse"
   ],
   "status": "passed"
 }

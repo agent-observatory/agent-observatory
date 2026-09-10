@@ -94,20 +94,21 @@ try {
   console.log(
     "Remote smoke: upload, duplicate ACK, ownership, workflow accepted. Waiting for result.",
   );
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 540; i++) {
     const d = await call("/api/sessions/" + session.id);
     const result = d.results[0];
     if (result?.status === "failed")
       throw new Error("Analysis failed: " + result.error);
     if (result?.status === "completed") {
       assert.ok(result.result.ai.summary);
+      assert.ok(result.result.analysisVersion.startsWith("analysis-1:"));
       assert.equal(result.result.metrics.toolCalls, 3);
       assert.ok(!JSON.stringify(result.result).includes("hello@example.com"));
       report.checks.push("remote AI completion + metrics + masking");
       console.log("Remote AI analysis completed");
       break;
     }
-    if (i === 35) throw new Error("Analysis completion timeout");
+    if (i === 539) throw new Error("Analysis completion timeout");
     await new Promise((r) => setTimeout(r, 5000));
   }
   const detail = await call("/api/sessions/" + session.id);

@@ -1,9 +1,9 @@
 # AgentSession Atlas
 
-Coding agent session analytics by [Agent Observatory](https://github.com/agent-observatory).
+Understand your coding agent sessions.
 
-Track usage, explore session timelines, and find opportunities to improve your workflow. Planned support starts with Codex, followed by Claude Code and Hermes.
+Collect Codex records, explore usage and timelines, and review improvement candidates with supporting evidence. Sign in with GitHub to keep your history and configure your own AI provider.
 
-**Status:** Early implementation. The Next.js app and local Collector are implemented in this repository. The deployed app supports GitHub sign-in, session ingestion, duplicate-safe ACKs, and analysis job dispatch; the Collector 0.1.0 is installed locally and connected to one account. CI, manual maintenance, daily analysis dispatch, and the Collector GitHub release are verified. npm publication and naturally scheduled workflow runs remain unverified.
+[Open Atlas](https://agent-session-atlas.vercel.app) · [Collector](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.1.0) · [Documentation (Korean)](docs/README.md)
 
-[Design documents (Korean)](docs/README.md)
+Korean and English. Dark and light themes. Claude Code and Hermes support is planned.

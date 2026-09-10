@@ -180,7 +180,7 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 ### 인프라 관리: 설정 파일 + 스크립트
 
 **초기에는 Terraform 없이 설정 파일·TypeScript 스크립트·GitHub Actions로 관리한다.**  
-리소스 수가 적으므로 Vercel CLI/API를 감싼 스크립트로 시작한다. `ops/production.json`과 루트 `vercel.json`은 현재 리소스·서울 리전 설정을 기록한다. 웹·API·Workflow 경로는 구현되어 있고, 예약 작업의 원격 실행과 운영 반복 검증은 남아 있다.
+리소스 수가 적으므로 Vercel CLI/API를 감싼 스크립트로 시작한다. `ops/production.json`과 루트 `vercel.json`은 현재 리소스·서울 리전 설정을 기록한다. 웹·API·Workflow를 배포했고 예약 작업의 수동 원격 실행을 검증했다. 자연 schedule 실행은 아직 관찰하지 않았다.
 
 | 관리 대상 | 코드로 관리할 위치·방식 |
 |---|---|
@@ -190,10 +190,10 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 | 예약 작업 | `.github/workflows/maintenance.yml`·`analysis-daily.yml`에 일정·수동 실행·동시 실행 제한. Vercel의 `/api/jobs/maintenance`·`/api/jobs/analysis`를 호출 |
 | Workflow | `workflows/*.ts`의 `use workflow`·`use step`, `next.config.ts`의 `withWorkflow`. Next.js와 함께 배포. 서울 상태 저장은 SDK `5.0.0-beta.33` 이상에서 지원하므로 설치 버전·실제 실행 리전 확인 |
 | 환경변수 | `.env.example`에 이름만 기록. 실제 키는 Vercel 환경변수·GitHub Secrets, CLI 기기 토큰과 분리 |
-| 웹 배포 | Actions에서 검사 → DB migration → Vercel CLI 배포 → 원격 smoke test. 현재 CLI production 배포는 확인했으며 GitHub 자동 배포 연결은 승인 대기 |
+| 웹 배포 | 현재 Actions CI 검사 후 Vercel CLI로 production 배포·원격 smoke 검증. GitHub App 저장소 접근 승인 후 push 자동 배포 연결 가능 |
 | CLI 배포 | CLI 태그 → 빌드·패키지 설치 검사 → GitHub Release 게시. npm 공개 게시와 npm Trusted Publishing 연결은 후속 |
 
-운영 배포는 Actions로 통일하고 Vercel Git 자동 배포와 중복 실행하지 않는다. PR Preview도 별도 환경으로 배포한다.  
+웹 자동 배포와 PR Preview 연결은 아직 완료하지 않았다.  
 Vercel은 `apps/web`만 배포하되 `packages/contracts`를 빌드에 포함한다. 수집기는 Vercel 배포 대상에서 제외한다.
 
 유지관리 API는 Next.js 앱 안의 작은 엔드포인트이며 별도 서비스로 배포하지 않는다.

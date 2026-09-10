@@ -1,0 +1,57 @@
+{
+  "vercel": {
+    "projectId": "prj_N1v191hjHAXdont7lZlI8Occfn41",
+    "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
+    "region": "icn1",
+    "url": "https://agent-session-atlas.vercel.app",
+    "latestReadyDeployment": "dpl_FVktq8tf5igf41phgRNh6v7cV3fS"
+  },
+  "supabase": {
+    "projectRef": "dgmecutgijgegtmrsygo",
+    "region": "ap-northeast-2",
+    "plan": "free",
+    "marketplaceResourceId": "store_OuLTwfVwNLKJI38Y",
+    "storageBucket": "sessions",
+    "storagePublic": false,
+    "maxFileBytes": 1048576,
+    "retentionMigration": "004-applied",
+    "databaseUrlEnv": "POSTGRES_URL",
+    "databaseCaFile": "ops/certs/supabase-prod-ca-2021.crt"
+  },
+  "scheduling": {
+    "provider": "github-actions",
+    "maintenance": "17 * * * *",
+    "analysis": "37 18 * * *",
+    "status": "configured-not-run"
+  },
+  "retention": {
+    "detailsDays": 7,
+    "summaryDays": 30,
+    "migration": "004",
+    "dbGuardBytes": 367001600,
+    "orphanStorageGraceSeconds": 3600
+  },
+  "ai": {
+    "provider": "zai",
+    "model": "glm-4.7-flash",
+    "baseUrl": "https://api.z.ai/api/paas/v4",
+    "apiKeyEnv": "ZAI_API_KEY",
+    "status": "synthetic-collector-analysis-passed",
+    "maxConcurrency": 1,
+    "concurrencySource": "user-selected-serial-execution",
+    "concurrentVerification": "two-succeeded; earlier-three-rate-limited",
+    "byok": {
+      "status": "implemented-unverified",
+      "apiFormat": "openai-chat-completions",
+      "presets": [
+        "openrouter"
+      ],
+      "customEndpoint": true,
+      "fields": [
+        "endpoint",
+        "apiKey",
+        "model"
+      ]
+    }
+  }
+}

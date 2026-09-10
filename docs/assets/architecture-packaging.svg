@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1004" viewBox="0 0 1400 1004" role="img" aria-labelledby="title desc">
+<title id="title">모노레포 · 배포와 예약 실행</title><desc id="desc">하나의 GitHub 저장소에 웹, Collector, 공통 계약을 둔다. GitHub Actions가 웹 배포와 npm 릴리스 및 매시간 유지관리와 일일 분석 요청을 관리한다. Vercel 서울에 웹을 배포하고 Supabase 서울에 DB와 비공개 Storage를 둔다. 사용자의 OS는 Collector를 30분마다 실행한다.</desc>
+<rect width="1400" height="1004" fill="white"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#3B5BA5"/></marker></defs>
+<text x="24" y="45" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.35" fill="#16213E">모노레포 · 배포와 예약 실행</text>
+<rect x="24" y="110" width="570" height="870" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+<!-- Embedded from icons/github.svg; see icons/SOURCES.md -->
+<svg x="45" y="129" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><path fill="#161614" d="M50 1C22.39 1 0 23.386 0 51c0 22.092 14.327 40.834 34.193 47.446 2.499.462 3.417-1.085 3.417-2.406 0-1.192-.047-5.131-.068-9.309-13.91 3.025-16.846-5.9-16.846-5.9-2.274-5.779-5.551-7.315-5.551-7.315-4.537-3.104.341-3.04.341-3.04 5.022.353 7.665 5.153 7.665 5.153 4.46 7.644 11.697 5.434 14.55 4.156.449-3.232 1.745-5.437 3.175-6.686-11.106-1.264-22.78-5.552-22.78-24.71 0-5.459 1.953-9.92 5.151-13.42-.519-1.26-2.23-6.346.485-13.233 0 0 4.198-1.344 13.753 5.125 3.988-1.108 8.266-1.663 12.515-1.682 4.25.019 8.53.574 12.526 1.682 9.544-6.469 13.736-5.125 13.736-5.125 2.722 6.887 1.01 11.973.49 13.232 3.206 3.502 5.146 7.962 5.146 13.42 0 19.205-11.697 23.434-22.83 24.671 1.793 1.552 3.391 4.595 3.391 9.26 0 6.69-.058 12.074-.058 13.721 0 1.33.9 2.89 3.435 2.399C85.692 91.819 100 73.085 100 51c0-27.614-22.386-50-50-50"/><path fill="#161614" d="M18.727 72.227c-.11.248-.502.322-.857.152-.363-.163-.567-.502-.45-.751.109-.256.5-.327.862-.156.363.163.57.505.445.755m2.46 2.194c-.24.221-.706.118-1.022-.231-.327-.349-.388-.814-.146-1.04.246-.22.698-.117 1.026.232.327.353.39.816.14 1.04zm1.687 2.808c-.307.213-.808.013-1.118-.432-.306-.444-.306-.977.007-1.191.31-.214.804-.021 1.118.42.305.452.305.985-.008 1.203m2.853 3.252c-.274.302-.858.22-1.285-.192-.437-.403-.56-.975-.284-1.277.277-.303.864-.218 1.295.191.434.403.566.979.274 1.278m3.688 1.098c-.12.391-.683.57-1.25.403-.565-.171-.935-.63-.821-1.026.118-.394.682-.58 1.253-.401.565.17.936.625.818 1.024m4.197.465c.014.413-.466.755-1.06.762-.599.013-1.082-.32-1.088-.726 0-.416.469-.755 1.067-.765.594-.012 1.081.32 1.081.73m4.123-.158c.071.403-.342.816-.932.926-.58.106-1.118-.143-1.192-.541-.072-.413.35-.826.928-.933.592-.103 1.12.14 1.196.548"/></svg>
+<text x="86" y="152" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="24" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">GitHub · agent-observatory</text>
+<rect x="48" y="185" width="522" height="95" rx="14" fill="#FBF5FF" stroke="#8B3DFF"/>
+<text x="68" y="225" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#16213E">packages/contracts</text>
+<text x="68" y="261" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">공통 이벤트 · 배치 · ACK · 버전</text>
+<rect x="48" y="315" width="522" height="140" rx="14" fill="#EFF6FF" stroke="#3B5BA5"/>
+<!-- Embedded from icons/nextdotjs.svg; see icons/SOURCES.md -->
+<svg x="68" y="332" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><g clip-path="url(#architecture-packaging-nextdotjs-2-a)"><path fill="#000" d="M50 99.999c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50"/><path fill="url(#architecture-packaging-nextdotjs-2-b)" d="M83.06 87.51 38.412 30H30v39.983h6.73V38.545L77.777 91.58a50 50 0 0 0 5.283-4.07"/><path fill="url(#architecture-packaging-nextdotjs-2-c)" d="M70.556 29.999h-6.667v40h6.667z"/></g><defs><linearGradient id="architecture-packaging-nextdotjs-2-b" x1="60.556" x2="80.278" y1="64.721" y2="89.166" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="architecture-packaging-nextdotjs-2-c" x1="67.222" x2="67.111" y1="29.999" y2="59.374" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="architecture-packaging-nextdotjs-2-a"><path fill="#fff" d="M0 0h100v100H0z"/></clipPath></defs></svg>
+<text x="108" y="355" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">apps/web · Next.js</text>
+<text x="68" y="391" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">API · 마스킹 · 지표와 규칙 · Workflow</text>
+<text x="68" y="421" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">Supabase DB·Storage 접근</text>
+<rect x="48" y="490" width="522" height="115" rx="14" fill="#EFF6FF" stroke="#3B5BA5"/>
+<text x="68" y="530" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#16213E">apps/collector</text>
+<text x="68" y="566" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">설치 · 어댑터 · Outbox · 증분 전송</text>
+<rect x="48" y="650" width="522" height="305" rx="10" fill="#FBF5FF" stroke="#8B3DFF"/>
+<text x="68" y="684" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">.github/workflows</text>
+<rect x="68" y="704" width="482" height="65" rx="10" fill="#EFF6FF" stroke="#3B5BA5"/>
+<text x="84" y="731" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">CI · 릴리스</text>
+<text x="84" y="756" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">검사 · 웹 배포 · npm 게시</text>
+<rect x="68" y="790" width="232" height="92" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
+<text x="84" y="820" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E">유지관리</text>
+<rect x="173" y="799" width="38" height="27" rx="7" fill="#DBEAFE"/><text x="192" y="819" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#1D4ED8">1h</text>
+<text x="84" y="850" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">maintenance → API</text>
+<rect x="318" y="790" width="232" height="92" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
+<text x="334" y="820" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E">누적 분석</text>
+<rect x="434" y="799" width="38" height="27" rx="7" fill="#EDE9FE"/><text x="453" y="819" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#6D28D9">1d</text>
+<text x="334" y="850" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">analysis-daily → API</text>
+<text x="68" y="925" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">수동 실행 · 동시 실행 제한 · 실패 확인</text>
+<rect x="820" y="110" width="552" height="180" rx="14" fill="#EFF6FF" stroke="#3B5BA5"/>
+<!-- Embedded from icons/vercel.svg; see icons/SOURCES.md -->
+<svg x="840" y="127" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><path fill="#000" fill-rule="evenodd" d="M100 93.957 50 7 0 93.957z" clip-rule="evenodd"/></svg>
+<text x="880" y="150" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">Vercel<tspan dx="10" font-size="17" font-weight="700" fill="#64748B">Seoul · icn1</tspan></text>
+<text x="840" y="186" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">Next.js 웹·API와 Workflow 배포</text>
+<text x="840" y="216" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">Actions 호출 인증 · 작업 등록·실행</text>
+<text x="840" y="246" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">웹은 main · Preview는 합성 데이터</text>
+<rect x="820" y="340" width="552" height="140" rx="14" fill="#F0FDF4" stroke="#3F8E55"/>
+<!-- Embedded from icons/supabase.svg; see icons/SOURCES.md -->
+<svg x="840" y="357" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><g clip-path="url(#architecture-packaging-supabase-4-a)"><path fill="url(#architecture-packaging-supabase-4-b)" d="M57.894 98.338c-2.554 3.217-7.734 1.454-7.796-2.654l-.9-60.082h40.4c7.316 0 11.397 8.452 6.847 14.182z"/><path fill="url(#architecture-packaging-supabase-4-c)" fill-opacity=".2" d="M57.894 98.338c-2.554 3.217-7.734 1.454-7.796-2.654l-.9-60.082h40.4c7.316 0 11.397 8.452 6.847 14.182z"/><path fill="#3ecf8e" d="M41.464 1.66c2.555-3.217 7.735-1.454 7.796 2.654l.395 60.082H9.76c-7.318 0-11.399-8.452-6.848-14.182z"/></g><defs><linearGradient id="architecture-packaging-supabase-4-b" x1="49.198" x2="85.103" y1="48.924" y2="63.982" gradientUnits="userSpaceOnUse"><stop stop-color="#249361"/><stop offset="1" stop-color="#3ecf8e"/></linearGradient><linearGradient id="architecture-packaging-supabase-4-c" x1="33.279" x2="49.654" y1="27.128" y2="57.953" gradientUnits="userSpaceOnUse"><stop/><stop offset="1" stop-opacity="0"/></linearGradient><clipPath id="architecture-packaging-supabase-4-a"><path fill="#fff" d="M0 0h100v100H0z"/></clipPath></defs></svg>
+<text x="880" y="380" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#166534">Supabase<tspan dx="10" font-size="17" font-weight="700" fill="#64748B">Seoul · ap-northeast-2</tspan></text>
+<text x="840" y="416" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">PostgreSQL + 비공개 Storage</text>
+<text x="840" y="446" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">서버 자격증명은 Vercel에서만 사용</text>
+<rect x="820" y="560" width="552" height="125" rx="14" fill="#FFF7ED" stroke="#C98A2B"/>
+<text x="840" y="600" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">npm · Collector 패키지</text>
+<text x="840" y="636" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">태그 릴리스 · 설치 버전 고정</text>
+<text x="840" y="666" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">공통 계약을 CLI 배포물에 포함</text>
+<rect x="820" y="755" width="552" height="185" rx="14" fill="#EFF6FF" stroke="#3B5BA5"/>
+<text x="840" y="795" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#16213E">사용자 PC · npx setup</text>
+<rect x="840" y="814" width="512" height="104" rx="10" fill="#FFFFFF" stroke="#3B5BA5"/>
+<text x="856" y="845" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">OS 스케줄러</text>
+<rect x="978" y="824" width="50" height="27" rx="7" fill="#DBEAFE"/><text x="1003" y="844" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#1D4ED8">30m</text>
+<text x="856" y="873" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">PC당 하나 등록 → Collector 실행</text>
+<text x="856" y="902" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">기록이 없으면 전송 생략</text>
+<path d="M570 380 H680 V205 H820" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="685" y="190" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#31559F">웹 배포</text>
+<path d="M570 890 H740 V250 H820" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="744" y="515" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">예약 호출</text>
+<path d="M1096 290 V340" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="1110" y="320" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">DB·파일 접근</text>
+<path d="M570 550 H650 V620 H820" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="660" y="605" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">npm 게시</text>
+<path d="M1096 685 V755" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="1110" y="725" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">설치·업데이트</text>
+</svg>

@@ -1,0 +1,30 @@
+{
+  "name": "@agent-observatory/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@agent-observatory/contracts": "workspace:*",
+    "next": "16.3.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "next-auth": "5.0.0-beta.32",
+    "workflow": "5.0.0-beta.50",
+    "postgres": "^3.4.7",
+    "@supabase/supabase-js": "^2.95.0",
+    "zod": "^4.0.0",
+    "undici": "^7.0.0",
+    "ipaddr.js": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

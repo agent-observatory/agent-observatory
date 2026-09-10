@@ -1,0 +1,27 @@
+{
+  "name": "@agent-observatory/collector",
+  "version": "0.1.0",
+  "description": "Codex session collector for AgentSession Atlas",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "atlas-collector": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "@agent-observatory/contracts": "workspace:*"
+  }
+}

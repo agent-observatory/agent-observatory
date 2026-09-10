@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-10T22:12:55.778Z",
+  "checks": [
+    "Expired detail hidden before cleanup",
+    "7-day detailed metadata and results deleted",
+    "8-day aggregate summary retained",
+    "31-day aggregate summary deleted",
+    "Expired private Storage objects removed"
+  ],
+  "status": "passed"
+}

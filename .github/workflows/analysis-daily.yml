@@ -1,0 +1,23 @@
+name: Daily analysis (1d)
+on:
+  schedule:
+    - cron: "37 18 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: analysis-daily
+  cancel-in-progress: false
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Start daily analysis
+        env:
+          SCHEDULER_SECRET: ${{ secrets.SCHEDULER_SECRET }}
+        run: |
+          test -n "$SCHEDULER_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 300 --retry 2 --retry-delay 30 \
+            -X POST -H "Authorization: Bearer $SCHEDULER_SECRET" \
+            https://agent-session-atlas.vercel.app/api/jobs/analysis

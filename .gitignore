@@ -9,3 +9,12 @@ dist/
 coverage/
 *.tsbuildinfo
 _local-draft/
+.vercel
+.env*.local
+.env*
+!.env.example
+
+*.tgz
+.workflow-data/
+
+apps/web/app/.well-known/workflow/

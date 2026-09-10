@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-10T22:10:58.933Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "checks": [
+    {
+      "name": "two guest accounts are isolated",
+      "status": "passed"
+    },
+    {
+      "name": "selected job cannot reference another guest session",
+      "status": "failed",
+      "error": "/api/analyses: expected 404, received 400"
+    },
+    {
+      "name": "malformed batch returns 422",
+      "status": "passed"
+    },
+    {
+      "name": "same batch id with changed payload returns 409",
+      "status": "passed"
+    },
+    {
+      "name": "invalid schema version returns 422",
+      "status": "passed"
+    },
+    {
+      "name": "cross origin POST returns 403",
+      "status": "passed"
+    },
+    {
+      "name": "unsigned ingest request returns 401",
+      "status": "passed"
+    },
+    {
+      "name": "unauthorized scheduler requests return 401",
+      "status": "passed"
+    }
+  ],
+  "status": "failed",
+  "cleanup": "test session deleted"
+}

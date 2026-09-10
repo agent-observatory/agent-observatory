@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-09-10T20:52:49.388Z",
+  "model": "glm-4.7-flash",
+  "syntheticOnly": true,
+  "concurrency": 3,
+  "concurrentClientRequests": true,
+  "results": [
+    {
+      "caseId": "repeat",
+      "http": 429,
+      "errorCode": "1305",
+      "startMs": 2,
+      "endMs": 393,
+      "retryAfter": null
+    },
+    {
+      "caseId": "changed",
+      "http": 429,
+      "errorCode": "1305",
+      "startMs": 14,
+      "endMs": 394,
+      "retryAfter": null
+    },
+    {
+      "caseId": "missing",
+      "http": 429,
+      "errorCode": "1305",
+      "startMs": 14,
+      "endMs": 397,
+      "retryAfter": null
+    }
+  ]
+}

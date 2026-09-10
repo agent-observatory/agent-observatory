@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="1108" viewBox="0 0 1160 1108" role="img" aria-labelledby="title desc">
+<title id="title">30분 전송·로컬 보관·재시도와 원격 분석</title>
+<desc id="desc">로컬 전송기는 30분마다 완성된 새 기록을 일반 JSON으로 작성하고 영속 Outbox에 확정한 후 읽기 위치를 저장한다. Next.js 서버에 JSON을 보내면 서버가 Workspace의 마스킹 설정을 적용하고 비공개 Storage 저장과 Supabase DB 접수를 COMMIT한 뒤 접수증을 반환한다. 접수증을 확인한 로컬 전송기는 접수 상태를 기록하고 대기 파일을 삭제한다. 확인하지 못하면 파일과 재시도 시각을 보관해 다음 실행에서 같은 배치를 보낸다. 원격 분석은 GitHub Actions의 하루 한 번 호출 또는 수동 요청으로 Workflow를 실행한다.</desc>
+<rect width="1160" height="1108" fill="#FFFFFF"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#3B5BA5"/></marker></defs>
+<text x="24" y="44" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">30분 전송 · 보관 · 재시도</text>
+<rect x="24" y="112" width="728" height="972" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<text x="48" y="150" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">사용자 장비 · 수집기 1개</text>
+<rect x="776" y="112" width="360" height="972" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<!-- Embedded from icons/vercel.svg; see icons/SOURCES.md -->
+<svg x="800" y="127" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><path fill="#000" fill-rule="evenodd" d="M100 93.957 50 7 0 93.957z" clip-rule="evenodd"/></svg>
+<text x="840" y="150" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8" text-anchor="start">원격 · Actions + Vercel</text>
+<rect x="48" y="192" width="272" height="104" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from icons/clock.svg; see icons/SOURCES.md -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" x="68" y="210" width="28" height="28" aria-hidden="true">
+  <path d="M0 0h24v24H0z" fill="none" />
+  <g fill="none" stroke="#111827" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="m15 16l-2.414-2.414A2 2 0 0 1 12 12.172V6" />
+  </g>
+</svg>
+<text x="108" y="234" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8" text-anchor="start">단발 실행</text>
+<rect x="208" y="213" width="50" height="27" rx="7" fill="#DBEAFE"/><text x="233" y="233" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#1D4ED8">30m</text>
+<text x="68" y="270" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">동시 실행 방지 · 이전 상태 복구</text>
+<rect x="432" y="192" width="296" height="104" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<text x="452" y="230" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">새 기록 읽기</text>
+<text x="452" y="266" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">읽기 위치 이후 · 완성된 줄만</text>
+<path d="M320 244 H432" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<rect x="48" y="362" width="272" height="174" rx="12" fill="#FBF5FF" stroke="#8B3DFF" stroke-width="1"/>
+<text x="68" y="400" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">전송 설정</text>
+<text x="68" y="435" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">프로젝트 기본값: all</text>
+<text x="68" y="467" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">허용 · 제외 목록 적용</text>
+<text x="68" y="505" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#6B21A8" text-anchor="start">전송 직전 정책 재확인</text>
+<rect x="432" y="362" width="296" height="148" rx="12" fill="#F0FDF4" stroke="#3F8E55" stroke-width="1"/>
+<text x="452" y="400" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#166534" text-anchor="start">JSON Outbox 확정</text>
+<text x="452" y="435" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">임시 파일 → ready로 확정</text>
+<text x="452" y="467" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">파일 보존 후 읽기 위치 저장</text>
+<text x="452" y="493" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">원본 본문 · 압축 없음</text>
+<path d="M580 296 V362" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="48" y="610" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">기록이 없으면 전송 생략</text>
+<rect x="432" y="588" width="296" height="108" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<text x="452" y="626" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">대기 배치 전송</text>
+<text x="452" y="662" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">같은 batch_id · 같은 원본 해시</text>
+<path d="M580 510 V588" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="594" y="555" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">전송 차례 확인</text>
+<rect x="808" y="466" width="296" height="254" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<!-- Embedded from icons/nextdotjs.svg; see icons/SOURCES.md -->
+<svg x="828" y="484" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><g clip-path="url(#collector-delivery-nextdotjs-2-a)"><path fill="#000" d="M50 99.999c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50"/><path fill="url(#collector-delivery-nextdotjs-2-b)" d="M83.06 87.51 38.412 30H30v39.983h6.73V38.545L77.777 91.58a50 50 0 0 0 5.283-4.07"/><path fill="url(#collector-delivery-nextdotjs-2-c)" d="M70.556 29.999h-6.667v40h6.667z"/></g><defs><linearGradient id="collector-delivery-nextdotjs-2-b" x1="60.556" x2="80.278" y1="64.721" y2="89.166" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="collector-delivery-nextdotjs-2-c" x1="67.222" x2="67.111" y1="29.999" y2="59.374" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="collector-delivery-nextdotjs-2-a"><path fill="#fff" d="M0 0h100v100H0z"/></clipPath></defs></svg>
+<text x="868" y="508" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8" text-anchor="start">Next.js 접수 API</text>
+<text x="828" y="545" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">인증 · 크기 · 원본 해시 확인</text>
+<text x="828" y="584" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">마스킹 ON/OFF · <tspan font-weight="700" fill="#1D4ED8">기본 ON</tspan></text>
+<text x="828" y="623" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">설정 적용 JSON → 비공개 Storage</text>
+<text x="828" y="662" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">Supabase DB 접수 내역 COMMIT</text>
+<text x="828" y="702" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">영속화 완료 후 ACK 반환</text>
+<path d="M728 616 H808" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="768" y="602" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">JSON</text>
+<path d="M808 668 H728" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="768" y="654" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">ACK</text>
+<path d="M580 772 L712 826 L580 880 L448 826 Z" fill="#FBF5FF" stroke="#8B3DFF" stroke-width="1.5"/>
+<text x="580" y="821" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="middle">접수증 확인?</text>
+<text x="580" y="846" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="middle">배치 ID · 원본 해시</text>
+<path d="M580 696 V772" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<rect x="48" y="764" width="300" height="124" rx="12" fill="#F0FDF4" stroke="#3F8E55" stroke-width="1"/>
+<text x="68" y="802" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#166534" text-anchor="start">접수 기록 후 파일 삭제</text>
+<text x="68" y="837" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">SQLite 접수증 → Outbox 정리</text>
+<text x="68" y="867" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">에이전트 원본 파일은 유지</text>
+<path d="M448 826 H348" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="398" y="812" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">확인됨</text>
+<rect x="432" y="968" width="296" height="96" rx="12" fill="#FFF7ED" stroke="#C98A2B" stroke-width="1"/>
+<text x="452" y="1006" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">파일 보관 · 재시도 예약</text>
+<text x="452" y="1043" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">다음 기동에서 재시도 시각 확인</text>
+<path d="M580 880 V968" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="594" y="927" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">미확인 · 응답 유실 포함</text>
+<path d="M728 1016 H760 V740 H676 V696" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<rect x="808" y="816" width="296" height="248" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="828" y="850" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">분석 API · 별도 기동</text>
+<rect x="828" y="880" width="118" height="40" rx="8" fill="#FFF7ED" stroke="#C98A2B" stroke-width="1"/>
+<text x="887" y="906" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="middle">예약 · 1d</text>
+<rect x="960" y="880" width="124" height="40" rx="8" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
+<text x="1022" y="906" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="middle">수동 실행</text>
+<rect x="828" y="980" width="256" height="52" rx="8" fill="#FFF7ED" stroke="#C98A2B" stroke-width="1"/>
+<text x="956" y="1013" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="middle">동일한 Workflow</text>
+<path d="M887 920 V950 H918 V980" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<path d="M1022 920 V950 H994 V980" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="828" y="1050" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">접수된 데이터 범위를 고정</text>
+<path d="M1072 816 V766 H1030 V720" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
+<text x="982" y="752" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">접수 기록 조회</text>
+
+<rect x="808" y="192" width="296" height="245" rx="10" fill="#FBF5FF" stroke="#8B3DFF"/>
+<text x="828" y="226" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">GitHub Actions</text>
+<rect x="828" y="244" width="256" height="66" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
+<text x="844" y="270" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E">유지관리</text>
+<rect x="933" y="249" width="38" height="27" rx="7" fill="#DBEAFE"/><text x="952" y="269" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#1D4ED8">1h</text>
+<text x="844" y="295" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">DB 연결 확인 · 만료 정리</text>
+<rect x="828" y="324" width="256" height="66" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
+<text x="844" y="350" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E">누적 분석</text>
+<rect x="944" y="329" width="38" height="27" rx="7" fill="#EDE9FE"/><text x="963" y="349" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.35" text-anchor="middle" fill="#6D28D9">1d</text>
+<text x="844" y="375" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">분석 기동 API 호출</text>
+</svg>

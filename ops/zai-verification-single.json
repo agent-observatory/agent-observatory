@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-09-10T20:54:14.259Z",
+  "model": "glm-4.7-flash",
+  "syntheticOnly": true,
+  "concurrency": 1,
+  "concurrentClientRequests": false,
+  "results": [
+    {
+      "caseId": "repeat",
+      "http": 200,
+      "model": "glm-4.7-flash",
+      "startMs": 2,
+      "endMs": 13098,
+      "finishReason": "stop",
+      "usage": {
+        "completion_tokens": 1401,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1213
+        },
+        "prompt_tokens": 185,
+        "prompt_tokens_details": {
+          "cached_tokens": 61
+        },
+        "total_tokens": 1586
+      },
+      "passed": true,
+      "result": {
+        "caseId": "repeat",
+        "candidate": true,
+        "evidenceIds": [
+          "e1",
+          "e2",
+          "e3"
+        ],
+        "explanation": "세 가지 동일한 이벤트(e1, e2, e3)가 동일한 검색, 리비전, 결과를 반복합니다. 이는 개입 없이 반복되는 실행(루프) 가능성을 시사하므로 비효율의 후보(Candidate)로 간주됩니다. 이는 확정적인 증거가 아니며, 특정 상황에서는 의도된 반복(예: 폴링)일 수 있습니다."
+      }
+    }
+  ]
+}

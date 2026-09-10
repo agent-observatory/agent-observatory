@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-09-10T20:55:04.244Z",
+  "model": "glm-4.7-flash",
+  "syntheticOnly": true,
+  "concurrency": 2,
+  "concurrentClientRequests": true,
+  "results": [
+    {
+      "caseId": "repeat",
+      "http": 200,
+      "model": "glm-4.7-flash",
+      "startMs": 2,
+      "endMs": 13857,
+      "finishReason": "stop",
+      "usage": {
+        "completion_tokens": 1402,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1230
+        },
+        "prompt_tokens": 185,
+        "prompt_tokens_details": {
+          "cached_tokens": 183
+        },
+        "total_tokens": 1587
+      },
+      "passed": true,
+      "result": {
+        "caseId": "repeat",
+        "candidate": true,
+        "evidenceIds": [
+          "e1",
+          "e2",
+          "e3"
+        ],
+        "explanation": "세 가지 이벤트(e1, e2, e3) 모두 동일한 검색, 동일한 수정 사항, 동일한 결과를 보여줍니다. 이는 동일한 작업이 반복적으로 수행되었음을 나타내며, 이는 우회적이거나 중복된 작업(예: 실수로 버튼을 여러 번 클릭하거나 디버깅 과정에서의 반복)일 가능성이 높습니다."
+      }
+    },
+    {
+      "caseId": "changed",
+      "http": 200,
+      "model": "glm-4.7-flash",
+      "startMs": 15,
+      "endMs": 11518,
+      "finishReason": "stop",
+      "usage": {
+        "completion_tokens": 1102,
+        "completion_tokens_details": {
+          "reasoning_tokens": 967
+        },
+        "prompt_tokens": 168,
+        "prompt_tokens_details": {
+          "cached_tokens": 142
+        },
+        "total_tokens": 1270
+      },
+      "passed": true,
+      "result": {
+        "caseId": "changed",
+        "candidate": false,
+        "evidenceIds": [],
+        "explanation": "이벤트 로그는 표준적인 TDD(테스트 주도 개발) 사이클을 보여줍니다. 테스트 실패(e1)로 인해 코드를 수정(e2)하고, 이를 통해 테스트가 통과(e3)합니다. 여기서는 중복 작업이나 비효율적인 조치가 없습니다."
+      }
+    }
+  ]
+}

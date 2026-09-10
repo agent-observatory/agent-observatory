@@ -1,0 +1,7 @@
+**/node_modules/**
+**/.next/**
+**/dist/**
+.agents/**
+docs/assets/**
+
+**/.well-known/workflow/**

@@ -1,0 +1,10 @@
+.env*
+**/.env*
+**/node_modules
+**/dist
+.agents
+_local-draft
+docs
+ops/bootstrap
+
+apps/web/app/.well-known/workflow

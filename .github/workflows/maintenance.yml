@@ -1,0 +1,23 @@
+name: Maintenance (1h)
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: maintenance
+  cancel-in-progress: false
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check database and remove expired data
+        env:
+          SCHEDULER_SECRET: ${{ secrets.SCHEDULER_SECRET }}
+        run: |
+          test -n "$SCHEDULER_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 300 --retry 2 --retry-delay 30 \
+            -X POST -H "Authorization: Bearer $SCHEDULER_SECRET" \
+            https://agent-session-atlas.vercel.app/api/jobs/maintenance

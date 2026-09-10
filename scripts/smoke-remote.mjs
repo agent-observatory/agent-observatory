@@ -113,13 +113,27 @@ try {
   const detail = await call("/api/sessions/" + session.id);
   assert.equal(detail.results[0].status, "completed");
   // Reuse validates selection/all orchestration without additional AI calls.
-  await call(
+  const selectedJob = await call(
     "/api/analyses",
     { scope: "selected", sessionIds: [session.id], requestKey: randomUUID() },
     202,
   );
-  await call("/api/analyses", { scope: "all", requestKey: randomUUID() }, 202);
-  report.checks.push("selected and all-session workflow accepted");
+  const allJob = await call(
+    "/api/analyses",
+    { scope: "all", requestKey: randomUUID() },
+    202,
+  );
+  for (let n = 0; n < 20; n++) {
+    const state = await call("/api/sessions");
+    const selected = state.jobs.find((j) => j.id === selectedJob.jobId);
+    const all = state.jobs.find((j) => j.id === allJob.jobId);
+    if (selected?.status === "completed" && all?.status === "completed") break;
+    if (n === 19) throw new Error("Result reuse completion timeout");
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  report.checks.push(
+    "selected and all-session workflows completed with result reuse",
+  );
   report.status = "passed";
 } catch (e) {
   report.status = "failed";

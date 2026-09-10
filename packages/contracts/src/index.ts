@@ -73,7 +73,9 @@ export const rules: Rule[] = [
       const groups = new Map<string, AtlasEvent[]>();
       for (const e of events.filter((e) => e.kind === "tool_call")) {
         const k = JSON.stringify([e.name, e.text]);
-        groups.set(k, [...(groups.get(k) || []), e]);
+        const group = groups.get(k);
+        if (group) group.push(e);
+        else groups.set(k, [e]);
       }
       return [...groups.values()]
         .filter((g) => g.length >= 3)
@@ -110,7 +112,7 @@ export function analysisVersion(
   enabled = registry.map((r) => r.id),
 ) {
   return (
-    "metrics-1:" +
+    "analysis-1:" +
     registry
       .filter((r) => enabled.includes(r.id))
       .map((r) => `${r.id}@${r.version}`)

@@ -4,7 +4,7 @@
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
-**Codex 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** Collector 0.1.0과 증분 수집·JSON Outbox·ACK 재시도·macOS launchd 경로가 구현되어 있다. npm 게시와 실제 개인 자동 수집은 아직 완료하지 않았다.
+**Codex 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** Collector 0.1.0과 증분 수집·JSON Outbox·ACK 재시도·macOS launchd 경로가 구현되어 있다. [GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.1.0)에서 tarball 설치를 확인했으며, npm 게시와 실제 개인 자동 수집은 아직 완료하지 않았다.
 
 ## 사용자 설치: npx setup
 

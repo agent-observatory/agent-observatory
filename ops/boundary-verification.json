@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-10T22:10:58.933Z",
+  "at": "2026-09-10T22:21:21.599Z",
   "url": "https://agent-session-atlas.vercel.app",
   "checks": [
     {
@@ -8,8 +8,7 @@
     },
     {
       "name": "selected job cannot reference another guest session",
-      "status": "failed",
-      "error": "/api/analyses: expected 404, received 400"
+      "status": "passed"
     },
     {
       "name": "malformed batch returns 422",
@@ -36,6 +35,6 @@
       "status": "passed"
     }
   ],
-  "status": "failed",
+  "status": "passed",
   "cleanup": "test session deleted"
 }

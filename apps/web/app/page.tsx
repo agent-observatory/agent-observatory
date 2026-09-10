@@ -770,6 +770,14 @@ export default function Atlas() {
                         {r.error && <p className="muted">{r.error}</p>}
                         {r.result && (
                           <>
+                            {!!r.result.ruleErrors?.length && (
+                              <p className="muted">
+                                {t(
+                                  "일부 규칙을 평가하지 못했습니다. 저장된 지표와 나머지 근거를 확인하세요.",
+                                  "Some rules could not be evaluated. Review the saved metrics and remaining evidence.",
+                                )}
+                              </p>
+                            )}
                             <p>
                               {r.result.ai?.summary ||
                                 t(

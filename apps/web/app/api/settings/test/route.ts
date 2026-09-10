@@ -26,7 +26,7 @@ export const POST = (req: Request) =>
     const holder = randomUUID(),
       leaseKey = user.settings.provider === "zai" ? "zai-global" : "byok:" + id;
     const lease =
-      await db()`INSERT INTO atlas.leases(key,holder,expires_at) VALUES(${leaseKey},${holder},now()+interval '240 seconds') ON CONFLICT(key) DO UPDATE SET holder=excluded.holder,expires_at=excluded.expires_at WHERE atlas.leases.expires_at<now() RETURNING key`;
+      await db()`INSERT INTO atlas.leases(key,holder,expires_at) VALUES(${leaseKey},${holder},now()+interval '600 seconds') ON CONFLICT(key) DO UPDATE SET holder=excluded.holder,expires_at=excluded.expires_at WHERE atlas.leases.expires_at<now() RETURNING key`;
     if (!lease.length)
       throw new Response("AI 요청이 진행 중입니다. 완료 후 다시 테스트하세요", {
         status: 429,

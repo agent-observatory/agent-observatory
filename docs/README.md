@@ -18,13 +18,13 @@
 
 | 대상 | 확인한 상태 |
 |---|---|
-| Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_FVktq8tf5igf41phgRNh6v7cV3fS` |
+| Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_7PVaDBLmvEKmSQr1pnXCV16uYDeV` |
 | Supabase | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증 |
 | GitHub OAuth | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공 |
 | 기본 AI | Z.ai `glm-4.7-flash` 합성 Collector 세션의 첫 시도 완료. `ops/remote-smoke.json`에서 한국어 결과·지표·마스킹 확인 |
 | 개인 BYOK | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증 |
-| GitHub Actions | 시간당 유지관리·일일 분석 워크플로 파일과 호출 API 작성. secret 설정 완료, push·실행은 미검증 |
-| Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 SSRF 1, 총 13개 테스트 통과. 로컬 설치·기기 연결·launchd 등록 확인. npm 게시와 개인 자동 수집은 미완료·중지 |
+| GitHub Actions | main push 후 CI 성공. 유지관리 수동 실행·일일 분석 기동·Collector packaging 성공. 자연 예약 실행은 아직 관찰하지 않음 |
+| Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 SSRF 1, 총 13개 테스트 통과. 경계 8건·보관 5건 검증 통과. GitHub Release에서 tarball 설치 가능. npm 게시와 개인 자동 수집은 미완료·중지 |
 
 구현·검증·배포 상태는 여기서 구분해 기록한다.
 

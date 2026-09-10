@@ -4,7 +4,7 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_FVktq8tf5igf41phgRNh6v7cV3fS"
+    "latestReadyDeployment": "dpl_7PVaDBLmvEKmSQr1pnXCV16uYDeV"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -22,7 +22,7 @@
     "provider": "github-actions",
     "maintenance": "17 * * * *",
     "analysis": "37 18 * * *",
-    "status": "configured-not-run"
+    "status": "dispatch-verified-schedule-unobserved"
   },
   "retention": {
     "detailsDays": 7,

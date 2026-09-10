@@ -76,7 +76,7 @@ BYOK에도 같은 마스킹 설정과 데이터 정책을 적용하고, 조건�
 작업별 전체·대기·진행·완료·실패 건수와 세션별 결과를 표시하고 완료된 결과부터 볼 수 있게 한다. 브라우저를 닫거나 다시 로그인해도 작업과 결과를 조회할 수 있어야 한다. 수동 실행은 즉시 작업을 접수한다는 뜻이며, AI 호출은 일일 분석과 공유하는 계정 전체 동시성 1 제한을 지킨다. 대기 중에는 대기 상태를 표시한다. 만료된 원본과 요약만 남은 세션은 분석 가능 대상으로 세지 않는다.
 
 일일 흐름은 **Actions → 분석 기동 API → Workflow**다. API는 외부 요청의 진입점이며 분석을 완료할 때까지 기다리지 않는다. 데이터 조회·범위 확정·분석·대기·복구는 Workflow가 맡는다. 수동 실행도 같은 Workflow를 시작한다. [Workflow 시작](https://vercel.com/docs/workflows)
-하루치 데이터 전체를 지표·규칙으로 살피되 이미 완료한 동일 revision은 재호출하지 않는다. AI에는 사용자·프로젝트 경계를 지킨 축약 근거만 보내며 하루치 원문 전체를 한 요청에 넣지 않는다.
+하루치 데이터 전체를 지표·규칙으로 살피되 이미 완료한 동일 revision은 규칙 목록·분석 버전까지 일치할 때 결과를 재사용한다. AI에는 사용자·프로젝트 경계를 지킨 축약 근거만 보내며 하루치 원문 전체를 한 요청에 넣지 않는다. 모든 지표·규칙 결과를 계산하고, 최대 24개 균등 샘플을 각 800자 이내로 보내므로 전체 transcript를 AI에 전달하지 않는다.
 
 접수 API는 데이터를 저장하고 분석 필요 상태만 표시한다. 업로드할 때마다 Workflow를 실행하지 않는다.
 DB 연결 확인은 테이블을 읽지 않는 `SELECT 1`로 충분하며 `LIMIT`은 필요하지 않다. GitHub Actions가 Vercel API를 호출하므로 사용자 PC 가동 여부와 무관하다. 연결 실패는 기록하고, 처리할 데이터가 없으면 AI를 호출하지 않는다.
@@ -151,7 +151,7 @@ Z.ai는 일반 API `https://api.z.ai/api/paas/v4/chat/completions`를 사용한�
 2026-09-11 기본 모델을 Z.ai `glm-4.7-flash`로 변경했다. 공식 가격표의 무료 표기와 API 전용 약관의 입력·출력 미보관 조건을 확인했다. 키 입력 후 합성 요청 3개를 동시에 전송했으나 모두 HTTP 429·코드 1305로 거절됐다. Retry-After 헤더는 없었다. 이후 사용자 요청으로 예정된 5분 재시도를 취소하고 단일 요청을 보냈다. HTTP 200·13.1초, 실제 모델 glm-4.7-flash, JSON 형식·근거 ID·한국어 응답 검사를 통과했다. 단일 합성 사례의 연결 성공이며 전체 분석 품질이나 병렬 실패 원인의 확정을 뜻하지 않는다. 결과는 `ops/zai-verification.json`·`ops/zai-verification-single.json`에 기록했다. 추가로 합성 요청 2개를 동시에 보내 모두 HTTP 200(11.5초·13.9초), JSON·근거 ID 기본 검사를 통과했다. 결과는 `ops/zai-verification-pair.json`에 기록했다. 표현의 정확성 등 전체 품질 평가는 별도다. 사용자 확인 동시성 3과 실측 호출 성공을 구분한다. [API 데이터 조건](https://docs.z.ai/legal-agreement/privacy-policy#4-data-return-and-deletion)
 
 이전 OpenRouter 연결 시험에서는 공개 모델·ZDR 목록 조회에서 `inclusionai/ling-3.0-flash-vl:free`의 Novita endpoint를 가용성 후보로 확인했다.
-입력·출력 가격 0과 ZDR 목록 등재를 확인한 것이며, 성능 우위나 운영 기본값을 뜻하지 않는다. 이후 합성 입력 연결 시험에서 해당 모델·Provider 응답과 비용 0을 확인했다. 실제 분석의 JSON 계약·근거 정확도·한국어 설명 품질은 미검증이다.
+입력·출력 가격 0과 ZDR 목록 등재를 확인한 것이며, 성능 우위나 운영 기본값을 뜻하지 않는다. 이후 합성 입력 연결 시험에서 해당 모델·Provider 응답과 비용 0을 확인했다. OpenRouter 전용 실제 분석의 JSON 계약·근거 정확도·한국어 설명 품질은 아직 미검증이며, 현재 원격 완료 검증은 Z.ai 경로다.
 운영 모델은 배포 시 후보 목록을 갱신하고 위 품질 평가로 선정한다. 무료 후보가 품질 기준에 못 미치면 기본 지표만 제공하고 AI 설명은 미제공 상태와 사유를 표시한다. 로그인 사용자는 BYOK 모델을 선택할 수 있다.
 [모델 API](https://openrouter.ai/api/v1/models) · [ZDR endpoint 목록](https://openrouter.ai/api/v1/endpoints/zdr) · [ZDR 정책](https://openrouter.ai/docs/guides/features/zdr)
 
@@ -162,7 +162,7 @@ Z.ai는 일반 API `https://api.z.ai/api/paas/v4/chat/completions`를 사용한�
 Supabase 서울 프로젝트의 DB·비공개 Storage를 사용하고, Vercel 함수도 서울 `icn1`로 고정한다. GitHub Actions와 외부 AI API의 실행 위치는 별도다.
 
 GitHub OAuth Homepage URL은 `https://agent-session-atlas.vercel.app`, callback은 `https://agent-session-atlas.vercel.app/api/auth/callback/github`로 등록한다.
-GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 운영 URL 배포와 실제 OAuth 진입은 확인했지만, npm 공개와 예약 작업의 원격 실행은 아직 확인하지 않았다.
+GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 운영 URL 배포와 실제 OAuth 진입을 확인했다. GitHub Actions의 CI·수동 유지관리·일일 분석 기동·Collector packaging도 성공했으며 자연 schedule 실행은 아직 관찰하지 않았다. GitHub 자동 배포 연결은 별도 관리자 승인 대기 상태다.
 
 | 구성요소 | 어디에 배포하나 | 무료 범위·설계 선택 |
 |---|---|---|
@@ -190,14 +190,14 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 | 예약 작업 | `.github/workflows/maintenance.yml`·`analysis-daily.yml`에 일정·수동 실행·동시 실행 제한. Vercel의 `/api/jobs/maintenance`·`/api/jobs/analysis`를 호출 |
 | Workflow | `workflows/*.ts`의 `use workflow`·`use step`, `next.config.ts`의 `withWorkflow`. Next.js와 함께 배포. 서울 상태 저장은 SDK `5.0.0-beta.33` 이상에서 지원하므로 설치 버전·실제 실행 리전 확인 |
 | 환경변수 | `.env.example`에 이름만 기록. 실제 키는 Vercel 환경변수·GitHub Secrets, CLI 기기 토큰과 분리 |
-| 웹 배포 | Actions에서 검사 → DB migration → Vercel CLI 배포 → 원격 smoke test |
-| CLI 배포 | CLI 태그 → 빌드·패키지 설치 검사 → npm 공개 게시. 최초 게시 후 npm Trusted Publishing 연결 |
+| 웹 배포 | Actions에서 검사 → DB migration → Vercel CLI 배포 → 원격 smoke test. 현재 CLI production 배포는 확인했으며 GitHub 자동 배포 연결은 승인 대기 |
+| CLI 배포 | CLI 태그 → 빌드·패키지 설치 검사 → GitHub Release 게시. npm 공개 게시와 npm Trusted Publishing 연결은 후속 |
 
 운영 배포는 Actions로 통일하고 Vercel Git 자동 배포와 중복 실행하지 않는다. PR Preview도 별도 환경으로 배포한다.  
 Vercel은 `apps/web`만 배포하되 `packages/contracts`를 빌드에 포함한다. 수집기는 Vercel 배포 대상에서 제외한다.
 
 유지관리 API는 Next.js 앱 안의 작은 엔드포인트이며 별도 서비스로 배포하지 않는다.
-원격 예약 작업은 GitHub Actions로 통일하고 `vercel.json`에는 Cron 일정을 등록하지 않는다. 아래는 구현할 일정이다.
+원격 예약 작업은 GitHub Actions로 통일하고 `vercel.json`에는 Cron 일정을 등록하지 않는다. 워크플로 파일과 수동 dispatch는 검증했으며 자연 schedule 실행은 아직 관찰하지 않았다.
 
 | 작업 | GitHub Actions 일정(UTC) | 실행 범위 |
 |---|---|---|
@@ -228,7 +228,7 @@ Vercel은 `apps/web`만 배포하되 `packages/contracts`를 빌드에 포함한
 |---|---|
 | 원본 | 마스킹 설정을 적용한 세션 JSON 파일은 최초 접수부터 **최대 7일** 보관 후 삭제. 마스킹 여부·로그인 여부와 무관하게 같은 최대 기간 적용. 전체 파일 **700 MB**에서 새 전송 중지하고 로컬 대기. 실제 저장 바이트로 제한 |
 | 크기 예산 | 하루 신규 기록 총 40 MB 가정 시 7일 약 280 MB. 세션 전체 재전송 없이 추가분만 전송 |
-| 파일 요청 | 30분마다 목적지별 변경분 전송. 목적지 1개·실행당 1배치·월 30일 가정 시 하루 4시간 변경은 월 약 240회, 8시간은 480회 업로드. 크기 제한에 따른 분할·재시도는 별도 |
+| 파일 요청 | 30분마다 목적지별 변경분 전송. API 요청 본문은 **1 MiB**, 세션 분석은 **40 MiB**, 작업당 세션은 **2,000개**, 배치 이벤트는 **1,000개**까지다. 초과 source는 자르지 않고 격리한다 |
 | DB | 지표·메타데이터·근거 위치 위주. 전체 도구 출력은 비공개 Storage에 두고 DB 350 MB에서 신규 입력 제한 |
 | 함수 | Hobby 4 CPU-hours·360 GB-hours/월. 대기에도 메모리 시간이 잡히므로 긴 대기는 Workflow로 넘김 |
 | Workflow | 월 50,000 events·기록 1 GB, 내부 Queues 월 100만 operations 무료 범위까지 함께 확인 |

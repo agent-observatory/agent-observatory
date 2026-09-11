@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-09-11T07:38:23.341Z",
-  "url": "http://localhost:3100",
+  "checkedAt": "2026-09-11T07:51:33.749Z",
+  "url": "https://agent-session-atlas.vercel.app",
   "status": "passed",
   "checks": [
     "same source_id and generation remain separate by source with scoped checkpoints",

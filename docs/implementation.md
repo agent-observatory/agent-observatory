@@ -132,3 +132,16 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 | 운영        | 접수·기기 필드 마이그레이션 적용. Supabase security advisor의 warn/error 결과 없음                                                             |
 
 원격 배포와 로컬 Collector 설치는 코드 빌드와 별도로 확인한다. 실제 개인 표본 4개 중 미완료 1개는 기존 Workflow에서 무료 제공자 백오프를 유지하며 처리 중이다. 새 평가 계약의 실세션 정확도, 계층적 증류, 개선안의 자동 적용·전후 추적은 완료로 표시하지 않는다.
+
+0.3.0 운영 확인은 16:53 KST에 마쳤다. 이 단계는 16:17~16:53 KST, 약 36분 걸렸다. Astra가 통합·근거 경계·운영 검증을 맡고 Terra 에이전트가 UI·Collector adapter·평가 카탈로그를 나눠 구현했다. 앞선 연구·개인 표본 분석의 백오프 대기는 제외했다.
+
+| 최종 확인 | 결과 |
+| --- | --- |
+| 소스·CI | `460f5ae`, [CI 34576287779](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34576287779) 성공. 계약 22·Collector 14·웹 29, 총 65개 테스트·타입 검사·빌드 통과 |
+| 운영 배포 | `dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c` Ready·Production·`icn1`. 배포 이후 조회 구간에서 runtime error 없음 |
+| 원격 API | 접수·source·heartbeat·인증 SSR 8그룹, 압축·마스킹·snapshot 완료 9그룹, 인증·소유권 9그룹, 페이지·메트릭·타임존 3그룹 통과 |
+| 화면 | 운영 빌드에 합성 API fixture를 연결해 인증 깜빡임·근거 팝업·포커스 복원·작업 복사·다크/라이트·390px 모바일 검증. 실제 서명된 합성 계정의 SSR은 별도 검증 |
+| Collector | [0.3.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0), 132,274 B. 로컬 설치·launchd `RunAtLoad`/1,800초·운영 paused heartbeat 확인. npm 미게시 |
+| 개인 표본 | 이미 ACK된 4개 snapshot의 완료를 서버에 확정. 새 수집·파일 업로드·AI 호출 없이 완료 시각만 기록. 분석은 3/4 완료, 1개는 기존 무료 제공자 백오프 대기 |
+
+[화면 검증](../ops/actionable-review-ui-verification.json) · [수집 생명주기](../ops/collector-lifecycle-verification.json) · [설치 검증](../ops/collector-install-verification.json) · [운영 상태](../ops/production.json)

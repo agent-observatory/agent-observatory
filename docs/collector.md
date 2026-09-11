@@ -4,18 +4,18 @@
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
-**Codex와 Claude Code 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 공개된 설치본은 0.2.0이며, 현재 작업 트리의 0.3.0은 Claude Code adapter·기기 heartbeat·수집 snapshot 완료 handshake를 추가한다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
+**Codex와 Claude Code 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 0.3.0은 Claude Code adapter·기기 heartbeat·수집 snapshot 완료 handshake를 제공한다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
 
 ## 사용자 설치: npx setup
 
 **Node.js 22.15 이상과 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
-공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.2.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0)의 125,477-byte tarball을 사용한다. 0.3.0은 아직 게시·배포 확인 전이다. 아래 `npx` 명령은 npm 게시 후 설치 경로다.
+공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.3.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0)의 132,274-byte tarball을 사용한다. 로컬 설치와 운영 heartbeat를 확인했다.
 
 ```sh
-npx @agent-observatory/collector@0.2.0 setup
+npx --yes https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.3.0/agent-observatory-collector-0.3.0.tgz setup
 ```
 
-`npx`는 게시 후 패키지를 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.**
+`npx`는 GitHub Release tarball을 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.**
 
 | 단계      | setup이 하는 일                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,7 @@ Collector의 30분 실행은 **Codex 앱의 예약 작업이 아니라 macOS 사
 
 `pause`는 설정 파일의 `paused` 값을 유지한다. 예약 실행은 이 값이 참이면 전송·수집 대신 paused heartbeat만 남기며, 수동 `sync`는 범위 확인·복구를 위해 실행할 수 있다. `resume` 뒤 다음 예약 주기부터 자동 전송을 다시 시도한다.
 
-0.3.0 Collector는 예약·paused 시작과 동기화 성공·실패 때 인증된 device heartbeat를 보낸다. 포함하는 값은 버전·활성 source 유형·pause 상태·마지막 성공 시각·안전한 오류 코드뿐이며, 경로·세션 본문·키는 보내지 않는다. 원격 UI 표시와 배포 확인은 별도 단계다.
+0.3.0 Collector는 예약·paused 시작과 동기화 성공·실패 때 인증된 device heartbeat를 보낸다. 포함하는 값은 버전·활성 source 유형·pause 상태·마지막 성공 시각·안전한 오류 코드뿐이며, 경로·세션 본문·키는 보내지 않는다. 운영 API의 기기 목록과 로컬 설치본의 paused heartbeat를 확인했다. 웹 설정에서 마지막 활동·버전·일시 중지 상태를 보여 준다.
 
 최초 연결에서는 **기존 기록 가져오기**를 제공한다. 현재 CLI는 `configure --include/--exclude/--since/--until`로 프로젝트·기간을 선택하고, `inventory`로 선택 범위의 세션 수·바이트·프로젝트 수를 집계한다. 대화형 GUI 미리보기는 아직 제공하지 않는다. 로컬 접수 이력이 없으면 서버 접수 내역을 먼저 조회해 이미 보낸 범위를 제외하고, 진행 위치를 저장해 중단 후 이어간다. 가져오기 완료 후 웹에서 **지금 분석**으로 바로 분석할 수 있으며 이후에는 30분 증분 동기화로 이어진다.
 

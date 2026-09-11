@@ -188,7 +188,7 @@ Historical — 2026-09-11 무료 풀 검증: 로컬 합성 호출에서 Kimi K3�
 Supabase 서울 프로젝트의 DB·비공개 Storage를 사용하고, Vercel 함수도 서울 `icn1`로 고정한다. GitHub Actions와 외부 AI API의 실행 위치는 별도다.
 
 GitHub OAuth Homepage URL은 `https://agent-session-atlas.vercel.app`, callback은 `https://agent-session-atlas.vercel.app/api/auth/callback/github`로 등록한다.
-GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 0.2.0은 source `3fff3b5`으로 Vercel Ready 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`를 확인했다. GitHub Actions [CI run 34570714079](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34570714079)는 계약 13·Collector 9·웹 21, 총 43개 테스트와 타입 검사·빌드를 통과했다. 2026-09-11 재확인 시 Vercel 프로젝트의 Git link는 없었다.
+GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 0.3.0은 source `460f5ae`로 Vercel Ready 배포 `dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c`를 확인했다. GitHub Actions [CI run 34576287779](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34576287779)는 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드를 통과했다. 2026-09-11 재확인 시 Vercel 프로젝트의 Git link는 없었다.
 
 | 구성요소       | 어디에 배포하나                       | 무료 범위·설계 선택                                                                                                          |
 | -------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -205,7 +205,7 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 
 ### 운영 리소스와 연결 상태
 
-**운영 URL에는 0.2.0이 배포됐다.** 식별자·확인 시각은 [ops/production.json](../ops/production.json)에서 관리한다. 다른 환경을 다룬다면 먼저 대상을 확인한다.
+**운영 URL에는 0.3.0이 배포됐다.** 식별자·확인 시각은 [ops/production.json](../ops/production.json)에서 관리한다. 다른 환경을 다룬다면 먼저 대상을 확인한다.
 
 | 대상         | 현재 구성                                                                                                                                                    |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -214,10 +214,10 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 | 웹 주소      | [운영 앱](https://agent-session-atlas.vercel.app) · [Vercel 설정](https://vercel.com/dans-projects-155a19b3/agent-session-atlas/settings)                    |
 | Supabase     | 프로젝트 `dgmecutgijgegtmrsygo`, 서울 `ap-northeast-2`, Free. [관리 화면](https://supabase.com/dashboard/project/dgmecutgijgegtmrsygo)                       |
 | DB·파일      | PostgreSQL `atlas` 스키마와 비공개 `sessions` 버킷. 로그인은 Supabase Auth가 아닌 Auth.js + GitHub OAuth                                                     |
-| 파일 제약    | `application/octet-stream` `.json.zst`를 저장하고 compressed body 1 MiB·decoded batch 8 MiB를 적용. 압축 수신 원격 검증 8개와 인증·소유권 경계 검증 9개 통과 |
-| DB 이력      | `db/migrations/001`~`004` 적용 확인. 적용 기록은 `atlas.migrations`                                                                                          |
+| 파일 제약    | `application/octet-stream` `.json.zst`를 저장하고 compressed body 1 MiB·decoded batch 8 MiB를 적용. 압축 수신 원격 검증 9개와 인증·소유권 경계 검증 9개 통과 |
+| DB 이력      | `001`~`004`와 `20260911072537_session_receipts_devices.sql` 적용 확인. 적용 기록은 `atlas.migrations`                                                                                          |
 | Git 연동     | Vercel Git link 없음. main push는 Actions CI를 실행하지만 웹 배포를 자동으로 만들지 않음                                                                     |
-| 최근 앱 변경 | source `3fff3b5`의 0.2.0 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`                                                                                             |
+| 최근 앱 변경 | source `460f5ae`의 0.3.0 배포 `dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c`                                                                                             |
 
 ### 키 관리와 로컬 환경
 

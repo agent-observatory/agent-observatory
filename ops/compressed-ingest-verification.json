@@ -1,6 +1,6 @@
 {
-  "at": "2026-09-11T07:44:57.535Z",
-  "url": "http://localhost:3100",
+  "at": "2026-09-11T07:51:44.831Z",
+  "url": "https://agent-session-atlas.vercel.app",
   "checks": [
     "large logical event / zstd / canonical hash ACK / duplicate idempotency",
     "owned pagination / literal search / overview / detail aggregate",
@@ -14,5 +14,5 @@
   ],
   "status": "passed",
   "decodedBytes": 1380565,
-  "wireBytes": 564
+  "wireBytes": 563
 }

@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-09-11T07:51:49.733Z",
+  "version": "0.3.0",
+  "installedPathVersion": "0.3.0",
+  "paused": true,
+  "intervalSeconds": 1800,
+  "runAtLoad": true,
+  "remote": {
+    "last_seen_at": "2026-09-11T07:51:37.812Z",
+    "collector_version": "0.3.0",
+    "source_types": [
+      "codex",
+      "claude-code"
+    ],
+    "paused": true,
+    "sync_status": "paused"
+  },
+  "noSessionCollection": true
+}

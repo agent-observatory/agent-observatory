@@ -4,14 +4,15 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud",
+    "latestReadyDeployment": "dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "3fff3b5cabc864346412c85897a6b68ccea08e9d"
+    "runtimeChangesRecordedIn": "460f5aeac1873998c29c65e239348bf5b0c3a1e6",
+    "version": "0.3.0"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -24,13 +25,17 @@
     "retentionMigration": "004-applied",
     "databaseUrlEnv": "POSTGRES_URL",
     "databaseCaFile": "ops/certs/supabase-prod-ca-2021.crt",
-    "allowedMimeTypes": ["application/json", "application/octet-stream"],
+    "allowedMimeTypes": [
+      "application/json",
+      "application/octet-stream"
+    ],
     "storedEncoding": "zstd-3",
     "appliedMigrations": [
       "001_initial.sql",
       "002_rate_limits.sql",
       "003_job_settings.sql",
-      "004_retention.sql"
+      "004_retention.sql",
+      "20260911072537_session_receipts_devices.sql"
     ]
   },
   "scheduling": {
@@ -54,7 +59,11 @@
     "routingVersion": "free-pool-2",
     "candidateConfig": "apps/web/lib/ai-routing.ts",
     "candidateCount": 6,
-    "apiKeyEnvs": ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "ZAI_API_KEY"],
+    "apiKeyEnvs": [
+      "NVIDIA_API_KEY",
+      "OPENROUTER_API_KEY",
+      "ZAI_API_KEY"
+    ],
     "status": "remote-fallback-single-selected-all-passed",
     "verificationReport": "ops/free-routing-remote-smoke.json",
     "maxConcurrency": 1,
@@ -63,15 +72,21 @@
     "byok": {
       "status": "implemented-unverified",
       "apiFormat": "openai-chat-completions",
-      "presets": ["openrouter"],
+      "presets": [
+        "openrouter"
+      ],
       "customEndpoint": true,
-      "fields": ["endpoint", "apiKey", "model"],
+      "fields": [
+        "endpoint",
+        "apiKey",
+        "model"
+      ],
       "maxAttempts": 5
     }
   },
-  "checkedAt": "2026-09-11T06:40:00Z",
+  "checkedAt": "2026-09-11T07:53:16Z",
   "collector": {
-    "installedVersion": "0.2.0",
+    "installedVersion": "0.3.0",
     "localSnapshot": {
       "paused": true,
       "projectMode": "all"
@@ -80,14 +95,29 @@
     "compression": "zstd-3",
     "preferredCompressionCandidate": "zstd-3",
     "compressionReport": "ops/compression-local.json",
-    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0"
+    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0",
+    "verificationReport": "ops/collector-install-verification.json"
   },
   "ui": {
-    "routes": ["/sessions", "/analyses", "/settings"],
-    "sessionPagination": [10, 20, 50, 100],
+    "routes": [
+      "/sessions",
+      "/analyses",
+      "/settings"
+    ],
+    "sessionPagination": [
+      10,
+      20,
+      50,
+      100
+    ],
     "defaultPageSize": 20,
     "timezone": "device default or IANA account preference",
-    "verification": "ops/session-browser-api-verification.json"
+    "verification": "ops/actionable-review-ui-verification.json",
+    "receipts": [
+      "first_received",
+      "last_received",
+      "ingestion_complete_at"
+    ]
   },
   "pilot": {
     "sessionsUploaded": 4,
@@ -96,6 +126,20 @@
     "checkedAt": "2026-09-11T06:39:54.852Z",
     "storedFileBytes": 2106796,
     "imagePolicy": "metadata-only",
-    "storageReport": "ops/personal-pilot-storage.json"
+    "storageReport": "ops/personal-pilot-storage.json",
+    "confirmedSnapshots": 4,
+    "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
+  },
+  "verification": {
+    "ciRun": 34576287779,
+    "tests": 65,
+    "contracts": 22,
+    "collector": 14,
+    "web": 29,
+    "runtimeErrorsSince": "2026-09-11T07:51:00Z",
+    "runtimeErrorsFound": 0,
+    "collectorLifecycle": "ops/collector-lifecycle-verification.json",
+    "compressedIngest": "ops/compressed-ingest-verification.json",
+    "browserApi": "ops/session-browser-api-verification.json"
   }
 }

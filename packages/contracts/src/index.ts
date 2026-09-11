@@ -1,16 +1,32 @@
 import { z } from "zod";
 export const SCHEMA_VERSION = 1;
-export const MAX_BATCH_BYTES = 1_048_576;
+export const MAX_COMPRESSED_BATCH_BYTES = 1_048_576;
+export const MAX_DECODED_BATCH_BYTES = 8 * 1_048_576;
+export const MAX_JSONL_LINE_BYTES = 64 * 1_048_576;
+// Kept as an alias for callers that previously treated this as the request cap.
+export const MAX_BATCH_BYTES = MAX_COMPRESSED_BATCH_BYTES;
+export const ImageMetadata = z.object({
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  mimeType: z
+    .string()
+    .regex(/^image\/[a-z0-9.+-]+$/i)
+    .max(100),
+  bytes: z.number().int().nonnegative(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  status: z.literal("local_only"),
+});
 export const Event = z.object({
   id: z.string().min(1).max(128),
   timestamp: z.string().datetime({ offset: true }).nullable(),
   kind: z.enum(["user", "assistant", "tool_call", "tool_result", "usage"]),
-  text: z.string().max(180_000).optional(),
+  text: z.string().max(MAX_DECODED_BATCH_BYTES).optional(),
   name: z.string().max(200).optional(),
   callId: z.string().max(256).optional(),
   inputTokens: z.number().nonnegative().optional(),
   outputTokens: z.number().nonnegative().optional(),
   cachedTokens: z.number().nonnegative().optional(),
+  images: z.array(ImageMetadata).max(1000).optional(),
 });
 export type AtlasEvent = z.infer<typeof Event>;
 export const Batch = z

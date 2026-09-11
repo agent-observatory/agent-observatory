@@ -15,6 +15,8 @@ import {
   MAX_OUTBOX_BYTES,
   outboxBytes,
 } from "../src/core.js";
+import { decompressBatch } from "@agent-observatory/contracts/transport";
+import { randomBytes } from "node:crypto";
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "atlas-test-"));
   await initialize(root);
@@ -75,7 +77,11 @@ test("partial lines wait; Outbox recovers cursor; ACK loss retains and replay re
       c,
       "synthetic",
       async (_url, init) => {
-        const b = JSON.parse(String(init?.body));
+        const b = decompressBatch(init?.body as Uint8Array).batch;
+        assert.equal(
+          (init?.headers as any)["x-atlas-content-encoding"],
+          "zstd",
+        );
         return Response.json({
           batch_id: b.batch_id,
           received_sha256: (init?.headers as any)["x-content-sha256"],
@@ -87,6 +93,81 @@ test("partial lines wait; Outbox recovers cursor; ACK loss retains and replay re
     assert.equal(
       (await fs.readdir(path.join(f.root, "outbox/ready"))).length,
       0,
+    );
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("a compressible 400 KB UTF-8 event stays whole in one batch", async () => {
+  const f = await fixture();
+  try {
+    const text = "근거보존".repeat(50_000);
+    await fs.writeFile(
+      f.file,
+      JSON.stringify({
+        type: "session_meta",
+        payload: { id: "synthetic", cwd: "/synthetic/project" },
+      }) +
+        "\n" +
+        JSON.stringify({
+          type: "response_item",
+          payload: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text }],
+          },
+        }) +
+        "\n",
+    );
+    const source = (await sources(path.join(f.root, "codex")))[0];
+    assert.equal(await collect(f.state, source, 0), 1);
+    const [name] = await fs.readdir(path.join(f.root, "outbox/ready"));
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(f.root, "outbox/ready", name), "utf8"),
+    );
+    assert.equal(manifest.payload.events.length, 1);
+    assert.equal(manifest.payload.events[0].text, text);
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("an incompressible oversized event fails without advancing its cursor", async () => {
+  const f = await fixture();
+  try {
+    const text = randomBytes(1_300_000).toString("base64");
+    await fs.writeFile(
+      f.file,
+      JSON.stringify({
+        type: "session_meta",
+        payload: { id: "synthetic", cwd: "/synthetic/project" },
+      }) +
+        "\n" +
+        JSON.stringify({
+          type: "response_item",
+          payload: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text }],
+          },
+        }) +
+        "\n",
+    );
+    const source = (await sources(path.join(f.root, "codex")))[0];
+    await assert.rejects(collect(f.state, source, 0), /단일 이벤트/);
+    const eventOffset = Buffer.byteLength(
+      JSON.stringify({
+        type: "session_meta",
+        payload: { id: "synthetic", cwd: "/synthetic/project" },
+      }) + "\n",
+    );
+    assert.equal(f.state.cursor(source), eventOffset);
+    assert.equal(
+      (await fs.readdir(path.join(f.root, "outbox/ready"))).length,
+      1,
     );
   } finally {
     f.state.close();

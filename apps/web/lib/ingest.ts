@@ -3,6 +3,11 @@ import { Batch, maskBatch } from "@agent-observatory/contracts";
 import { db } from "./db";
 import { hash } from "./security";
 import { storage } from "./storage";
+import {
+  canonicalBatch,
+  compressBatch,
+} from "@agent-observatory/contracts/transport";
+import { sanitizeEventImages } from "@agent-observatory/contracts/images";
 export async function ingest(
   owner: string,
   input: unknown,
@@ -31,9 +36,20 @@ export async function ingest(
     const [user] =
       await sql`SELECT settings,guest FROM atlas.users WHERE id=${owner}`;
     if (!user) throw new Response("계정 없음", { status: 401 });
+    const sanitized = {
+      ...b,
+      events: await Promise.all(b.events.map(sanitizeEventImages)),
+    };
     const masked = user.guest || user.settings.masking !== false;
-    const stored = masked ? maskBatch(b) : b;
-    const body = JSON.stringify(stored);
+    const stored = masked ? maskBatch(sanitized) : sanitized;
+    let body: string;
+    let compressed: Buffer;
+    try {
+      body = canonicalBatch(stored).json;
+      compressed = compressBatch(stored);
+    } catch {
+      throw new Response("마스킹 후 저장 크기 제한 초과", { status: 413 });
+    }
     await sql`SELECT pg_advisory_xact_lock(782111)`;
     const [database] =
       await sql`SELECT pg_database_size(current_database()) AS size`;
@@ -41,12 +57,12 @@ export async function ingest(
       throw new Response("DB 저장 용량 한도", { status: 429 });
     const [quota] =
       await sql`SELECT coalesce(sum(bytes),0)::bigint AS size FROM atlas.batches WHERE purged=false`;
-    if (Number(quota.size) + Buffer.byteLength(body) > 700 * 1024 * 1024)
+    if (Number(quota.size) + compressed.length > 700 * 1024 * 1024)
       throw new Response("저장 용량 한도", { status: 429 });
     const [day] =
       await sql`SELECT coalesce(sum(bytes),0)::bigint AS size FROM atlas.batches WHERE owner=${owner} AND created_at>now()-interval '1 day'`;
     if (
-      Number(day.size) + Buffer.byteLength(body) >
+      Number(day.size) + compressed.length >
       (user.guest ? 2 : 40) * 1024 * 1024
     )
       throw new Response("일일 업로드 한도", { status: 429 });
@@ -61,15 +77,15 @@ export async function ingest(
     const offset = Number(found?.offset_bytes || 0);
     if (b.start_offset !== offset)
       throw new Response("서버 접수 위치를 다시 확인하세요", { status: 409 });
-    const objectPath = hash(owner) + "/" + sid + "/" + b.batch_id + ".json";
-    const { error } = await storage().upload(objectPath, body, {
-      contentType: "application/json",
+    const objectPath = hash(owner) + "/" + sid + "/" + b.batch_id + ".json.zst";
+    const { error } = await storage().upload(objectPath, compressed, {
+      contentType: "application/octet-stream",
       upsert: true,
     });
     if (error) throw new Error("Storage upload failed");
     if (!found)
       await sql`INSERT INTO atlas.sessions(id,owner,source_id,generation,project) VALUES(${sid},${owner},${b.session_id},${b.generation},${stored.project})`;
-    await sql`INSERT INTO atlas.batches(id,owner,session_id,received_hash,stored_hash,path,bytes,end_offset,masking) VALUES(${b.batch_id},${owner},${sid},${received},${hash(body)},${objectPath},${Buffer.byteLength(body)},${b.end_offset},${masked})`;
+    await sql`INSERT INTO atlas.batches(id,owner,session_id,received_hash,stored_hash,path,bytes,end_offset,masking) VALUES(${b.batch_id},${owner},${sid},${received},${hash(body)},${objectPath},${compressed.length},${b.end_offset},${masked})`;
     await sql`UPDATE atlas.sessions SET revision=revision+1,offset_bytes=${b.end_offset} WHERE id=${sid}`;
     return {
       batch_id: b.batch_id,

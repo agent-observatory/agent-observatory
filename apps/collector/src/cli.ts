@@ -95,7 +95,7 @@ async function install() {
     };
     await save(c);
   }
-  const dir = path.join(root, "versions/0.1.0");
+  const dir = path.join(root, "versions/0.2.0");
   await fs.mkdir(dir, { recursive: true, mode: 0o700 });
   const bundle = fileURLToPath(import.meta.url);
   await fs.copyFile(bundle, path.join(dir, "cli.js"));
@@ -123,7 +123,7 @@ async function install() {
   execFileSync("launchctl", ["bootstrap", `gui/${process.getuid!()}`, plist], {
     stdio: "pipe",
   });
-  console.log("Collector 0.1.0 설치 완료 · 30분 스케줄러 등록");
+  console.log("Collector 0.2.0 설치 완료 · 30분 스케줄러 등록");
   console.log("계정 연결: " + node + " " + script + " connect");
 }
 async function connect() {
@@ -284,7 +284,7 @@ async function main() {
       console.log(
         JSON.stringify(
           {
-            version: "0.1.0",
+            version: "0.2.0",
             installed: true,
             connected: !!token(c),
             paused: c.paused,

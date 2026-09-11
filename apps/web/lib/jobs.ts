@@ -47,7 +47,7 @@ export async function registerJob(owner: string, input: unknown) {
     const [user] =
       await sql`SELECT settings,key_cipher FROM atlas.users WHERE id=${owner}`;
     const id = randomUUID();
-    const version = analysisVersion();
+    const version = analysisVersion() + ":prompt-tool-evidence-v1";
     const settings = {
       ...normalizeSettings(user.settings),
       routingVersion: isFree(user.settings) ? routingVersion : "byok-1",

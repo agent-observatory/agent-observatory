@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { signIn, signOut } from "next-auth/react";
-import { codexEvent, type AtlasBatch } from "@agent-observatory/contracts";
+import { type AtlasBatch } from "@agent-observatory/contracts";
+import { codexEventWithImages } from "@agent-observatory/contracts/images";
 import {
   aiPendingLabel,
   formatAiProvenance,
@@ -98,6 +99,7 @@ export default function Atlas() {
     [pair, setPair] = useState(""),
     [freeCandidates, setFreeCandidates] = useState<FreeCandidate[]>([]),
     [ready, setReady] = useState(false);
+  const detailRef = useRef<HTMLElement>(null);
   const t = (ko: string, en: string) => (settings.language === "ko" ? ko : en);
   const apply = (s: Settings) => {
     setSettings(s);
@@ -142,7 +144,14 @@ export default function Atlas() {
               },
         );
         setSavedSettings(m.user ? settingsFrom(m.user.settings) : defaults);
-        if (m.user) await load();
+        if (m.user) {
+          await load();
+          const sessionId = new URLSearchParams(location.search).get("session");
+          if (sessionId) {
+            const sessionDetail = await api("/api/sessions/" + sessionId);
+            setDetail(sessionDetail);
+          }
+        }
         setPair(new URLSearchParams(location.search).get("connect") || "");
       })
       .catch((e) => setError(e.message))
@@ -168,6 +177,10 @@ export default function Atlas() {
       active = false;
       clearInterval(timer);
     };
+  }, [detail?.session.id]);
+  useEffect(() => {
+    if (!detail?.session.id) return;
+    detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [detail?.session.id]);
   useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
@@ -283,7 +296,7 @@ export default function Atlas() {
             new TextEncoder().encode(line + (i < lines.length - 1 ? "\n" : ""))
               .length;
           if (offset >= ck.offset && line) {
-            const event = codexEvent(
+            const event = await codexEventWithImages(
               JSON.parse(line),
               await digest(generation + ":" + offset),
             );
@@ -354,11 +367,31 @@ export default function Atlas() {
       expired: t("만료", "Expired"),
       dispatch_failed: t("시작 실패", "Dispatch failed"),
     })[s] || t("미분석", "Not analyzed");
+  const setSessionUrl = (sessionId?: string) => {
+    const url = new URL(location.href);
+    if (sessionId) url.searchParams.set("session", sessionId);
+    else url.searchParams.delete("session");
+    history.replaceState(null, "", url.pathname + url.search);
+  };
+  const focusEvidence = (id: string) => {
+    const evidence = document.getElementById(`evidence-${id}`);
+    if (!(evidence instanceof HTMLDetailsElement)) return;
+    evidence.open = true;
+    evidence.classList.remove("evidence-focus");
+    requestAnimationFrame(() => {
+      evidence.classList.add("evidence-focus");
+      evidence.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(
+        () => evidence.classList.remove("evidence-focus"),
+        1800,
+      );
+    });
+  };
   return (
     <div className="app">
       <aside>
         <a className="brand" href="/">
-          ◈{" "}
+          ◫{" "}
           <span>
             Atlas<small>AGENT OBSERVATORY</small>
           </span>
@@ -371,16 +404,13 @@ export default function Atlas() {
             {user?.guest
               ? t("방문자 공간", "Guest workspace")
               : user?.name || t("개인 워크스페이스", "Personal workspace")}
-            <small>
-              {t("세션에서 더 나은 개발로", "Learn from your sessions")}
-            </small>
           </span>
         </div>
         <nav>
           {[
-            ["sessions", "◫", t("세션", "Sessions")],
+            ["sessions", "▤", t("세션", "Sessions")],
             ["jobs", "◷", t("분석 기록", "Analyses")],
-            ["settings", "⚙", t("설정", "Settings")],
+            ["settings", "·", t("설정", "Settings")],
           ].map(([id, icon, label]) => (
             <button
               className={tab === id ? "active" : ""}
@@ -397,7 +427,7 @@ export default function Atlas() {
         </nav>
         <div className="aside-bottom">
           <span className="dot" /> {t("서울 리전", "Seoul region")}
-          <p>Atlas v0.1.0</p>
+          <p>Atlas v0.2.0</p>
           {user && !user.guest ? (
             <button onClick={() => signOut()}>
               {t("로그아웃", "Sign out")}
@@ -439,13 +469,12 @@ export default function Atlas() {
         <div className="content">
           <div className="title-row">
             <div>
-              <p className="eyebrow">YOUR WORK, UNDERSTOOD</p>
               <h1>
                 {tab === "settings"
-                  ? t("나에게 맞는 Atlas", "Your Atlas")
+                  ? t("설정", "Settings")
                   : tab === "jobs"
                     ? t("분석 기록", "Analysis history")
-                    : t("내 에이전트 세션", "My agent sessions")}
+                    : t("세션 검토", "Session review")}
               </h1>
               <p className="muted">
                 {tab === "settings"
@@ -454,8 +483,8 @@ export default function Atlas() {
                       "Choose your language, appearance, and analysis model.",
                     )
                   : t(
-                      "기록을 모으고, 실행을 돌아보고, 다음 개발을 개선하세요.",
-                      "Collect your work, review the evidence, improve your next session.",
+                      "세션을 선택해 발견 사항과 원문 근거를 함께 검토하세요.",
+                      "Select a session to review findings alongside source evidence.",
                     )}
               </p>
             </div>
@@ -647,7 +676,12 @@ export default function Atlas() {
                     </thead>
                     <tbody>
                       {visible.map((s) => (
-                        <tr key={s.id}>
+                        <tr
+                          key={s.id}
+                          className={
+                            detail?.session.id === s.id ? "selected-row" : ""
+                          }
+                        >
                           <td>
                             <input
                               type="checkbox"
@@ -667,6 +701,7 @@ export default function Atlas() {
                               className="session-link"
                               onClick={() =>
                                 run(async () => {
+                                  setSessionUrl(s.id);
                                   setDetail(await api("/api/sessions/" + s.id));
                                 })
                               }
@@ -753,7 +788,11 @@ export default function Atlas() {
                 )}
               </section>
               {detail && (
-                <section className="panel detail">
+                <section
+                  className="panel detail"
+                  id={`session-${detail.session.id}`}
+                  ref={detailRef}
+                >
                   <div className="section-heading">
                     <h2>{detail.session.project.split("/").at(-1)}</h2>
                     <div className="actions">
@@ -777,11 +816,20 @@ export default function Atlas() {
                           ? t("이 세션 다시 분석", "Analyze this session again")
                           : t("이 세션 지금 분석", "Analyze this session")}
                       </button>
-                      <button onClick={() => setDetail(null)}>
+                      <button
+                        onClick={() => {
+                          setDetail(null);
+                          setSessionUrl();
+                        }}
+                      >
                         {t("닫기", "Close")}
                       </button>
                     </div>
                   </div>
+                  <p className="muted">
+                    {detail.session.source_id} · revision{" "}
+                    {detail.session.revision}
+                  </p>
                   {detail.results.length ? (
                     detail.results.map((r: any) => (
                       <article key={r.id}>
@@ -814,38 +862,111 @@ export default function Atlas() {
                                 )}
                               </p>
                             )}
-                            <p>
-                              {r.result.ai?.summary ||
-                                (r.status === "failed"
-                                  ? t(
-                                      "지표는 저장되었습니다. AI 설명은 다시 분석할 수 있습니다.",
-                                      "Metrics are saved. You can retry the AI explanation.",
-                                    )
-                                  : t(
-                                      "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
-                                      "Metrics are ready. Waiting for AI explanation.",
-                                    ))}
-                            </p>
+                            <div className="result-summary">
+                              <h3>{t("발견 사항", "Finding")}</h3>
+                              <p>
+                                {r.result.ai?.summary ||
+                                  (r.status === "failed"
+                                    ? t(
+                                        "지표는 저장되었습니다. AI 설명은 다시 분석할 수 있습니다.",
+                                        "Metrics are saved. You can retry the AI explanation.",
+                                      )
+                                    : t(
+                                        "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
+                                        "Metrics are ready. Waiting for AI explanation.",
+                                      ))}
+                              </p>
+                            </div>
                             {r.result.aiInput && (
                               <p className="muted">
                                 {t(
-                                  `지표·규칙은 전체 이벤트를 계산했습니다. AI 설명에는 ${r.result.aiInput.events}개 중 ${r.result.aiInput.samples}개의 고른 표본을 사용했습니다.`,
-                                  `Metrics and rules cover all events. AI explanation uses ${r.result.aiInput.samples} evenly spaced samples from ${r.result.aiInput.events} events.`,
+                                  `지표·규칙은 전체 이벤트를 계산했습니다. AI 설명에는 ${r.result.aiInput.events}개 중 선별한 근거 ${r.result.aiInput.samples}개를 사용했습니다. 나머지 이벤트는 AI 설명에서 제외되었습니다.`,
+                                  `Metrics and rules cover all events. The AI explanation uses ${r.result.aiInput.samples} selected evidence items from ${r.result.aiInput.events} events; remaining events were excluded from the AI explanation.`,
+                                )}
+                              </p>
+                            )}
+                            {!!r.result.imageInput?.occurrences && (
+                              <p className="muted">
+                                {t(
+                                  `이미지 ${r.result.imageInput.occurrences}건은 위치·형식·해상도만 수집했습니다. 이미지 내용은 분석하지 않았습니다.`,
+                                  `${r.result.imageInput.occurrences} image references include metadata only. Image content was not analyzed.`,
                                 )}
                               </p>
                             )}
                             <div className="result-columns">
+                              <div className="evidence-pane">
+                                <h3>{t("근거", "Evidence")}</h3>
+                                <div className="timeline">
+                                  {r.result.timeline?.map((e: any) => (
+                                    <details key={e.id} id={`evidence-${e.id}`}>
+                                      <summary>
+                                        <time>
+                                          {e.timestamp
+                                            ? new Date(
+                                                e.timestamp,
+                                              ).toLocaleTimeString(
+                                                settings.language,
+                                              )
+                                            : "—"}
+                                        </time>{" "}
+                                        {e.name || e.kind}{" "}
+                                        <small>{e.id.slice(0, 10)}</small>
+                                      </summary>
+                                      <pre>{e.text}</pre>
+                                      {e.images?.map(
+                                        (img: any, index: number) => (
+                                          <p
+                                            className="muted"
+                                            key={`${img.sha256}-${index}`}
+                                          >
+                                            {img.mimeType} ·{" "}
+                                            {img.width && img.height
+                                              ? `${img.width} × ${img.height} · `
+                                              : ""}
+                                            {Math.ceil(img.bytes / 1024)} KB ·{" "}
+                                            {t(
+                                              "본문은 로컬 보관 · 미분석",
+                                              "Content stays local · not analyzed",
+                                            )}
+                                          </p>
+                                        ),
+                                      )}
+                                    </details>
+                                  ))}
+                                </div>
+                                {Number(r.result.timelineTotal) >
+                                  (r.result.timeline?.length || 0) && (
+                                  <p className="muted timeline-note">
+                                    {t(
+                                      `전체 ${r.result.timelineTotal}개 중 ${r.result.timeline.length}개 표시`,
+                                      `${r.result.timeline.length} of ${r.result.timelineTotal} events shown`,
+                                    )}
+                                  </p>
+                                )}
+                              </div>
                               <div>
-                                <h3>{t("개선 제안", "Suggestions")}</h3>
+                                <h3>{t("개선 방향", "Improvements")}</h3>
                                 {r.result.ai?.suggestions?.map(
                                   (s: any, i: number) => (
                                     <div className="suggestion" key={i}>
                                       <p>{s.text}</p>
-                                      <small>
+                                      <small className="evidence-links">
                                         {t("근거", "Evidence")}:{" "}
-                                        {s.evidenceIds
-                                          .map((id: string) => id.slice(0, 10))
-                                          .join(", ")}
+                                        {s.evidenceIds.map(
+                                          (id: string, index: number) => (
+                                            <span key={id}>
+                                              {index > 0 && ", "}
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  focusEvidence(id)
+                                                }
+                                              >
+                                                {id.slice(0, 10)}
+                                              </button>
+                                            </span>
+                                          ),
+                                        )}
                                       </small>
                                     </div>
                                   ),
@@ -861,38 +982,6 @@ export default function Atlas() {
                                       </small>
                                     </div>
                                   ),
-                                )}
-                              </div>
-                              <div>
-                                <h3>{t("실행 타임라인", "Timeline")}</h3>
-                                <div className="timeline">
-                                  {r.result.timeline?.map((e: any) => (
-                                    <details key={e.id}>
-                                      <summary>
-                                        <time>
-                                          {e.timestamp
-                                            ? new Date(
-                                                e.timestamp,
-                                              ).toLocaleTimeString(
-                                                settings.language,
-                                              )
-                                            : "—"}
-                                        </time>{" "}
-                                        {e.name || e.kind}{" "}
-                                        <small>{e.id.slice(0, 10)}</small>
-                                      </summary>
-                                      <pre>{e.text}</pre>
-                                    </details>
-                                  ))}
-                                </div>
-                                {Number(r.result.timelineTotal) >
-                                  (r.result.timeline?.length || 0) && (
-                                  <p className="muted timeline-note">
-                                    {t(
-                                      `전체 ${r.result.timelineTotal}개 중 ${r.result.timeline.length}개 표시`,
-                                      `${r.result.timeline.length} of ${r.result.timelineTotal} events shown`,
-                                    )}
-                                  </p>
                                 )}
                               </div>
                             </div>
@@ -946,6 +1035,7 @@ export default function Atlas() {
                             "DELETE",
                           );
                           setDetail(null);
+                          setSessionUrl();
                           await load();
                         });
                     }}

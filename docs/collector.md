@@ -4,11 +4,11 @@
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
-**Codex 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** Collector 0.1.0과 증분 수집·JSON Outbox·ACK 재시도·macOS launchd 경로가 구현되어 있다. [GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.1.0)에서 tarball 설치를 확인했으며, npm 게시와 실제 개인 자동 수집은 아직 완료하지 않았다.
+**Codex 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 0.2.0 로컬 구현은 증분 수집·canonical JSON Outbox·Zstd 전송·ACK 재시도를 포함한다. Node.js 22.15 이상이 필요하다. 이 버전의 배포와 실제 개인 자동 수집 pilot은 아직 확인하지 않았다.
 
 ## 사용자 설치: npx setup
 
-**Node.js 지원 LTS와 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
+**Node.js 22.15 이상과 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
 공개 npm 패키지는 아직 게시되지 않았으므로 아래 명령은 예정 공개 설치 경로다. 현재 검증은 로컬 tarball과 설치된 `~/.agent-session-atlas/current/cli.js`로 수행했다.
 
 ```sh
@@ -71,9 +71,9 @@ upload:
   mode: automatic # automatic | manual
   interval_minutes: 30
   workspace: personal
-  format: json
-  max_request_bytes: 1048576 # 직렬화한 HTTP 본문 1 MiB
-  compression: none
+  format: canonical-json
+  max_request_bytes: 1048576 # Zstd 압축 HTTP 본문 1 MiB
+  compression: zstd-level-3
   outbox_dir: "~/.agent-session-atlas/outbox"
   max_pending_mb: 1024
   retry_backoff_minutes: [5, 10, 20, 40, 60]
@@ -87,7 +87,7 @@ analysis:
 |---|---|
 | 프로젝트 | `exclude` 우선. 정규화한 경로로 비교하고 경로 미상은 자동 전송 제외 |
 | 자동·수동 전송 | 기본은 설정 범위의 새 기록 자동 전송. `manual`은 선택 시점까지의 기록만 대기열에 등록 |
-| 본문 | 현재 사용자·에이전트 메시지의 텍스트와 도구 입출력을 변환. 인증 파일이나 프로젝트 소스 전체를 별도로 탐색하지 않음. 사용자 이미지 블록은 제외하지만 도구 출력 내부 이미지의 일관된 제거·분리는 아직 보장하지 않음 |
+| 본문·이미지 | 사용자·에이전트 메시지와 도구 입출력을 변환. 중첩된 user/tool data URL 이미지는 원본 bytes를 hash한 metadata(등장 횟수·MIME·bytes·PNG/JPEG 크기·`local_only`)로 바꾸고 본문에서는 제거. 인증 파일이나 프로젝트 소스 전체를 별도로 탐색하지 않음 |
 | 마스킹 | **Next.js 서버에서 기본 `enabled: true`**. Atlas의 Settings → Privacy에서 켜기·끄기. 서버가 인증된 Workspace의 설정을 읽어 새 접수에 적용하며, Collector 요청값으로 해제할 수 없음 |
 | 설정 변경 | 실제 전송 직전 정책을 다시 검사. 제외된 미전송 기록은 차단하며, 이미 서버에 보낸 기록은 별도 삭제 |
 | 목적지 | 대기 파일에 Workspace·계정·기기·정책 버전을 고정. 설정을 바꿔도 기존 파일의 목적지는 바뀌지 않음 |
@@ -98,7 +98,7 @@ analysis:
 
 ## 근거를 보존하는 수집
 
-**사용자 지시 → 스킬·도구 사용 → 결과 → 추가 지시·수정의 연결을 보존한다.** 아래는 목표 계약이며, 현재 Collector 0.1.0의 구현 완료 목록이 아니다. Collector는 원본 형식 해석·기계적인 정규화·중복 구분을 맡는다. 마스킹과 분석용 근거 선별·축약은 서버의 공통 경로에서 처리하며, 매 수집마다 로컬 AI 호출을 요구하지 않는다.
+**사용자 지시 → 스킬·도구 사용 → 결과 → 추가 지시·수정의 연결을 보존한다.** 0.2.0은 원본 형식 해석·기계적 정규화·중복 구분과 이미지 metadata-only 처리를 구현했다. 마스킹과 분석용 근거 선별·축약은 서버의 공통 경로에서 처리하며, 계층적 세션 증류와 개인 pilot은 아직 범위 밖이다.
 
 | 기록 | 목표 처리 |
 |---|---|
@@ -108,7 +108,7 @@ analysis:
 | 중복 이벤트 | 원본 ID·호출 ID·출처를 기준으로 같은 실행의 여러 표현을 구분. 내용이 같아도 실제로 반복한 호출·지시는 별도 발생으로 유지 |
 | 사용량 | 누적·요청별 토큰을 구분하고 증분 집계. 모델·턴 경계와 누적값 초기화를 보존해 중복 합산 방지 |
 | 복원용 기록 | 암호화된 추론 데이터·복원용 중복 이력은 전송 제외. 압축 발생·맥락 손실 여부 등 분석에 필요한 메타데이터는 보존 |
-| 이미지 | 출처 턴·해시·원본 크기·형식을 기록하고 같은 파일은 재사용. 원본은 로컬에 두고 전송용 사본만 축소. 긴 변 1,600px은 실험 시작값이며 글자 가독성 검증 후 확정 |
+| 이미지 | 발생한 턴마다 hash·MIME·bytes·PNG/JPEG 폭·높이만 기록하고 원본 pixels는 로컬에 둠. 같은 binary가 반복돼도 발생 횟수는 보존. OCR·vision·이미지 픽셀 분석은 pilot 범위에 없음 |
 | 알 수 없는 형식 | 해석 불가·미지원·잘림·정책 제외를 구분해 기록. 수집되지 않은 것을 사용하지 않은 것으로 판단하지 않음 |
 
 전송 계약에는 원본 위치·이벤트 ID와 정제 정책 버전, 원본/전송 바이트, 제외·축약 사유 및 범위를 추가한다. 정책은 단계별 모듈과 등록 목록으로 확장하고 공통 계약 버전을 관리한다. 계약을 바꿀 때는 서버와 Collector를 함께 전환하고 구버전 호환 경로는 두지 않는다. 기존 Outbox·체크포인트는 새 계약에 맞게 이관하거나 원본에서 재생성하며, 이미 접수된 범위와 대조해 누락·중복을 검증한다.
@@ -121,21 +121,21 @@ analysis:
 
 ### 압축과 분할
 
-**작은 조각으로 먼저 나누지 않고, 논리적 이벤트·턴을 묶어 압축한다.** JSON + Zstd 3을 우선 도입 후보로 두고, 압축 후 전송 한도와 해제 후 메모리·처리 한도를 함께 검사한다. 한도는 런타임 검증 후 확정한다. 압축률이 높아도 해제 후 크기 제한을 생략하지 않는다.
+**논리적 이벤트·턴을 canonical JSON으로 묶어 Node.js native Zstd level 3으로 압축한다.** 압축 wire·저장 본문은 1 MiB, 해제 배치는 8 MiB, JSONL 한 줄은 64 MiB까지 검사한다. 압축률이 높아도 해제 후 크기 제한을 생략하지 않는다.
 
 | 구간 | 목표 처리 |
 |---|---|
-| Collector | 원본 해석·정규화 → 배치 구성·압축 → Outbox 확정·전송. 한도를 넘으면 이벤트 경계부터 나누고, 단일 이벤트도 넘는 경우에만 내부 분할 |
-| 서버 접수 | 인증 → 크기를 제한한 압축 해제·계약 검증 → 소유자 설정에 따른 마스킹 → 저장용 재압축·접수 확정 |
-| 수동 업로드 | 비압축 입력도 허용하고 같은 서버 검증·마스킹·저장 경로 적용. 분석 요청도 같은 서버 증류 정책 사용 |
+| Collector | 원본 해석·정규화 → canonical JSON Outbox 확정 → 전송 직전에 Zstd 압축. wire 1 MiB 또는 decoded 8 MiB를 넘는 단일 이벤트는 원본과 cursor를 보존하고 수집 중단 |
+| 서버 접수 | 1 MiB 압축 본문 해제·계약 검증 → data URL 이미지를 다시 제거 → Workspace 마스킹 → `.json.zst` 재압축 저장·접수 확정. 저장 quota는 압축 bytes 기준 |
+| 수동 업로드 | 브라우저 JSON wire는 1 MiB까지 허용하고 같은 이미지 제거·마스킹·Zstd 저장 경로 적용 |
 
 불가피하게 나눈 이벤트는 원본 ID·순서·완료 여부를 유지하고 한 건으로 집계한다. 일부만 도착한 상태를 완료로 처리하지 않으며, 조각 경계에서도 마스킹이 누락되지 않아야 한다. 전송 배치와 AI 입력 구간은 별개다. 압축은 AI 입력 토큰을 줄이지 않는다.
 
-현재 제품은 비압축 JSON이며 큰 이벤트 차단도 남아 있다. 위 압축·분할 처리는 공통 계약·서버·Collector를 한 번에 바꾸고 함께 검증한다. 서버 마스킹은 이미 구현되어 있으며 이 공통 경로를 유지한다.
+Outbox에는 압축본이 아니라 재전송·복구용 raw canonical JSON을 둔다. 서버가 마스킹 뒤 압축본을 저장한다. 이미지 원본과 pixels는 Collector·서버·AI에 전송하지 않는다.
 
 ### 로컬 압축 비교 — 2026-09-11
 
-**이번 데이터에서는 JSON + Zstd 레벨 3을 우선 도입 후보로 선택한다.** gzip 레벨 6보다 작고 압축도 빨랐으며, LZ4 기본은 더 빠르지만 저장량이 컸다. 압축 전송·저장은 아직 제품에 적용하지 않았다.
+**이 표는 2026-09-11의 historical codec benchmark다.** Zstd 3을 선택한 근거이지만, 현재 0.2.0의 실제 wire·Storage·개인 pilot 측정값은 아니다.
 
 Apple M3 Pro에서 인식 가능한 Codex 파일 1,088개(약 1.232 GB)를 현재 Collector 코드로 읽었다. 설치된 수집기 상태와 원본은 변경하지 않았고, 외부 업로드·AI 호출은 없었다. 격리한 임시 Outbox는 측정 후 삭제했다. 보고서에는 집계만 남겼다.
 
@@ -163,7 +163,7 @@ Apple M3 Pro에서 인식 가능한 Codex 파일 1,088개(약 1.232 GB)를 현�
 
 네이티브 zlib 1.2.12·Zstd 1.5.7·LZ4 1.10.0의 단일 스레드 API를 사용했다. 배치당 예열 1회와 측정 3회를 수행하고, 회차별 시간 합계의 중앙값을 기록했다. 모든 압축 해제 결과를 원본 바이트와 비교했다. 표의 시간은 파일 I/O·프로세스 간 전송을 제외한 코덱 시간이며 Node 바인딩·Vercel에서의 실제 처리 시간은 아니다. 원본 읽기·Outbox 확정·마스킹·양쪽 단계의 반복 측정까지 전체 실행은 약 100초였다.
 
-Zstd 3 도입 시 **수집된 범위의 파일 약 49.3 MB + 분석 결과 JSON 약 43.5 MB**가 된다. 이는 로컬에서 계산한 저장 예상치이며 DB 물리 사용량이 아니다. AI 응답·접수/작업 메타데이터·인덱스와 기존 원격 데이터는 포함하지 않았다. 현재 일일 업로드 한도·7일 삭제 정책도 재현하지 않았으므로 전체를 한 번에 서버에 보낼 수 있다는 뜻은 아니다. 현재 서버는 비압축 JSON을 저장하며, 서버의 구간별 증류도 아직 미구현이다.
+Zstd 3 도입 시 **수집된 범위의 파일 약 49.3 MB + 분석 결과 JSON 약 43.5 MB**라는 과거 로컬 예상치였다. DB 물리 사용량·AI 응답·접수/작업 메타데이터·인덱스와 0.2.0 운영값은 포함하지 않았다.
 
 재현: `pnpm exec tsx scripts/benchmark-compression.ts --synthetic`로 합성 검증 후, `pnpm exec tsx scripts/benchmark-compression.ts`로 로컬 집계한다. C 컴파일러와 로컬 LZ4·Zstd 개발 라이브러리가 필요하다. macOS 기본 경로는 Homebrew이며 다른 설치 위치는 `CODEC_PREFIX`로 지정한다. 새 앱 의존성은 추가하지 않았다.
 
@@ -173,7 +173,7 @@ Zstd 3 도입 시 **수집된 범위의 파일 약 49.3 MB + 분석 결과 JSON 
 
 
 임시 파일은 OS가 청소하는 `/tmp`가 아닌 **앱 전용 영속 폴더**에 둔다.
-MVP는 압축하지 않은 **일반 JSON의 `events` 배열**을 사용하고, 같은 목적지의 새 기록을 한 배치로 묶는다.
+Outbox는 raw canonical JSON의 `events` 배열을 보관하고, 전송할 때 같은 목적지의 새 기록을 Zstd로 압축한다.
 
 ```text
 ~/.agent-session-atlas/
@@ -193,8 +193,8 @@ MVP는 압축하지 않은 **일반 JSON의 `events` 배열**을 사용하고, �
 | 2. 새 기록 읽기 | 파일별 읽기 위치 이후의 **완성된 JSONL 줄**만 읽음. 쓰는 중인 마지막 줄은 다음 실행까지 대기 |
 | 3. 대기 파일 확정 | JSON 작성 → 파일 동기화 → 같은 파일시스템의 `ready`로 atomic rename → 부모 디렉터리 동기화. 로컬에서는 마스킹하지 않음 |
 | 4. 읽기 위치 저장 | 파일 확정 후 SQLite 트랜잭션으로 배치 등록·읽기 위치 갱신. 서버 전송 성공 여부와 분리 |
-| 5. 전송 | 재시도 시각이 지난 배치부터 처리. 실제 전송 본문을 1 MiB 이하로 제한하고 Next.js API에 JSON POST |
-| 6. 서버 접수 | 인증·크기·원본 해시 확인 → Workspace 마스킹 설정 적용 → Supabase Storage 저장 → Supabase DB 배치 접수·세션 변경 COMMIT → ACK |
+| 5. 전송 | 재시도 시각이 지난 배치부터 처리. Zstd 압축 본문을 1 MiB 이하로 제한하고 `application/octet-stream`으로 전송 |
+| 6. 서버 접수 | 인증·압축/해제 크기·원본 해시 확인 → 이미지 data URL 재제거 → Workspace 마스킹 → `.json.zst` Storage 저장 → compressed bytes quota 확인 → DB 배치 접수·세션 변경 COMMIT → ACK |
 | 7. 로컬 정리 | ACK의 `batch_id`·`received_sha256`을 확인하고 SQLite에 접수증 저장. 그다음 대기 파일 삭제. 에이전트 원본은 유지 |
 
 **ACK는 서버의 보관·접수가 끝났다는 뜻이다. 분석 완료를 기다리지 않는다.**

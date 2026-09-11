@@ -6,11 +6,12 @@ import path from "node:path";
 import {
   Batch,
   Ack,
-  codexEvent,
-  MAX_BATCH_BYTES,
+  MAX_JSONL_LINE_BYTES,
   type AtlasBatch,
   type AtlasEvent,
 } from "@agent-observatory/contracts";
+import { compressBatch } from "@agent-observatory/contracts/transport";
+import { codexEventWithImages } from "@agent-observatory/contracts/images";
 export const sha = (x: string | Buffer) =>
   createHash("sha256").update(x).digest("hex");
 export type Config = {
@@ -157,8 +158,8 @@ export async function commitBatch(
 ) {
   const payload = JSON.stringify(Batch.parse(batch));
   const hash = sha(payload);
-  if (Buffer.byteLength(payload) > MAX_BATCH_BYTES)
-    throw new Error("단일 배치 크기 제한 초과");
+  // Validate both decoded and wire limits before advancing the durable cursor.
+  compressBatch(batch);
   let destination: { url: string; deviceId?: string } | null = null;
   try {
     destination = JSON.parse(
@@ -286,11 +287,15 @@ export async function collect(
       let end;
       while ((end = carry.indexOf(10)) >= 0 && count < maxBatches) {
         const line = carry.subarray(0, end);
+        if (line.length > MAX_JSONL_LINE_BYTES)
+          throw new Error(
+            "단일 JSONL 줄이 64MiB를 초과했습니다. 원본 보존·수집 중단",
+          );
         const next = current + end + 1;
         let event: AtlasEvent | null = null;
         try {
           if (line.length)
-            event = codexEvent(
+            event = await codexEventWithImages(
               JSON.parse(line.toString("utf8")),
               sha(s.generation + ":" + current),
             );
@@ -300,25 +305,47 @@ export async function collect(
           );
         }
         if (event) {
-          // Oversize records block this source explicitly; never silently truncate.
-          if (Buffer.byteLength(JSON.stringify(event)) > 180000)
-            throw new Error(
-              "단일 이벤트가 제한을 초과했습니다. 원본 보존·수집 중단",
-            );
-          if (
-            events.length >= 300 ||
-            Buffer.byteLength(JSON.stringify([...events, event])) > 800000
-          ) {
+          const candidate = {
+            schema_version: 1 as const,
+            batch_id: randomUUID(),
+            source: "codex" as const,
+            session_id: s.sessionId,
+            project: s.project,
+            generation: s.generation,
+            start_offset: start,
+            end_offset: next,
+            events: [...events, event],
+          };
+          let candidateFits = true;
+          try {
+            compressBatch(candidate);
+          } catch {
+            candidateFits = false;
+          }
+          if (events.length >= 300 || !candidateFits) {
             await flush();
             if (count >= maxBatches) break;
+            try {
+              compressBatch({
+                ...candidate,
+                start_offset: current,
+                events: [event],
+              });
+            } catch {
+              throw new Error(
+                "단일 이벤트가 압축 전송 또는 해제 한도를 초과했습니다. 원본 보존·수집 중단",
+              );
+            }
           }
           events.push(event);
         }
         current = next;
         carry = carry.subarray(end + 1);
       }
-      if (carry.length > 8 * 1024 * 1024)
-        throw new Error("단일 JSONL 줄이 너무 큽니다. 원본 보존·수집 중단");
+      if (carry.length > MAX_JSONL_LINE_BYTES)
+        throw new Error(
+          "단일 JSONL 줄이 64MiB를 초과했습니다. 원본 보존·수집 중단",
+        );
     }
     if (count < maxBatches) await flush();
     return count;
@@ -392,14 +419,16 @@ export async function sendPending(
     if ((m.url && m.url !== c.url) || (m.deviceId && m.deviceId !== c.deviceId))
       throw new Error("Outbox 목적지가 현재 연결과 다릅니다");
     try {
+      const body = compressBatch(b);
       const res = await request(c.url + "/api/ingest", {
         method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
-          "content-type": "application/json",
+          "content-type": "application/octet-stream",
+          "x-atlas-content-encoding": "zstd",
           "x-content-sha256": String(row.hash),
         },
-        body: JSON.stringify(b),
+        body: Uint8Array.from(body),
         signal: AbortSignal.timeout(60000),
         redirect: "error",
       });

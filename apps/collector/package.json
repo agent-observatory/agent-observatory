@@ -1,6 +1,6 @@
 {
   "name": "@agent-observatory/collector",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Codex session collector for AgentSession Atlas",
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,7 @@
     "dist"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.15.0"
   },
   "scripts": {
     "build": "tsup",

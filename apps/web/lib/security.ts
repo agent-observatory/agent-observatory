@@ -9,6 +9,14 @@ import {
 import { cookies } from "next/headers";
 import { auth } from "../auth";
 import { db } from "./db";
+import {
+  ATLAS_CONTENT_ENCODING,
+  decompressBytes,
+} from "@agent-observatory/contracts/transport";
+import {
+  MAX_COMPRESSED_BATCH_BYTES,
+  MAX_DECODED_BATCH_BYTES,
+} from "@agent-observatory/contracts";
 export const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 export function secret(name: string) {
   const s = process.env[name];
@@ -118,6 +126,44 @@ export async function limitedJson(req: Request, max = 1048576) {
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch {
     throw new Response("JSON 형식 오류", { status: 400 });
+  }
+}
+async function limitedBody(req: Request, max: number) {
+  const reader = req.body?.getReader();
+  if (!reader) throw new Response("빈 요청", { status: 400 });
+  let bytes = 0;
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.length;
+    if (bytes > max) {
+      await reader.cancel();
+      throw new Response("파일 크기 제한 초과", { status: 413 });
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+export async function limitedBatch(req: Request) {
+  const encoding = req.headers.get("x-atlas-content-encoding");
+  if (encoding && encoding !== ATLAS_CONTENT_ENCODING)
+    throw new Response("지원하지 않는 본문 인코딩", { status: 415 });
+  try {
+    const body =
+      encoding === ATLAS_CONTENT_ENCODING
+        ? decompressBytes(await limitedBody(req, MAX_COMPRESSED_BATCH_BYTES))
+        : await limitedBody(req, MAX_COMPRESSED_BATCH_BYTES);
+    return JSON.parse(body.toString("utf8"));
+  } catch (e) {
+    if (e instanceof Response) throw e;
+    const tooLarge =
+      e instanceof Error &&
+      (e.message.includes("exceeds") ||
+        ("code" in e && e.code === "ERR_BUFFER_TOO_LARGE"));
+    throw new Response(tooLarge ? "파일 크기 제한 초과" : "JSON 형식 오류", {
+      status: tooLarge ? 413 : 400,
+    });
   }
 }
 export async function endpoint(fn: () => Promise<Response>) {

@@ -27,7 +27,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 무료 후보·직렬 실행·분석 | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts` |
 | 실제 완료·검증 범위 | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json` |
 
-현재 이어갈 순서는 **큰 이벤트 때문에 중단되는 수집 보완 → 정제·이미지 분리와 새 계약 → Zstd 전송/저장 → 서버 구간별 증류·품질 검증**이다. 압축은 로컬 비교만 끝났으며, 운영은 비압축 JSON이다. 로컬 Collector는 `paused: true`다. 개인 기록 분석이 완료됐다고 가정하지 않는다.
+현재 0.2.0 로컬 구현에는 Zstd 전송·저장, 이미지 메타데이터 분리, 결정적 근거 선택이 포함된다. 이 변경의 원격 배포·개인 기록 pilot 검증은 아직 대기 중이며, 개인 기록 분석이 완료됐다고 가정하지 않는다.
 
 먼저 `git status --short`로 기존 변경을 확인한다. 이전 모델 연결 조사에서 남은 미추적 `ops/openrouter-*.json`·`ops/zai-vision-*.json`은 현재 커밋에 포함되지 않았다. 자동 삭제·일괄 커밋하지 말고 출처와 내용을 확인한다.
 
@@ -40,10 +40,10 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp` |
 | Supabase | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증 |
 | GitHub OAuth | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공 |
-| 기본 AI | 서버 설정 키가 있는 6개 무료 모델 후보와 공통 직렬 슬롯·모델/제공자 범위 cooldown 구현. 최종 6개 후보 배포와 원격 합성 분석 검증 완료. NVIDIA timeout → OpenRouter 성공 및 실제 모델 기록 확인. [검증 기록](../ops/free-routing-remote-smoke.json) |
+| 기본 AI | 서버 설정 키가 있는 6개 무료 모델 후보와 공통 직렬 슬롯·모델/제공자 범위 cooldown 구현. 0.2.0의 원격 배포·개인 pilot 검증은 대기 중 |
 | 개인 BYOK | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증 |
 | GitHub Actions | main push 후 CI 성공. 유지관리 자연 예약 실행 성공, 일일 분석은 수동 기동·완료 확인. 일일 자연 예약 미관찰. 웹 Git 자동 배포는 미연결 |
-| Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 14, 총 26개 테스트 통과. 경계 8건·보관 5건 검증 통과. GitHub Release에서 tarball 설치 가능. npm은 인증 부재로 미게시. 개인 자동 수집은 사용자가 범위를 확인하도록 중지 |
+| Atlas·Collector | 0.2.0 로컬 구현에 압축 전송·metadata-only 이미지 처리·결정적 근거 선택 포함. 원격 배포·개인 pilot 결과는 대기 중. 기존 0.1.0 GitHub Release tarball은 공개되어 있고 npm은 인증 부재로 미게시 |
 
 
 ## 제품의 핵심: 근거를 보존하는 수집과 증류
@@ -54,13 +54,13 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 | 단계 | 핵심 책임 | 현재 상태 |
 |---|---|---|
-| [Collector 정제](collector.md#근거를-보존하는-수집) | 원본 형식 해석·기계적 정규화·중복 구분·근거 연결·압축 전송 | 기본 이벤트 변환·증분 전송 구현. 압축·이미지 처리·누락 보고는 보완 필요 |
-| [서버 증류](atlas.md#서버-증류와-분석-품질) | 수신 검증·마스킹·구간별 근거 구성·세션 전체 평가 | 마스킹·지표·규칙·균등 표본 구현. 구간별 증류와 전체 맥락 연결은 미구현 |
+| [Collector 정제](collector.md#근거를-보존하는-수집) | 원본 형식 해석·기계적 정규화·중복 구분·근거 연결·압축 전송 | Zstd 전송·이미지 metadata 분리 구현. 원격 배포와 개인 pilot은 대기 중 |
+| [서버 증류](atlas.md#서버-증류와-분석-품질) | 수신 검증·마스킹·결정적 근거 구성·세션 전체 평가 | 마스킹·지표·규칙·근거 선택 구현. 계층적 구간 증류와 전체 맥락 연결은 미구현 |
 | 품질 검증 | 프롬프트·스킬 사용·실패 후 수정·결과의 연결과 근거 누락 평가 | 합성 데이터로 형식·기본 근거 검증. 정제 전후 분석 품질 비교는 미검증 |
 
 **다음 개발은 수집 계약과 Collector 정제 → 서버 구간별 증류 → 정제 전후 품질 검증 순으로 우선한다.** 모델 후보 확대나 화면 확장보다 앞선 과제다. 상세 구현·검증 기준은 위 문서에서 관리한다.
 
-전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. [압축과 분할](collector.md#압축과-분할)의 구현은 아직 남아 있다.
+전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. [압축과 분할](collector.md#압축과-분할)의 원격 검증은 아직 남아 있다.
 
 ## 핵심 결정
 
@@ -165,7 +165,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 | 경계 | 지킬 것 |
 |---|---|
 | 사용자·팀 | 로그인 데이터에 Workspace·소유자 연결. 비로그인 분석은 방문자 접근 토큰·임시 보관 정책 적용. 팀 집계와 원문 열람 권한 분리 |
-| 업로드 | 전송은 일반 JSON, 원본 파일의 JSONL 형식은 어댑터가 해석. 직렬화한 요청 전체 1 MiB 상한을 클라이언트·서버 양쪽에서 검사 |
+| 업로드 | Collector는 Zstd, 브라우저 수동 업로드는 JSON을 사용하며 wire 본문은 각각 1 MiB까지 검사. 원본 파일의 JSONL 형식은 어댑터가 해석 |
 | 저장 | 서버에서 Workspace의 마스킹 설정을 적용한 JSON을 Storage에 저장 후 DB 등록. 기본 켜짐이며 Settings → Privacy에서 변경. 미등록 객체는 유예 후 정리. 공개 저장소에는 합성 fixture만 포함 |
 | 중복·재개 | 현재 배치는 `(owner, batch_id)`로 중복 제거. 로컬은 `configure`의 include/exclude/since/until과 `inventory` 집계를 사용하며, 삭제한 세션은 재접수 차단 |
 | 토큰·시간 | 누적·요청별 토큰, 부모·자식 세션, 병렬 실행 중복 집계 방지. 구독 청구액으로 표현하지 않음 |

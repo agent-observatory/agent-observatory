@@ -1,4 +1,4 @@
-import { endpoint, owner, limitedJson } from "../../../lib/security";
+import { endpoint, owner, limitedBatch } from "../../../lib/security";
 import { ingest } from "../../../lib/ingest";
 export const POST = (req: Request) =>
   endpoint(async () => {
@@ -6,7 +6,7 @@ export const POST = (req: Request) =>
     return Response.json(
       await ingest(
         id,
-        await limitedJson(req),
+        await limitedBatch(req),
         req.headers.get("x-content-sha256"),
       ),
     );

@@ -14,6 +14,7 @@ import {
   acquire,
   MAX_OUTBOX_BYTES,
   outboxBytes,
+  commitBatch,
 } from "../src/core.js";
 import { decompressBatch } from "@agent-observatory/contracts/transport";
 import { randomBytes } from "node:crypto";
@@ -251,6 +252,76 @@ test("409 ingest reconciles an already uploaded generation through checkpoint", 
     assert.equal(
       (await fs.readdir(path.join(f.root, "outbox/ready"))).length,
       0,
+    );
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("a deferred earlier batch blocks only later batches in the same generation", async () => {
+  const f = await fixture();
+  try {
+    const makeBatch = (generation: string, start: number, end: number) => ({
+      schema_version: 1 as const,
+      batch_id: crypto.randomUUID(),
+      source: "codex" as const,
+      session_id: generation,
+      project: "/synthetic/project",
+      generation,
+      start_offset: start,
+      end_offset: end,
+      events: [],
+    });
+    const first = makeBatch("a".repeat(64), 0, 10);
+    const second = makeBatch("a".repeat(64), 10, 20);
+    const other = makeBatch("b".repeat(64), 0, 10);
+    await commitBatch(
+      f.state,
+      { ...f.source, generation: first.generation },
+      first,
+    );
+    await commitBatch(
+      f.state,
+      { ...f.source, generation: second.generation },
+      second,
+    );
+    await commitBatch(
+      f.state,
+      { ...f.source, generation: other.generation },
+      other,
+    );
+    f.state.db
+      .prepare("UPDATE batches SET retry_at=? WHERE id=?")
+      .run(Date.now() + 60_000, first.batch_id);
+    const posted: string[] = [];
+    const sent = await sendPending(
+      f.state,
+      {
+        url: "https://atlas.example",
+        sourceHome: "",
+        exclude: [],
+        include: [],
+        paused: false,
+      },
+      "synthetic",
+      async (_url, init) => {
+        const batch = decompressBatch(init?.body as Uint8Array).batch;
+        posted.push(batch.batch_id);
+        return Response.json({
+          batch_id: batch.batch_id,
+          received_sha256: (init?.headers as any)["x-content-sha256"],
+          end_offset: batch.end_offset,
+        });
+      },
+    );
+    assert.equal(sent, 1);
+    assert.deepEqual(posted, [other.batch_id]);
+    assert.equal(
+      f.state.db
+        .prepare("SELECT status FROM batches WHERE id=?")
+        .get(second.batch_id)?.status,
+      "pending",
     );
   } finally {
     f.state.close();

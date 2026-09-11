@@ -409,7 +409,17 @@ export async function sendPending(
   let sent = 0;
   for (const row of state.db
     .prepare(
-      "SELECT * FROM batches WHERE status='pending' AND retry_at<=? ORDER BY rowid LIMIT 20",
+      `SELECT candidate.* FROM batches candidate
+       WHERE candidate.status='pending' AND candidate.retry_at<=?1
+         AND NOT EXISTS (
+           SELECT 1 FROM batches earlier
+           WHERE earlier.file=candidate.file
+             AND earlier.generation=candidate.generation
+             AND earlier.rowid<candidate.rowid
+             AND earlier.status!='acknowledged'
+             AND NOT (earlier.status='pending' AND earlier.retry_at<=?1)
+         )
+       ORDER BY candidate.rowid LIMIT 20`,
     )
     .all(Date.now())) {
     const file = path.join(state.root, "outbox/ready", row.id + ".json");

@@ -1,8 +1,8 @@
 # Agent Observatory
 
-The portal for understanding your coding agent sessions.
+A workspace for personal knowledge and coding-agent work.
 
-Agent Observatory keeps the evidence needed to evaluate prompts, skills, and agent workflows. The portal brings sessions, account settings, and future knowledge work into one place.
+Wiki is the next design focus. Sessions preserves the earlier collection and analysis implementation as a reference. The Collector and data model may be redesigned without backward-compatibility constraints.
 
 ## Sessions
 

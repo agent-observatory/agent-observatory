@@ -219,3 +219,7 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - npm Trusted Publisher를 새 저장소로 연결하고 이전 저장소의 권한을 제거했다. Collector 0.4.3의 [Release 자동 게시](https://github.com/agent-observatory/agent-observatory/actions/runs/34643650693), npm 버전·provenance 및 별도 임시 경로의 설치·doctor 실행을 확인했다. 기존 로컬 Collector 설치본과 pause 상태는 유지했다.
 - 초기 UI 구현, UI 재검토·브라우저 검증, 문서 이전은 에이전트에 나눠 맡겼다. 통합 검토에서 헤더/사이드바 구분과 공통 설정 저장 누락을 수정했다.
 - 최종 방향: 기존 Sessions와 Collector는 참고 구현으로 남긴다. 다음 Wiki 설계에 맞춰 수집 모델·계약·구현을 다시 정하며 하위 호환성은 제약으로 두지 않는다.
+- 최종 source `40040ed`의 [CI 34644344734](https://github.com/agent-observatory/agent-observatory/actions/runs/34644344734)에서 69개 테스트·타입 검사·빌드를 통과했다. 문서 상대 링크, 평가 문서 생성 위치, Overview 사본과 렌더링을 확인했다.
+- 운영 배포 `dpl_A3jRwe4oQY22rchrPP9Ksxjhwj2r`는 `agent-observatory` 프로젝트의 Production Ready·`icn1`이다. 기존 canonical URL이 이 배포를 가리키는 것을 확인했다.
+- 운영 서버의 임시 합성 계정으로 여섯 경로의 직접 진입·새로고침, 메뉴 전환 중 비로그인 버튼 깜빡임 없음, 설정 저장과 마스킹 값 보존, 공통 설정의 연결 기기 표시, 세션 조회와 루트 진입을 확인했다. 검사 계정은 삭제했다. GitHub OAuth 동의 절차와 전체 기존 Sessions 분석 파이프라인은 다시 실행하지 않았다. 기록: `ops/portal-ui-verification.json`, `ops/portal-remote-verification.json`.
+- 소요 시간은 이름 변경·병렬 구현·문서 이전·npm 및 웹 배포·검증까지 약 20분이다. 05:29 KST에 운영 검증을 마쳤으며, 앞선 Wiki 방향 논의는 제외한다.

@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-09-11T20:28:48.598Z",
+  "source": "40040ed87f4b2e1da5c34ff540e16a576862f72e",
+  "environment": "Local Edge with synthetic account and mocked APIs",
+  "status": "passed",
+  "checks": [
+    "Wiki-first header and contextual sidebars",
+    "Desktop/mobile dark and light: no page overflow or runtime error",
+    "Synthetic populated session list",
+    "Common preferences save includes all seven setting fields, preserving custom provider, endpoint, model and masking",
+    "Account label persists across client navigation",
+    "Fresh-device and local language/theme/timezone preferences",
+    "Root Wiki and device/session deep links"
+  ],
+  "tests": {
+    "contracts": 22,
+    "collector": 18,
+    "web": 29
+  },
+  "typecheck": "passed",
+  "build": "passed",
+  "limitations": [
+    "GitHub OAuth consent was not repeated",
+    "Connected-device placement verified separately against deployed /settings"
+  ]
+}

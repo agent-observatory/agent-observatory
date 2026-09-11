@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-09-11T20:29:15.837Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "status": "passed",
+  "checks": [
+    "Authenticated direct load and refresh: /wiki",
+    "Authenticated direct load and refresh: /sessions",
+    "Authenticated direct load and refresh: /analyses",
+    "Authenticated direct load and refresh: /sessions/settings",
+    "Authenticated direct load and refresh: /settings",
+    "Authenticated direct load and refresh: /docs",
+    "Client navigation retains authenticated account without signed-out control flash",
+    "Authenticated settings persistence and masking preservation",
+    "Owned session API",
+    "Redirect / → /wiki",
+    "Redirect /?connect=TEST-CODE → /sessions?connect=TEST-CODE",
+    "Redirect /?session=test-session → /sessions?session=test-session"
+  ],
+  "errors": [],
+  "authentication": "Short-lived synthetic Auth.js session with real server/database; GitHub consent flow not repeated",
+  "cleanup": "Synthetic account deleted in finally"
+}

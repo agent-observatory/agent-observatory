@@ -4,15 +4,15 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp",
+    "latestReadyDeployment": "dpl_A3jRwe4oQY22rchrPP9Ksxjhwj2r",
     "projectName": "agent-observatory",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "30dbc8cfe404ac1234f42e4143aa6819567896c1",
-    "version": "0.4.0"
+    "runtimeChangesRecordedIn": "40040ed87f4b2e1da5c34ff540e16a576862f72e",
+    "version": "0.5.0"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -85,7 +85,7 @@
       "maxAttempts": 5
     }
   },
-  "checkedAt": "2026-09-11T08:19:31Z",
+  "checkedAt": "2026-09-11T20:29:14.121Z",
   "collector": {
     "installedVersion": "0.4.0",
     "localSnapshot": {
@@ -120,7 +120,7 @@
     ],
     "defaultPageSize": 20,
     "timezone": "device default or IANA account preference",
-    "verification": "ops/pagination-docs-ui-verification.json",
+    "verification": "ops/portal-ui-verification.json",
     "receipts": [
       "first_received",
       "last_received",
@@ -139,7 +139,7 @@
     "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
   },
   "verification": {
-    "ciRun": 34640646926,
+    "ciRun": 34644344734,
     "tests": 69,
     "contracts": 22,
     "collector": 18,
@@ -154,6 +154,16 @@
     "deletionRetention": "ops/retention-verification.json",
     "deviceInspection": "ops/device-inspection-verification.json",
     "deviceDocsUi": "ops/device-docs-ui-verification.json",
-    "overviewUi": "ops/overview-ui-verification.json"
+    "overviewUi": "ops/overview-ui-verification.json",
+    "portalUi": "ops/portal-ui-verification.json",
+    "portalRemote": "ops/portal-remote-verification.json"
+  },
+  "product": {
+    "name": "Agent Observatory",
+    "repository": "agent-observatory/agent-observatory",
+    "defaultRoute": "/wiki",
+    "wiki": "empty scaffold; next design priority",
+    "sessions": "reference implementation; no backward compatibility requirement",
+    "collector": "subject to redesign for Wiki"
   }
 }

@@ -57,16 +57,16 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 ## 현재 상태
 
-2026-09-11 확인 기준이다. 운영 리소스·키 이름·DB migration·비공개 버킷은 13:43 KST에 다시 조회했다. 이후 17:19 KST에 최신 운영 배포·원격 경계·화면을 확인했다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
+포털 전환·배포·npm은 2026-09-12 확인 기준이다. DB·AI·기존 Sessions 기능의 세부 검증은 2026-09-11 기록이며, 이번에 다시 전부 검증한 것은 아니다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
 
 | 대상            | 확인한 상태                                                                                                                                                                                                                             |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.4.0 배포 `dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp`, source `30dbc8c`, 기본 함수 리전 `icn1`                                                                          |
+| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.5.0 배포 `dpl_A3jRwe4oQY22rchrPP9Ksxjhwj2r`, source `40040ed`, 기본 함수 리전 `icn1`                                                                          |
 | Supabase        | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증                                                                                                                         |
 | GitHub OAuth    | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공                                                                                                                                                                      |
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
-| GitHub Actions  | [CI run 34640646926](https://github.com/agent-observatory/agent-observatory/actions/runs/34640646926) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
+| GitHub Actions  | [CI run 34644344734](https://github.com/agent-observatory/agent-observatory/actions/runs/34644344734) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
 | Portal·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. 배포판 0.4.3은 [npm](https://www.npmjs.com/package/@agent-observatory/collector)·[GitHub Release](https://github.com/agent-observatory/agent-observatory/releases/tag/collector-v0.4.3)에 게시됐고 OIDC 자동 게시를 확인했다             |
 
 ## 에이전트 인터페이스 경계

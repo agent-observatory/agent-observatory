@@ -2,7 +2,7 @@
 
 Understand your coding agent sessions.
 
-![How Atlas works: collect coding sessions, analyze them, review actionable feedback, and improve the next session.](docs/assets/overview-cycle.svg)
+![How Atlas works: collect sessions on your device, analyze them remotely with Atlas, and apply findings with your coding agent.](docs/assets/overview-cycle.svg)
 
 Our focus is evidence-preserving collection and distillation: keep the context needed to evaluate prompts, skills, and agent workflows.
 

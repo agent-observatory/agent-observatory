@@ -42,7 +42,7 @@ export function CollectorGuide({ language }: { language: "ko" | "en" }) {
         <h2 id="overview-title">Overview</h2>
         <picture>
           <source media="(max-width: 700px)" srcSet="/overview-cycle-mobile.svg" />
-          <img src="/overview-cycle.svg" width={1208} height={410} alt="Collect coding sessions, analyze them with Atlas, review issues and next steps, then apply changes with your coding agent." />
+          <img src="/overview-cycle.svg" width={1240} height={474} alt="Local: coding sessions and Collector. Remote: Atlas analysis and findings. Review findings and apply changes with your coding agent on your device." />
         </picture>
       </section>
       <div className="docs-guide-actions" aria-label={t("문서 링크", "Documentation links")}>

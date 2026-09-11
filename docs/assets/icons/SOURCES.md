@@ -21,3 +21,16 @@
 
 아이콘은 기술 식별용이다. SVG 내부에 벡터로 포함해 외부 URL에 의존하지 않는다.  
 상표 권리는 각 소유자에게 있다.
+
+## 사용자 Overview
+
+2026-09-12: 일반 기능 아이콘은 [Iconify의 Tabler 세트](https://icon-sets.iconify.design/tabler/)로 통일했다. 아래 원본은 Tabler Icons `v3.34.1`에서 받아 SVG 내부에 포함한다. 직접 그린 대체 아이콘과 외부 이미지 요청을 사용하지 않는다. 라이선스는 [MIT](TABLER-LICENSE.md)다.
+
+| 파일 | 의미 | 공식 원본 |
+| --- | --- | --- |
+| `tabler-terminal-2.svg` | Coding sessions | [Tabler terminal-2](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/terminal-2.svg) |
+| `tabler-cloud-upload.svg` | Collector | [Tabler cloud-upload](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/cloud-upload.svg) |
+| `tabler-chart-bar.svg` | Atlas analysis | [Tabler chart-bar](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/chart-bar.svg) |
+| `tabler-clipboard-check.svg` | Findings | [Tabler clipboard-check](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/clipboard-check.svg) |
+| `tabler-device-laptop.svg` | Local device | [Tabler device-laptop](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/device-laptop.svg) |
+| `tabler-cloud.svg` | Remote service | [Tabler cloud](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/cloud.svg) |

@@ -121,3 +121,5 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 README와 사용 가이드 첫머리에는 영어 Overview를 둔다. 코딩 세션 → Collector → Atlas 분석 → 개선안 확인·적용 → 다음 세션의 순환을 보여 준다. 인프라 상세 아키텍처와 별개이며 제공자·리전·내부 API는 넣지 않는다. 개선안 적용은 사용자와 코딩 에이전트의 행동으로 표현한다.
 
 `docs/assets/overview-cycle.svg`가 데스크톱용, `overview-cycle-mobile.svg`가 모바일용이다. 내용은 같고 모바일에서는 순환 배치로 읽기 크기를 유지한다. `scripts/generate-overview.mjs`가 두 SVG와 웹 공개 사본을 함께 생성하고 CI에서 일치를 검사한다. SVG의 text·tspan은 편집 가능하며 아이콘 출처는 기존 라이선스를 유지한다.
+
+Overview는 **LOCAL · Your device**와 **REMOTE · Atlas service** 영역을 구분한다. 세션·Collector는 로컬, 분석·결과는 원격에 둔다. 결과 검토와 코딩 에이전트에 개선을 적용하는 행동은 로컬 세션으로 돌아오는 화살표에 둔다. 브라우저를 원격 실행 컴포넌트로 표현하지 않는다. 일반 기능 아이콘은 Iconify에 등록된 Tabler Icons의 공식 SVG를 사용하고 직접 그리지 않는다. 기술 로고는 기존 출처 우선순위를 유지한다.

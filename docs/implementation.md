@@ -201,3 +201,9 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - npm에서 패키지명·버전으로 별도 임시 prefix에 설치하고 합성 설정의 `doctor`가 0.4.2·미연결·paused·대기 배치 0을 반환하는 것을 확인했다. 기존 설치본과 개인 세션은 건드리지 않았다.
 - 사용 가이드 배포 `dpl_CNHgzYWwnX7qMjiKRNYWnrBZefvs`는 Production Ready·`icn1`, source `a84c378`이다. 공개 웹 가이드와 한국어·영어 Markdown에서 npm 설치 명령과 이전 tarball 명령 제거를 확인했다. CI 34607609886도 성공했다.
 - 전체 npm 연결은 22:55~23:02 KST 약 7분으로, 사용자 2FA·브라우저 인증 대기와 자동 게시·웹 배포 검증을 포함한다.
+
+## 2026-09-12 · Overview 실행 영역과 공식 아이콘
+
+- LOCAL에 코딩 세션·Collector, REMOTE에 Atlas 분석·결과를 그룹으로 구분했다. 결과 검토와 개선 적용은 로컬 세션으로 돌아오는 사용자 행동으로 표시한다.
+- 직접 그린 기능 아이콘을 Tabler Icons v3.34.1 공식 SVG로 교체했다. 아이콘 원본·MIT 라이선스·출처를 저장소에 보존하며 외부 이미지 요청 없이 그림 안에 포함한다.
+- 데스크톱·모바일 SVG 렌더링과 생성기 사본 일치, XML을 검사했다.

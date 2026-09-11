@@ -22,7 +22,7 @@ async function call(
 ) {
   const r = await fetch(url + route, {
     method: method || (body === undefined ? "GET" : "POST"),
-    headers: { origin: url, cookie, ...extra },
+    headers: { origin: process.env.ATLAS_TEST_ORIGIN || url, cookie, ...extra },
     body,
   });
   assert.equal(r.status, expected, route + " HTTP " + r.status);
@@ -39,7 +39,8 @@ async function main() {
       .join("; ");
     const id = "synthetic-compression-" + randomUUID();
     const batch = {
-      schema_version: 1,
+      schema_version: 2,
+      subject_model: { harness: "codex", model: "synthetic-model" },
       batch_id: randomUUID(),
       source: "codex",
       session_id: id,
@@ -114,6 +115,70 @@ async function main() {
     checks.push(
       "owned pagination / literal search / overview / detail aggregate",
     );
+    assert.equal(detail.session.ingestion_complete_at, null);
+    const complete = {
+      source: batch.source,
+      session_id: batch.session_id,
+      generation: batch.generation,
+      snapshot_end_offset: batch.end_offset,
+    };
+    const receipt = await (
+      await call("/api/checkpoints/complete", JSON.stringify(complete), {
+        "content-type": "application/json",
+      })
+    ).json();
+    assert.ok(receipt.completed_at);
+    const nextBatch = {
+      ...batch,
+      batch_id: randomUUID(),
+      start_offset: batch.end_offset,
+      end_offset: batch.end_offset + 100,
+      events: [
+        {
+          id: "later",
+          timestamp: null,
+          kind: "user",
+          text: "synthetic later event",
+        },
+      ],
+    };
+    await call("/api/ingest", compressBatch(nextBatch), {
+      "content-type": "application/octet-stream",
+      "x-atlas-content-encoding": "zstd",
+    });
+    const after = await (await call("/api/sessions/" + sid)).json();
+    assert.equal(after.session.ingestion_complete_at, null);
+    assert.equal(after.session.first_received, detail.session.first_received);
+    assert.ok(
+      new Date(after.session.last_received).getTime() >=
+        new Date(detail.session.last_received).getTime(),
+    );
+    await call(
+      "/api/checkpoints/complete",
+      JSON.stringify(complete),
+      { "content-type": "application/json" },
+      409,
+    );
+    const latestReceipt = await (
+      await call(
+        "/api/checkpoints/complete",
+        JSON.stringify({
+          ...complete,
+          snapshot_end_offset: nextBatch.end_offset,
+        }),
+        { "content-type": "application/json" },
+      )
+    ).json();
+    await call("/api/ingest", packed, headers);
+    const duplicate = await (await call("/api/sessions/" + sid)).json();
+    assert.equal(
+      duplicate.session.ingestion_complete_at,
+      latestReceipt.completed_at,
+    );
+    checks.push(
+      "v2 actual ingest clears snapshot completion; stale completion rejected; duplicate ACK preserves completion and first receipt",
+    );
+
     for (const name of [".env.remote.local", ".env.local"])
       try {
         process.loadEnvFile(name);

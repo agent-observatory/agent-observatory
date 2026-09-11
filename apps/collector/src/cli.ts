@@ -7,14 +7,20 @@ import { execFileSync } from "node:child_process";
 import {
   initialize,
   State,
-  sources,
+  discoverSources,
   allowed,
   collect,
   recover,
   sendPending,
   acquire,
   type Config,
+  type Source,
+  COLLECTOR_VERSION,
+  heartbeat,
+  completeSnapshot,
+  completedJsonlEnd,
 } from "./core.js";
+import { launchAgentPlist } from "./scheduling.js";
 const root =
   process.env.ATLAS_HOME || path.join(os.homedir(), ".agent-session-atlas");
 const configFile = path.join(root, "config.json");
@@ -71,12 +77,6 @@ function storeToken(c: Config, value: string) {
     { stdio: "ignore" },
   );
 }
-const esc = (s: string) =>
-  s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 async function install() {
   if (process.platform !== "darwin")
     throw new Error("현재 setup은 macOS를 지원합니다");
@@ -89,13 +89,20 @@ async function install() {
     c = {
       url: "https://agent-session-atlas.vercel.app",
       sourceHome: path.join(os.homedir(), ".codex"),
+      sources: {
+        codex: { enabled: true, home: path.join(os.homedir(), ".codex") },
+        "claude-code": {
+          enabled: true,
+          home: path.join(os.homedir(), ".claude", "projects"),
+        },
+      },
       exclude: [],
       include: [],
       paused: false,
     };
     await save(c);
   }
-  const dir = path.join(root, "versions/0.2.0");
+  const dir = path.join(root, `versions/${COLLECTOR_VERSION}`);
   await fs.mkdir(dir, { recursive: true, mode: 0o700 });
   const bundle = fileURLToPath(import.meta.url);
   await fs.copyFile(bundle, path.join(dir, "cli.js"));
@@ -111,7 +118,14 @@ async function install() {
     label + ".plist",
   );
   await fs.mkdir(path.dirname(plist), { recursive: true });
-  const xml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array><string>${esc(node)}</string><string>${esc(script)}</string><string>sync</string><string>--scheduled</string></array><key>StartInterval</key><integer>1800</integer><key>RunAtLoad</key><false/><key>EnvironmentVariables</key><dict><key>ATLAS_HOME</key><string>${esc(root)}</string></dict><key>StandardOutPath</key><string>${esc(path.join(root, "collector.log"))}</string><key>StandardErrorPath</key><string>${esc(path.join(root, "collector-error.log"))}</string></dict></plist>`;
+  const xml = launchAgentPlist({
+    label,
+    node,
+    script,
+    root,
+    log: path.join(root, "collector.log"),
+    errorLog: path.join(root, "collector-error.log"),
+  });
   await fs.writeFile(plist, xml, { mode: 0o600 });
   try {
     execFileSync(
@@ -123,7 +137,9 @@ async function install() {
   execFileSync("launchctl", ["bootstrap", `gui/${process.getuid!()}`, plist], {
     stdio: "pipe",
   });
-  console.log("Collector 0.2.0 설치 완료 · 30분 스케줄러 등록");
+  console.log(
+    `Collector ${COLLECTOR_VERSION} 설치 완료 · 기동 시 및 30분 스케줄러 등록`,
+  );
   console.log("계정 연결: " + node + " " + script + " connect");
 }
 async function connect() {
@@ -162,30 +178,49 @@ async function connect() {
 }
 async function sync() {
   const c = await config();
-  if (c.paused && args.includes("--scheduled")) return;
   const auth = token(c);
   if (!auth) {
     console.log("계정 연결 대기 · 전송 없음");
     return;
   }
+  const report = async (
+    status: "starting" | "paused" | "success" | "failed",
+    details: { lastSyncAt?: string; lastErrorCode?: string } = {},
+  ) => {
+    try {
+      await heartbeat(c, auth, status, fetch, details);
+    } catch {
+      // Heartbeats are observability only. They must not block durable upload.
+      console.error("기기 상태 전송 실패 · 수집은 계속합니다");
+    }
+  };
+  if (c.paused && args.includes("--scheduled")) {
+    await report("paused");
+    return;
+  }
+  await report("starting");
   const unlock = await acquire(root);
   if (!unlock) return;
   const state = new State(root);
   try {
     await recover(state);
     let batches = 0;
+    let sourceFailed = false;
+    const snapshots: Array<{ source: Source; endOffset: number }> = [];
     // Send recovered pending data before discovering more work.
     let sent = await sendPending(state, c, auth);
-    for (const s of await sources(c.sourceHome)) {
+    for (const s of await discoverSources(c)) {
       if (
         !allowed(s.project, c) ||
         (c.since && (!s.startedAt || s.startedAt < c.since)) ||
         (c.until && (!s.startedAt || s.startedAt > c.until))
       )
         continue;
+      const snapshotEndOffset = await completedJsonlEnd(s);
       let cursor = state.cursor(s);
       if (cursor === null) {
         const url = new URL(c.url + "/api/checkpoint");
+        url.searchParams.set("source", s.source);
         url.searchParams.set("session_id", s.sessionId);
         url.searchParams.set("generation", s.generation);
         const r = await fetch(url, {
@@ -204,13 +239,28 @@ async function sync() {
         } catch {
           // A malformed or oversized source must not prevent later sources
           // from being collected. Keep the diagnostic free of source content.
+          sourceFailed = true;
           console.error("소스 처리 실패 · 원본 보존 · 다음 소스로 계속합니다");
+          continue;
         }
       }
+      if (state.cursor(s) === snapshotEndOffset && snapshotEndOffset > 0)
+        snapshots.push({ source: s, endOffset: snapshotEndOffset });
       if (batches >= 20) break;
     }
     sent += await sendPending(state, c, auth);
+    for (const { source, endOffset } of snapshots)
+      await completeSnapshot(state, c, auth, source, endOffset);
+    await report(
+      sourceFailed ? "failed" : "success",
+      sourceFailed
+        ? { lastErrorCode: "sync_failed" }
+        : { lastSyncAt: new Date().toISOString() },
+    );
     console.log(`전송 완료 ${sent}개 배치 · 새 대기 ${batches}개`);
+  } catch (error) {
+    await report("failed", { lastErrorCode: "sync_failed" });
+    throw error;
   } finally {
     state.close();
     await unlock();
@@ -258,7 +308,7 @@ async function main() {
   }
   if (cmd === "inventory") {
     const c = await config();
-    const list = (await sources(c.sourceHome)).filter(
+    const list = (await discoverSources(c)).filter(
       (s) =>
         allowed(s.project, c) &&
         (!c.since || (!!s.startedAt && s.startedAt >= c.since)) &&
@@ -284,7 +334,7 @@ async function main() {
       console.log(
         JSON.stringify(
           {
-            version: "0.2.0",
+            version: COLLECTOR_VERSION,
             installed: true,
             connected: !!token(c),
             paused: c.paused,

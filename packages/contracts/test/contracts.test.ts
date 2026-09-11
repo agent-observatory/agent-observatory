@@ -4,6 +4,7 @@ import {
   analyze,
   maskText,
   codexEvent,
+  codexSubjectModel,
   Batch,
   type Rule,
 } from "../src/index.js";
@@ -11,6 +12,11 @@ import { compressBatch, decompressBatch } from "../src/transport.js";
 import { randomUUID } from "node:crypto";
 import { zstdCompressSync } from "node:zlib";
 import { codexEventWithImages, sanitizeEventImages } from "../src/images.js";
+import {
+  claudeCodeEvent,
+  claudeCodeEvents,
+  claudeCodeEventsWithImages,
+} from "../src/claude.js";
 
 const transportBatch = (text: string) => ({
   schema_version: 1 as const,
@@ -186,13 +192,259 @@ test("redaction preserves surrounding text and removes common secrets", () => {
   assert.ok(!s.includes("sk-"));
 });
 test("future schema rejected", () => {
-  assert.equal(Batch.safeParse({ schema_version: 2 }).success, false);
+  assert.equal(Batch.safeParse({ schema_version: 3 }).success, false);
+});
+
+test("version 1 Codex batches remain readable while version 2 needs source provenance", () => {
+  const legacy = transportBatch("legacy evidence");
+  assert.equal(Batch.safeParse(legacy).success, true);
+  assert.equal(
+    Batch.safeParse({ ...legacy, source: "claude-code" }).success,
+    false,
+  );
+  assert.equal(
+    Batch.safeParse({ ...legacy, schema_version: 2 }).success,
+    false,
+  );
+  assert.equal(
+    Batch.safeParse({
+      ...legacy,
+      schema_version: 2,
+      source: "claude-code",
+      subject_model: { harness: "claude-code", model: "synthetic" },
+    }).success,
+    true,
+  );
+  assert.equal(
+    Batch.safeParse({
+      ...legacy,
+      schema_version: 2,
+      source: "codex",
+      subject_model: { harness: "claude-code" },
+    }).success,
+    false,
+  );
+  assert.equal(
+    Batch.safeParse({
+      ...legacy,
+      schema_version: 2,
+      subject_model: { harness: "codex" },
+      events: [
+        {
+          id: "event",
+          timestamp: null,
+          kind: "assistant",
+          subject_model: { harness: "claude-code" },
+        },
+      ],
+    }).success,
+    false,
+  );
+});
+
+test("Claude Code parser keeps observed tool evidence but excludes thinking blocks", () => {
+  assert.deepEqual(
+    claudeCodeEvent(
+      {
+        type: "assistant",
+        timestamp: "2026-01-01T00:00:00.000Z",
+        message: {
+          content: [
+            { type: "thinking", thinking: "must stay local" },
+            {
+              type: "tool_use",
+              id: "tool-1",
+              name: "Skill",
+              input: { skill: "review" },
+            },
+          ],
+        },
+      },
+      "event-1",
+    ),
+    {
+      id: "event-1",
+      timestamp: "2026-01-01T00:00:00.000Z",
+      kind: "tool_call",
+      name: "Skill",
+      callId: "tool-1",
+      text: '{"skill":"review"}',
+      observations: [{ kind: "skill", evidence: "invoked", id: "review" }],
+    },
+  );
+  assert.equal(
+    claudeCodeEvent(
+      {
+        type: "assistant",
+        message: { content: [{ type: "thinking", thinking: "local" }] },
+      },
+      "thinking",
+    ),
+    null,
+  );
+});
+
+test("Claude Code preserves every text, tool call, and tool result block", () => {
+  const events = claudeCodeEvents(
+    {
+      type: "assistant",
+      message: {
+        model: "synthetic-model",
+        content: [
+          { type: "text", text: "first" },
+          {
+            type: "tool_use",
+            id: "one",
+            name: "Read",
+            input: { path: "synthetic" },
+          },
+          { type: "text", text: "second" },
+        ],
+      },
+    },
+    "assistant",
+  );
+  assert.deepEqual(
+    events.map(({ id, kind, text, callId }) => ({ id, kind, text, callId })),
+    [
+      {
+        id: "assistant:0",
+        kind: "assistant",
+        text: "first",
+        callId: undefined,
+      },
+      {
+        id: "assistant:1",
+        kind: "tool_call",
+        text: '{"path":"synthetic"}',
+        callId: "one",
+      },
+      {
+        id: "assistant:2",
+        kind: "assistant",
+        text: "second",
+        callId: undefined,
+      },
+    ],
+  );
+  assert.deepEqual(
+    claudeCodeEvents(
+      {
+        type: "user",
+        message: {
+          content: [
+            { type: "text", text: "follow up" },
+            {
+              type: "tool_result",
+              tool_use_id: "one",
+              is_error: true,
+              content: "failed",
+            },
+          ],
+        },
+      },
+      "user",
+    ).map(({ id, kind, toolOutcome }) => ({ id, kind, toolOutcome })),
+    [
+      { id: "user:0", kind: "user", toolOutcome: undefined },
+      { id: "user:1", kind: "tool_result", toolOutcome: { status: "failed" } },
+    ],
+  );
+});
+
+test("Claude Code base64 image blocks become local-only metadata without fetching", async () => {
+  const png = Buffer.alloc(24);
+  png.set([0x89, 0x50, 0x4e, 0x47]);
+  png.writeUInt32BE(80, 16);
+  png.writeUInt32BE(60, 20);
+  const data = png.toString("base64");
+  const user = await claudeCodeEventsWithImages(
+    {
+      type: "user",
+      message: {
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data },
+          },
+          { type: "text", text: "after image" },
+        ],
+      },
+    },
+    "user-image",
+  );
+  assert.equal(user.length, 2);
+  assert.equal(user[0].kind, "user");
+  assert.equal(user[0].images?.[0].mimeType, "image/png");
+  assert.deepEqual(
+    { width: user[0].images?.[0].width, height: user[0].images?.[0].height },
+    { width: 80, height: 60 },
+  );
+  assert.match(user[0].text || "", /omitted: local-only/);
+  assert.equal(user[1].text, "after image");
+  assert.ok(!JSON.stringify(user).includes(data));
+
+  const [result] = await claudeCodeEventsWithImages(
+    {
+      type: "user",
+      message: {
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "tool-image",
+            content: [
+              { type: "text", text: "tool output" },
+              {
+                type: "image",
+                source: { type: "base64", media_type: "image/png", data },
+              },
+            ],
+          },
+        ],
+      },
+    },
+    "tool-image",
+  );
+  assert.equal(result.kind, "tool_result");
+  assert.equal(result.images?.length, 1);
+  assert.match(result.text || "", /tool output/);
+  assert.match(result.text || "", /omitted: local-only/);
+  assert.ok(!JSON.stringify(result).includes(data));
+});
+
+test("Codex model context and typed exit codes are observed without guessing", () => {
+  assert.deepEqual(
+    codexSubjectModel({
+      payload: {
+        type: "turn_context",
+        model: "synthetic",
+        reasoning_effort: "high",
+      },
+    }),
+    { harness: "codex", model: "synthetic", reasoning: "high" },
+  );
+  assert.deepEqual(
+    codexEvent(
+      {
+        type: "response_item",
+        payload: {
+          type: "function_call_output",
+          call_id: "tool",
+          output: "ok",
+          exit_code: 0,
+        },
+      },
+      "tool",
+    )?.toolOutcome,
+    { status: "succeeded", exitCode: 0 },
+  );
 });
 
 test("tool error metrics use the shared predicate even when the rule registry changes", () => {
   const events = [
     {
       id: "error",
+      toolOutcome: { status: "failed", exitCode: 1 },
       timestamp: null,
       kind: "tool_result" as const,
       text: "request failed",

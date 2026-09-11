@@ -18,6 +18,15 @@ export function selectEvidence(events: AtlasEvent[]) {
   };
   const indices = observations.map((_, i) => i);
   choose(
+    indices.filter(
+      (i) =>
+        observations[i].subject_model ||
+        observations[i].observations?.length ||
+        observations[i].toolOutcome,
+    ),
+    8,
+  );
+  choose(
     indices.filter((i) => observations[i].kind === "user"),
     14,
   );
@@ -53,7 +62,15 @@ export function selectEvidence(events: AtlasEvent[]) {
     if (e.kind === "user" && i + 1 < observations.length) selected.add(i + 1);
   }
   choose(indices, 10);
-  const picked = [...selected].sort((a, b) => a - b).slice(0, 64);
+  const ordered = [...selected].sort((a, b) => a - b);
+  // Keep both ends of the selected session range even at the sample cap.
+  const picked =
+    ordered.length <= 64
+      ? ordered
+      : Array.from(
+          { length: 64 },
+          (_, i) => ordered[Math.floor((i * (ordered.length - 1)) / 63)],
+        );
   let remaining = 32_000;
   const samples = picked.map((i) => {
     const e = observations[i];
@@ -71,6 +88,9 @@ export function selectEvidence(events: AtlasEvent[]) {
       name: e.name,
       callId: e.callId,
       images: e.images,
+      subject_model: e.subject_model,
+      observations: e.observations,
+      toolOutcome: e.toolOutcome,
       text,
       originalCharacters: original.length,
       truncated: text !== original,
@@ -79,7 +99,7 @@ export function selectEvidence(events: AtlasEvent[]) {
   return {
     samples,
     aiInput: {
-      strategy: "prompt-tool-evidence-v1",
+      strategy: "actionable-evidence-v2",
       events: observations.length,
       samples: samples.length,
       maxCharactersPerSample: 1000,

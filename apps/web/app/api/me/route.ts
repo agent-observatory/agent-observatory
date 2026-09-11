@@ -9,7 +9,8 @@ export const GET = (req: Request) =>
     let id;
     try {
       id = await owner(req, true);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof Response) || error.status !== 401) throw error;
       return Response.json({ user: null, freeCandidates: publicCandidates });
     }
     const [user] =

@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { endpoint, hash, rate, dailyKey } from "../../../lib/security";
+import { endpoint, hash, rate, dailyKey, owner } from "../../../lib/security";
 import { db } from "../../../lib/db";
 export const POST = () =>
   endpoint(async () => {
@@ -16,4 +16,12 @@ export const POST = () =>
       user_code: userCode,
       verification_url: process.env.APP_URL + "/?connect=" + userCode,
     });
+  });
+
+export const GET = (req: Request) =>
+  endpoint(async () => {
+    const id = await owner(req);
+    const devices =
+      await db()`SELECT id,created_at,revoked,last_seen_at,collector_version,source_types,paused,sync_status,last_sync_at,last_error_code FROM atlas.devices WHERE owner=${id} ORDER BY created_at DESC`;
+    return Response.json({ devices });
   });

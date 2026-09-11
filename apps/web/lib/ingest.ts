@@ -67,7 +67,7 @@ export async function ingest(
     )
       throw new Response("일일 업로드 한도", { status: 429 });
     const [found] =
-      await sql`SELECT * FROM atlas.sessions WHERE owner=${owner} AND source_id=${b.session_id} AND generation=${b.generation}`;
+      await sql`SELECT * FROM atlas.sessions WHERE owner=${owner} AND source=${b.source} AND source_id=${b.session_id} AND generation=${b.generation}`;
     if (
       found &&
       (found.deleted || new Date(found.expires_at).getTime() <= Date.now())
@@ -84,9 +84,9 @@ export async function ingest(
     });
     if (error) throw new Error("Storage upload failed");
     if (!found)
-      await sql`INSERT INTO atlas.sessions(id,owner,source_id,generation,project) VALUES(${sid},${owner},${b.session_id},${b.generation},${stored.project})`;
+      await sql`INSERT INTO atlas.sessions(id,owner,source,source_id,generation,project) VALUES(${sid},${owner},${b.source},${b.session_id},${b.generation},${stored.project})`;
     await sql`INSERT INTO atlas.batches(id,owner,session_id,received_hash,stored_hash,path,bytes,end_offset,masking) VALUES(${b.batch_id},${owner},${sid},${received},${hash(body)},${objectPath},${compressed.length},${b.end_offset},${masked})`;
-    await sql`UPDATE atlas.sessions SET revision=revision+1,offset_bytes=${b.end_offset} WHERE id=${sid}`;
+    await sql`UPDATE atlas.sessions SET revision=revision+1,offset_bytes=${b.end_offset},last_received=now(),ingestion_complete_at=null,completed_snapshot_offset=null WHERE id=${sid}`;
     return {
       batch_id: b.batch_id,
       received_sha256: received,

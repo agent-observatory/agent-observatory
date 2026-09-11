@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs, createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
+import os from "node:os";
 import path from "node:path";
 import {
   Batch,
@@ -9,14 +10,19 @@ import {
   MAX_JSONL_LINE_BYTES,
   type AtlasBatch,
   type AtlasEvent,
+  type SourceType,
+  type SubjectModel,
+  codexSubjectModel,
 } from "@agent-observatory/contracts";
 import { compressBatch } from "@agent-observatory/contracts/transport";
 import { codexEventWithImages } from "@agent-observatory/contracts/images";
+import { claudeCodeEventsWithImages } from "@agent-observatory/contracts/claude";
 export const sha = (x: string | Buffer) =>
   createHash("sha256").update(x).digest("hex");
 export type Config = {
   url: string;
   sourceHome: string;
+  sources?: Partial<Record<SourceType, { enabled?: boolean; home?: string }>>;
   exclude: string[];
   include: string[];
   paused: boolean;
@@ -25,14 +31,18 @@ export type Config = {
   deviceId?: string;
 };
 export type Source = {
+  source: SourceType;
   file: string;
   sessionId: string;
   project: string;
   generation: string;
   size: number;
   startedAt?: string;
+  subjectModel: SubjectModel;
 };
 export const MAX_OUTBOX_BYTES = 1_073_741_824;
+export const COLLECTOR_VERSION = "0.3.0";
+export type HeartbeatStatus = "starting" | "paused" | "success" | "failed";
 export async function sources(root: string): Promise<Source[]> {
   const result: Source[] = [];
   async function visit(dir: string) {
@@ -59,12 +69,19 @@ export async function sources(root: string): Promise<Source[]> {
             continue;
           const stat = await h.stat();
           result.push({
+            source: "codex",
             file,
             sessionId: r.payload.id,
             project: r.payload.cwd,
             generation: sha(line),
             size: stat.size,
             startedAt: r.timestamp || r.payload.timestamp,
+            subjectModel: {
+              harness: "codex",
+              ...(typeof r.payload.model_provider === "string"
+                ? { provider: r.payload.model_provider }
+                : {}),
+            },
           });
         } catch (e: any) {
           if (e instanceof SyntaxError) continue;
@@ -78,6 +95,110 @@ export async function sources(root: string): Promise<Source[]> {
   await visit(path.join(root, "sessions"));
   await visit(path.join(root, "archived_sessions"));
   return result.sort((a, b) => a.file.localeCompare(b.file));
+}
+export async function claudeCodeSources(root: string): Promise<Source[]> {
+  const result: Source[] = [];
+  async function visit(dir: string) {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch (error: any) {
+      if (error.code === "ENOENT") return;
+      throw error;
+    }
+    for (const entry of entries) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) await visit(file);
+      else if (entry.isFile() && file.endsWith(".jsonl")) {
+        const handle = await fs.open(file, "r");
+        try {
+          const bytes = Buffer.alloc(64 * 1024);
+          const { bytesRead } = await handle.read(bytes, 0, bytes.length, 0);
+          const lines = bytes
+            .subarray(0, bytesRead)
+            .toString("utf8")
+            .split("\n")
+            .filter(Boolean);
+          let session: Record<string, any> | undefined;
+          let generationLine = "";
+          let model: string | undefined;
+          let reasoning: string | undefined;
+          for (const line of lines) {
+            let record: Record<string, any>;
+            try {
+              record = JSON.parse(line);
+            } catch {
+              continue;
+            }
+            if (
+              !session &&
+              (record.type === "user" || record.type === "assistant") &&
+              typeof record.sessionId === "string" &&
+              typeof record.cwd === "string"
+            ) {
+              session = record;
+              generationLine = line;
+            }
+            if (record.type === "assistant") {
+              if (typeof record.message?.model === "string")
+                model ||= record.message.model;
+              if (typeof record.effort === "string")
+                reasoning ||= record.effort;
+            }
+          }
+          if (!session || !generationLine) continue;
+          const stat = await handle.stat();
+          result.push({
+            source: "claude-code",
+            file,
+            sessionId: session.sessionId,
+            project: session.cwd,
+            generation: sha(generationLine),
+            size: stat.size,
+            startedAt:
+              typeof session.timestamp === "string"
+                ? session.timestamp
+                : undefined,
+            subjectModel: {
+              harness: "claude-code",
+              ...(model ? { model } : {}),
+              ...(reasoning ? { reasoning } : {}),
+            },
+          });
+        } finally {
+          await handle.close();
+        }
+      }
+    }
+  }
+  await visit(root);
+  return result.sort((a, b) => a.file.localeCompare(b.file));
+}
+export async function discoverSources(c: Config): Promise<Source[]> {
+  const codex = c.sources?.codex;
+  const claude = c.sources?.["claude-code"];
+  const groups = await Promise.all([
+    codex?.enabled === false ? [] : sources(codex?.home || c.sourceHome),
+    claude?.enabled === false
+      ? []
+      : claudeCodeSources(
+          claude?.home || path.join(os.homedir(), ".claude", "projects"),
+        ),
+  ]);
+  return groups.flat().sort((a, b) => a.file.localeCompare(b.file));
+}
+export async function completedJsonlEnd(source: Source) {
+  if (!source.size) return 0;
+  const handle = await fs.open(source.file, "r");
+  try {
+    const length = Math.min(source.size, 64 * 1024);
+    const bytes = Buffer.alloc(length);
+    await handle.read(bytes, 0, length, source.size - length);
+    const newline = bytes.lastIndexOf(10);
+    return newline < 0 ? 0 : source.size - length + newline + 1;
+  } finally {
+    await handle.close();
+  }
 }
 export function allowed(project: string, c: Config) {
   const matches = (rule: string) => {
@@ -96,6 +217,7 @@ export class State {
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
  CREATE TABLE IF NOT EXISTS cursors(file TEXT PRIMARY KEY,generation TEXT NOT NULL,offset INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS batches(id TEXT PRIMARY KEY,file TEXT NOT NULL,generation TEXT NOT NULL,end_offset INTEGER NOT NULL,hash TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,retry_at INTEGER NOT NULL DEFAULT 0);
+ CREATE TABLE IF NOT EXISTS snapshot_completions(file TEXT NOT NULL,generation TEXT NOT NULL,end_offset INTEGER NOT NULL,completed_at TEXT NOT NULL,PRIMARY KEY(file,generation,end_offset));
  `);
   }
   cursor(s: Source) {
@@ -224,11 +346,13 @@ export async function recover(state: State) {
       register(
         state,
         {
+          source: b.source,
           file: m.file,
           sessionId: b.session_id,
           project: b.project,
           generation: b.generation,
           size: b.end_offset,
+          subjectModel: b.subject_model || { harness: b.source },
         },
         b,
         m.hash,
@@ -256,15 +380,17 @@ export async function collect(
     start = offset,
     events: AtlasEvent[] = [],
     count = 0;
+  let codexTurnModel = s.subjectModel;
   const h = await fs.open(s.file, "r");
   let carry = Buffer.alloc(0);
   let position = offset;
   const flush = async () => {
     if (current === start) return;
     const batch: AtlasBatch = {
-      schema_version: 1,
+      schema_version: 2,
       batch_id: randomUUID(),
-      source: "codex",
+      source: s.source,
+      subject_model: s.subjectModel,
       session_id: s.sessionId,
       project: s.project,
       generation: s.generation,
@@ -292,29 +418,45 @@ export async function collect(
             "단일 JSONL 줄이 64MiB를 초과했습니다. 원본 보존·수집 중단",
           );
         const next = current + end + 1;
-        let event: AtlasEvent | null = null;
+        let lineEvents: AtlasEvent[] = [];
         try {
-          if (line.length)
-            event = await codexEventWithImages(
-              JSON.parse(line.toString("utf8")),
-              sha(s.generation + ":" + current),
-            );
+          if (line.length) {
+            const record = JSON.parse(line.toString("utf8"));
+            const id = sha(s.source + ":" + s.generation + ":" + current);
+            if (s.source === "codex") {
+              const observed = codexSubjectModel(record);
+              if (observed) codexTurnModel = { ...codexTurnModel, ...observed };
+              const event = await codexEventWithImages(record, id);
+              lineEvents = event
+                ? [
+                    event.subject_model
+                      ? event
+                      : { ...event, subject_model: codexTurnModel },
+                  ]
+                : [];
+            } else lineEvents = await claudeCodeEventsWithImages(record, id);
+          }
         } catch {
           throw new Error(
             "잘못된 JSONL 레코드: 원본과 읽기 위치를 보존했습니다",
           );
         }
-        if (event) {
+        if (lineEvents.length) {
+          if (lineEvents.length > 300)
+            throw new Error(
+              "단일 JSONL 레코드의 이벤트 수가 300개를 초과했습니다. 원본 보존·수집 중단",
+            );
           const candidate = {
-            schema_version: 1 as const,
+            schema_version: 2 as const,
             batch_id: randomUUID(),
-            source: "codex" as const,
+            source: s.source,
+            subject_model: s.subjectModel,
             session_id: s.sessionId,
             project: s.project,
             generation: s.generation,
             start_offset: start,
             end_offset: next,
-            events: [...events, event],
+            events: [...events, ...lineEvents],
           };
           let candidateFits = true;
           try {
@@ -322,14 +464,14 @@ export async function collect(
           } catch {
             candidateFits = false;
           }
-          if (events.length >= 300 || !candidateFits) {
+          if (events.length + lineEvents.length > 300 || !candidateFits) {
             await flush();
             if (count >= maxBatches) break;
             try {
               compressBatch({
                 ...candidate,
                 start_offset: current,
-                events: [event],
+                events: lineEvents,
               });
             } catch {
               throw new Error(
@@ -337,7 +479,7 @@ export async function collect(
               );
             }
           }
-          events.push(event);
+          events.push(...lineEvents);
         }
         current = next;
         carry = carry.subarray(end + 1);
@@ -445,6 +587,7 @@ export async function sendPending(
       if (!res.ok) {
         if (res.status === 409) {
           const checkpoint = new URL(c.url + "/api/checkpoint");
+          checkpoint.searchParams.set("source", b.source);
           checkpoint.searchParams.set("session_id", b.session_id);
           checkpoint.searchParams.set("generation", b.generation);
           const checkpointResponse = await request(checkpoint, {
@@ -506,4 +649,100 @@ export async function sendPending(
     }
   }
   return sent;
+}
+
+export async function heartbeat(
+  c: Config,
+  token: string,
+  status: HeartbeatStatus,
+  request: typeof fetch = fetch,
+  details: { lastSyncAt?: string; lastErrorCode?: string } = {},
+) {
+  const sourceTypes = (["codex", "claude-code"] as const).filter(
+    (source) => c.sources?.[source]?.enabled !== false,
+  );
+  const response = await request(c.url + "/api/devices/heartbeat", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      version: COLLECTOR_VERSION,
+      sourceTypes,
+      paused: c.paused,
+      status,
+      ...details,
+    }),
+    signal: AbortSignal.timeout(30000),
+    redirect: "error",
+  });
+  if (!response.ok) throw new Error(`heartbeat HTTP ${response.status}`);
+  const body = (await response.json()) as { ok?: unknown };
+  if (body.ok !== true) throw new Error("heartbeat acknowledgement invalid");
+}
+
+export async function completeSnapshot(
+  state: State,
+  c: Config,
+  token: string,
+  source: Source,
+  snapshotEndOffset: number,
+  request: typeof fetch = fetch,
+) {
+  if (state.cursor(source) !== snapshotEndOffset) return false;
+  if (
+    state.db
+      .prepare(
+        "SELECT 1 FROM snapshot_completions WHERE file=? AND generation=? AND end_offset=?",
+      )
+      .get(source.file, source.generation, snapshotEndOffset)
+  )
+    return false;
+  const progress = state.db
+    .prepare(
+      `SELECT
+        SUM(CASE WHEN status='acknowledged' THEN 1 ELSE 0 END) AS acknowledged,
+        SUM(CASE WHEN status!='acknowledged' THEN 1 ELSE 0 END) AS unfinished
+       FROM batches WHERE file=? AND generation=? AND end_offset<=?`,
+    )
+    .get(source.file, source.generation, snapshotEndOffset) as {
+    acknowledged: number | null;
+    unfinished: number | null;
+  };
+  // A fresh local state may have recovered its cursor from the server. The
+  // server's exact terminal-offset check is authoritative even without local ACK rows.
+  if (Number(progress.unfinished)) return false;
+  const response = await request(c.url + "/api/checkpoints/complete", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      source: source.source,
+      session_id: source.sessionId,
+      generation: source.generation,
+      snapshot_end_offset: snapshotEndOffset,
+    }),
+    signal: AbortSignal.timeout(30000),
+    redirect: "error",
+  });
+  // An empty/no-event source does not create a server session and is not an
+  // error. Future data will create a normal batch before completion is tried.
+  if (response.status === 404 || response.status === 409) return false;
+  if (!response.ok)
+    throw new Error(`snapshot completion HTTP ${response.status}`);
+  const body = (await response.json()) as {
+    ok?: unknown;
+    completed_at?: unknown;
+  };
+  if (body.ok !== true || typeof body.completed_at !== "string")
+    throw new Error("snapshot completion acknowledgement invalid");
+  state.db
+    .prepare(
+      "INSERT OR IGNORE INTO snapshot_completions(file,generation,end_offset,completed_at) VALUES(?,?,?,?)",
+    )
+    .run(source.file, source.generation, snapshotEndOffset, body.completed_at);
+  return true;
 }

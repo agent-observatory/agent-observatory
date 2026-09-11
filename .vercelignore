@@ -5,6 +5,6 @@
 .agents
 _local-draft
 docs
-ops/bootstrap
+ops
 
 apps/web/app/.well-known/workflow

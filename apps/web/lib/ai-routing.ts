@@ -114,6 +114,12 @@ export type Attempt = {
   outcome: "success" | "http_error" | "connection_error" | "invalid_output";
   status?: number;
   rateLimitScope?: "provider" | "model";
+  validationError?:
+    | "invalid_json"
+    | "invalid_schema"
+    | "invalid_evidence"
+    | "truncated_output"
+    | "empty_output";
 };
 export const Explanation = z.object({
   summary: z.string().min(1).max(3000),
@@ -121,12 +127,23 @@ export const Explanation = z.object({
     .array(
       z.object({
         text: z.string().min(1).max(2000),
-        evidenceIds: z.array(z.string()).max(50),
+        title: z.string().min(1).max(200).optional(),
+        problem: z.string().min(1).max(1500).optional(),
+        action: z.string().min(1).max(1500).optional(),
+        verification: z.string().min(1).max(1000).optional(),
+        ruleId: z.string().min(1).max(100).optional(),
+        ruleVersion: z.number().int().positive().optional(),
+        evidenceIds: z.array(z.string()).min(1).max(50),
       }),
     )
     .max(10),
 });
-export function parseExplanation(content: unknown, evidenceIds: Set<string>) {
+export function parseExplanation(
+  content: unknown,
+  evidenceIds: Set<string>,
+  actionable = false,
+  allowedEvidenceByRule?: Record<string, Set<string>>,
+) {
   const parsed = Explanation.parse(
     JSON.parse(String(content).replace(/^```(?:json)?\s*|\s*```$/g, "")),
   );
@@ -134,6 +151,27 @@ export function parseExplanation(content: unknown, evidenceIds: Set<string>) {
     parsed.suggestions.some((s) =>
       s.evidenceIds.some((id) => !evidenceIds.has(id)),
     )
+  )
+    throw new Error("AI 근거 검증 실패");
+  if (
+    actionable &&
+    parsed.suggestions.some(
+      (s) =>
+        !s.title ||
+        !s.problem ||
+        !s.action ||
+        !s.verification ||
+        !s.ruleId ||
+        !s.ruleVersion,
+    )
+  )
+    throw new Error("invalid_schema");
+  if (
+    allowedEvidenceByRule &&
+    parsed.suggestions.some((s) => {
+      const allowed = allowedEvidenceByRule[`${s.ruleId}@${s.ruleVersion}`];
+      return !allowed || !s.evidenceIds.some((id) => allowed.has(id));
+    })
   )
     throw new Error("AI 근거 검증 실패");
   return parsed;
@@ -172,6 +210,8 @@ export async function attemptCompletion(
   evidenceIds: Set<string>,
   attemptNumber: number,
   transport: typeof completion = completion,
+  actionable = false,
+  allowedEvidenceByRule?: Record<string, Set<string>>,
 ) {
   const attempt: Attempt = {
     provider: candidate.provider,
@@ -225,6 +265,8 @@ export async function attemptCompletion(
     const ai = parseExplanation(
       response.data?.choices?.[0]?.message?.content,
       evidenceIds,
+      actionable,
+      allowedEvidenceByRule,
     );
     attempt.outcome = "success";
     return {
@@ -234,8 +276,18 @@ export async function attemptCompletion(
       ...provenance(candidate, free, response.data),
       usage: response.data?.usage || null,
     };
-  } catch {
+  } catch (error) {
     attempt.outcome = "invalid_output";
+    attempt.validationError =
+      response.data?.choices?.[0]?.finish_reason === "length"
+        ? "truncated_output"
+        : !response.data?.choices?.[0]?.message?.content
+          ? "empty_output"
+          : error instanceof SyntaxError
+            ? "invalid_json"
+            : error instanceof Error && error.message === "AI 근거 검증 실패"
+              ? "invalid_evidence"
+              : "invalid_schema";
     return {
       ok: false as const,
       attempt,

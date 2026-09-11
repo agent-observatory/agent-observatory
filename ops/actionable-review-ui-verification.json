@@ -1,0 +1,21 @@
+{
+  "verifiedAt": "2026-09-11T07:55:00.000Z",
+  "environment": "local production build with synthetic authenticated API fixtures",
+  "syntheticOnly": true,
+  "version": "0.3.0",
+  "checks": {
+    "authenticatedNavigationNoAnonymousFlash": true,
+    "evidenceDialogEscapeAndFocusRestore": true,
+    "agentTaskCopyIncludesUntrustedEvidenceAndHash": true,
+    "structuredFindingsRender": true,
+    "darkAndLightThemes": true,
+    "mobileNoHorizontalOverflow": true,
+    "receiptStartAndCompletionLabels": true,
+    "metricsDisclosureClosedInitially": true
+  },
+  "screenshots": [
+    "docs/assets/atlas-dashboard-review.png",
+    "docs/assets/atlas-dashboard-review-light.png",
+    "docs/assets/atlas-dashboard-review-mobile.png"
+  ]
+}

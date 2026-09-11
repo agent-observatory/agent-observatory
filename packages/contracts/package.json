@@ -5,8 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./claude": "./src/claude.ts",
     "./images": "./src/images.ts",
-    "./transport": "./src/transport.ts"
+    "./transport": "./src/transport.ts",
+    "./evaluation": "./src/evaluation-catalog.ts"
   },
   "scripts": {
     "build": "tsc",

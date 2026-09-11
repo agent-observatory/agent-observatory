@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-09-11T07:38:23.341Z",
+  "url": "http://localhost:3100",
+  "status": "passed",
+  "checks": [
+    "same source_id and generation remain separate by source with scoped checkpoints",
+    "exact checkpoint completion returns a stable timestamp on repeat",
+    "simulated later batch rejects stale completion offset with 409",
+    "foreign completion is not found and foreign checkpoint reveals no offset",
+    "expired receipt is 410 and invalid completion body is 422",
+    "valid device heartbeat records status; revoked and absent bearer tokens are 401",
+    "owner device list omits token_hash",
+    "authenticated server HTML on all three routes contains account/logout and no anonymous CTA"
+  ],
+  "limitations": [
+    "All rows are synthetic and are deleted in finally.",
+    "The stale-offset case updates a synthetic session directly in SQL to model a later accepted batch. It does not verify the ingest endpoint or Storage write.",
+    "Run only after the target has deployed the receipt, source-identity, and heartbeat migration/routes."
+  ]
+}

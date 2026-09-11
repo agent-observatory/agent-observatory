@@ -15,6 +15,10 @@ import {
   MAX_OUTBOX_BYTES,
   outboxBytes,
   commitBatch,
+  claudeCodeSources,
+  discoverSources,
+  heartbeat,
+  completeSnapshot,
 } from "../src/core.js";
 import { decompressBatch } from "@agent-observatory/contracts/transport";
 import { randomBytes } from "node:crypto";
@@ -387,6 +391,243 @@ test("a malformed source can fail while a later valid source remains collectable
     );
     assert.ok(validSource);
     assert.equal(await collect(f.state, validSource, 0), 1);
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("Claude Code discovery produces source-scoped v2 batches without thinking text", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "atlas-claude-"));
+  const state = new State(root);
+  try {
+    await initialize(root);
+    const claudeRoot = path.join(root, "claude", "projects");
+    await fs.mkdir(path.join(claudeRoot, "synthetic"), { recursive: true });
+    await fs.writeFile(
+      path.join(claudeRoot, "synthetic", "session.jsonl"),
+      [
+        {
+          type: "user",
+          sessionId: "claude-synthetic",
+          cwd: "/synthetic/claude",
+          timestamp: "2026-01-01T00:00:00.000Z",
+          message: { content: "synthetic request" },
+        },
+        {
+          type: "assistant",
+          sessionId: "claude-synthetic",
+          cwd: "/synthetic/claude",
+          timestamp: "2026-01-01T00:00:01.000Z",
+          effort: "high",
+          message: {
+            model: "synthetic-model",
+            content: [
+              { type: "thinking", thinking: "must not be collected" },
+              { type: "text", text: "first visible response" },
+              {
+                type: "tool_use",
+                id: "tool",
+                name: "Skill",
+                input: { skill: "review" },
+              },
+              { type: "text", text: "second visible response" },
+            ],
+          },
+        },
+      ]
+        .map((record) => JSON.stringify(record))
+        .join("\n") + "\n",
+    );
+    const direct = await claudeCodeSources(claudeRoot);
+    assert.equal(direct.length, 1);
+    const source = direct[0];
+    assert.equal(source.source, "claude-code");
+    assert.deepEqual(source.subjectModel, {
+      harness: "claude-code",
+      model: "synthetic-model",
+      reasoning: "high",
+    });
+    assert.deepEqual(
+      await discoverSources({
+        url: "https://atlas.example",
+        sourceHome: path.join(root, "no-codex"),
+        sources: {
+          codex: { enabled: false },
+          "claude-code": { home: claudeRoot },
+        },
+        exclude: [],
+        include: [],
+        paused: false,
+      }),
+      direct,
+    );
+    assert.equal(await collect(state, source, 0), 1);
+    const [name] = await fs.readdir(path.join(root, "outbox/ready"));
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(root, "outbox/ready", name), "utf8"),
+    );
+    assert.equal(manifest.payload.schema_version, 2);
+    assert.equal(manifest.payload.source, "claude-code");
+    assert.deepEqual(
+      manifest.payload.events.map((event: { kind: string; text?: string }) => ({
+        kind: event.kind,
+        text: event.text,
+      })),
+      [
+        { kind: "user", text: "synthetic request" },
+        { kind: "assistant", text: "first visible response" },
+        { kind: "tool_call", text: '{"skill":"review"}' },
+        { kind: "assistant", text: "second visible response" },
+      ],
+    );
+    assert.ok(
+      !JSON.stringify(manifest.payload).includes("must not be collected"),
+    );
+  } finally {
+    state.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("heartbeat is secret-free and completion follows an acknowledged snapshot", async () => {
+  const f = await fixture();
+  try {
+    await collect(f.state, f.source, 0);
+    const config = {
+      url: "https://atlas.example",
+      sourceHome: "",
+      sources: { "claude-code": { enabled: false } },
+      exclude: [],
+      include: [],
+      paused: false,
+    };
+    await sendPending(f.state, config, "synthetic", async (_url, init) => {
+      const batch = decompressBatch(init?.body as Uint8Array).batch;
+      return Response.json({
+        batch_id: batch.batch_id,
+        received_sha256: (init?.headers as any)["x-content-sha256"],
+        end_offset: batch.end_offset,
+      });
+    });
+    let heartbeatBody: any;
+    await heartbeat(config, "synthetic", "success", async (_url, init) => {
+      heartbeatBody = JSON.parse(String(init?.body));
+      return Response.json({ ok: true });
+    });
+    assert.deepEqual(heartbeatBody, {
+      version: "0.3.0",
+      sourceTypes: ["codex"],
+      paused: false,
+      status: "success",
+    });
+    let completionBody: any;
+    const capturedEndOffset = f.state.cursor(f.source)!;
+    assert.equal(
+      await completeSnapshot(
+        f.state,
+        config,
+        "synthetic",
+        f.source,
+        capturedEndOffset,
+        async (_url, init) => {
+          completionBody = JSON.parse(String(init?.body));
+          return Response.json({
+            ok: true,
+            completed_at: "2026-01-01T00:00:00.000Z",
+          });
+        },
+      ),
+      true,
+    );
+    assert.deepEqual(completionBody, {
+      source: "codex",
+      session_id: "synthetic",
+      generation: f.source.generation,
+      snapshot_end_offset: capturedEndOffset,
+    });
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("Codex turn model context carries to later events in the same source stream", async () => {
+  const f = await fixture();
+  try {
+    await fs.writeFile(
+      f.file,
+      [
+        {
+          type: "session_meta",
+          payload: { id: "synthetic", cwd: "/synthetic/project" },
+        },
+        {
+          type: "event_msg",
+          payload: {
+            type: "turn_context",
+            model: "synthetic-model",
+            reasoning_effort: "high",
+          },
+        },
+        {
+          type: "response_item",
+          payload: {
+            type: "message",
+            role: "assistant",
+            content: [{ type: "output_text", text: "visible" }],
+          },
+        },
+      ]
+        .map((record) => JSON.stringify(record))
+        .join("\n") + "\n",
+    );
+    const source = (await sources(path.join(f.root, "codex")))[0];
+    assert.equal(await collect(f.state, source, 0), 1);
+    const [name] = await fs.readdir(path.join(f.root, "outbox/ready"));
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(f.root, "outbox/ready", name), "utf8"),
+    );
+    assert.deepEqual(manifest.payload.events[0].subject_model, {
+      harness: "codex",
+      model: "synthetic-model",
+      reasoning: "high",
+    });
+  } finally {
+    f.state.close();
+    await fs.rm(f.root, { recursive: true, force: true });
+  }
+});
+test("a recovered server checkpoint can confirm completion without local ACK history", async () => {
+  const f = await fixture();
+  try {
+    f.state.checkpoint(f.source, f.source.size);
+    let calls = 0;
+    const config = {
+      url: "https://atlas.example",
+      sourceHome: "",
+      exclude: [],
+      include: [],
+      paused: false,
+    };
+    assert.equal(
+      await completeSnapshot(
+        f.state,
+        config,
+        "synthetic",
+        f.source,
+        f.source.size,
+        async () => {
+          calls++;
+          return Response.json({
+            ok: true,
+            completed_at: "2026-01-01T00:00:00Z",
+          });
+        },
+      ),
+      true,
+    );
+    assert.equal(calls, 1);
   } finally {
     f.state.close();
     await fs.rm(f.root, { recursive: true, force: true });

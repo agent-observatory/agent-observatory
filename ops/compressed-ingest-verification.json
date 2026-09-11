@@ -1,9 +1,10 @@
 {
-  "at": "2026-09-11T06:38:43.634Z",
-  "url": "https://agent-session-atlas.vercel.app",
+  "at": "2026-09-11T07:44:57.535Z",
+  "url": "http://localhost:3100",
   "checks": [
     "large logical event / zstd / canonical hash ACK / duplicate idempotency",
     "owned pagination / literal search / overview / detail aggregate",
+    "v2 actual ingest clears snapshot completion; stale completion rejected; duplicate ACK preserves completion and first receipt",
     "server image stripping / text masking / stored zstd hash verified",
     "corrupt zstd rejected",
     "decompression limit enforced",
@@ -12,6 +13,6 @@
     "hash mismatch rejected"
   ],
   "status": "passed",
-  "decodedBytes": 1380503,
-  "wireBytes": 536
+  "decodedBytes": 1380565,
+  "wireBytes": 564
 }

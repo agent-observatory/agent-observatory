@@ -5,7 +5,9 @@
   "scripts": {
     "build": "pnpm --filter @agent-observatory/contracts build && pnpm --filter @agent-observatory/collector build && pnpm --filter @agent-observatory/web build",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "generate:evaluation-docs": "tsx scripts/generate-evaluation-docs.ts",
+    "check:evaluation-docs": "tsx scripts/generate-evaluation-docs.ts --check"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

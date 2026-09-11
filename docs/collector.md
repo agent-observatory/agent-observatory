@@ -4,12 +4,12 @@
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
-**Codex 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 0.2.0은 증분 수집·canonical JSON Outbox·Zstd 전송·ACK 재시도를 포함하며 [GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0)로 공개됐다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
+**Codex와 Claude Code 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 공개된 설치본은 0.2.0이며, 현재 작업 트리의 0.3.0은 Claude Code adapter·기기 heartbeat·수집 snapshot 완료 handshake를 추가한다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
 
 ## 사용자 설치: npx setup
 
 **Node.js 22.15 이상과 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
-공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.2.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0)의 125,477-byte tarball을 사용한다. 아래 `npx` 명령은 npm 게시 후 설치 경로다.
+공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.2.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0)의 125,477-byte tarball을 사용한다. 0.3.0은 아직 게시·배포 확인 전이다. 아래 `npx` 명령은 npm 게시 후 설치 경로다.
 
 ```sh
 npx @agent-observatory/collector@0.2.0 setup
@@ -17,23 +17,23 @@ npx @agent-observatory/collector@0.2.0 setup
 
 `npx`는 게시 후 패키지를 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.**
 
-| 단계      | setup이 하는 일                                                                                 |
-| --------- | ----------------------------------------------------------------------------------------------- |
-| 설치      | 배포 버전을 앱 전용 폴더에 설치. npm 임시 캐시와 분리하고 관리자 권한 없이 사용자 영역에 설치   |
-| 계정 연결 | 브라우저 로그인 후 일회용 코드로 기기 연결. CLI에는 해당 Workspace 전송·접수 조회용 토큰만 발급 |
-| 수집 설정 | 기본 `all`, 제외 프로젝트·목적지를 보여주고 설정 저장. 연결·설정 완료 후 자동 전송 시작         |
-| 자동 기동 | `launchd` 사용자 LaunchAgent 하나에 1,800초 간격 등록. Node·설치 CLI의 절대 경로 사용           |
-| 확인      | 시험 연결과 스케줄러 상태 확인. 대기 배치 수·최근 ACK·다음 재시도 시각 표시                     |
+| 단계      | setup이 하는 일                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| 설치      | 배포 버전을 앱 전용 폴더에 설치. npm 임시 캐시와 분리하고 관리자 권한 없이 사용자 영역에 설치         |
+| 계정 연결 | 브라우저 로그인 후 일회용 코드로 기기 연결. CLI에는 해당 Workspace 전송·접수 조회용 토큰만 발급       |
+| 수집 설정 | 기본 `all`, 제외 프로젝트·목적지를 보여주고 설정 저장. 연결·설정 완료 후 자동 전송 시작               |
+| 자동 기동 | `launchd` 사용자 LaunchAgent 하나에 로그인 시와 1,800초 간격으로 등록. Node·설치 CLI의 절대 경로 사용 |
+| 확인      | 시험 연결과 스케줄러 상태 확인. 대기 배치 수·최근 ACK·다음 재시도 시각 표시                           |
 
 ### 실행 주체·로그인·재부팅
 
 Collector의 30분 실행은 **Codex 앱의 예약 작업이 아니라 macOS 사용자 `launchd` LaunchAgent**다. `setup`이 `com.agent-observatory.atlas-collector`을 등록해 설치된 CLI에 `sync --scheduled`를 전달한다. Codex 앱 예약 작업과 함께 쓸 수 있는지는 개발 후속 검증 항목이며, Collector의 실행 조건으로 가정하지 않는다.
 
-등록값은 `StartInterval: 1800`, `RunAtLoad: false`다. 따라서 로그인 직후나 재부팅 직후에 즉시 실행된다는 보장은 없고, 다음 30분 주기까지 기다리거나 `node ~/.agent-session-atlas/current/cli.js sync`를 직접 실행한다. 재로그인 뒤에도 설정과 cursor는 `~/.agent-session-atlas`에, 기기 토큰은 macOS Keychain에 남아 있으면 별도 연결 없이 다음 동기화를 시도한다. 토큰이 없거나 폐기됐으면 전송하지 않고 `connect`가 필요하다.
+0.3.0 등록값은 `StartInterval: 1800`, `RunAtLoad: true`다. 따라서 로그인·재부팅 뒤 복귀하면 즉시 한 번 실행하고 30분 주기를 이어 간다. 재로그인 뒤에도 설정과 cursor는 `~/.agent-session-atlas`에, 기기 토큰은 macOS Keychain에 남아 있으면 별도 연결 없이 다음 동기화를 시도한다. 토큰이 없거나 폐기됐으면 전송하지 않고 `connect`가 필요하다.
 
-`pause`는 설정 파일의 `paused` 값을 유지한다. 예약 실행은 이 값이 참이면 아무 작업 없이 끝나며, 수동 `sync`는 범위 확인·복구를 위해 실행할 수 있다. `resume` 뒤 다음 예약 주기부터 자동 전송을 다시 시도한다.
+`pause`는 설정 파일의 `paused` 값을 유지한다. 예약 실행은 이 값이 참이면 전송·수집 대신 paused heartbeat만 남기며, 수동 `sync`는 범위 확인·복구를 위해 실행할 수 있다. `resume` 뒤 다음 예약 주기부터 자동 전송을 다시 시도한다.
 
-웹에는 현재 기기 연결 승인과 세션·분석 상태만 있다. Collector의 최근 접속·다음 실행·마지막 ACK·pause 상태를 서버에 올려 목록으로 표시하는 기능은 구현하지 않았다. 이 화면을 추가한다면 기기별 `last_seen_at`, `last_sync_started_at`, `last_ack_at`, `next_scheduled_at`, `paused`, `last_error_code`를 명시적으로 기록·표시하는 설계가 필요하다.
+0.3.0 Collector는 예약·paused 시작과 동기화 성공·실패 때 인증된 device heartbeat를 보낸다. 포함하는 값은 버전·활성 source 유형·pause 상태·마지막 성공 시각·안전한 오류 코드뿐이며, 경로·세션 본문·키는 보내지 않는다. 원격 UI 표시와 배포 확인은 별도 단계다.
 
 최초 연결에서는 **기존 기록 가져오기**를 제공한다. 현재 CLI는 `configure --include/--exclude/--since/--until`로 프로젝트·기간을 선택하고, `inventory`로 선택 범위의 세션 수·바이트·프로젝트 수를 집계한다. 대화형 GUI 미리보기는 아직 제공하지 않는다. 로컬 접수 이력이 없으면 서버 접수 내역을 먼저 조회해 이미 보낸 범위를 제외하고, 진행 위치를 저장해 중단 후 이어간다. 가져오기 완료 후 웹에서 **지금 분석**으로 바로 분석할 수 있으며 이후에는 30분 증분 동기화로 이어진다.
 
@@ -71,11 +71,10 @@ Codex 기록 저장소에서 신규·변경 기록을 찾고 작업 경로로 �
 내장 OTel은 에이전트별 내용·잘림 범위가 달라 후속 보완 경로로 둔다.
 
 ```yaml
-# 이 서비스의 로컬 전송기 설정 제안
+# 이 서비스의 로컬 전송기 설정
 sources:
   codex: { enabled: true, home: "~/.codex" }
-  claude_code: { enabled: false } # 후속 어댑터
-  hermes: { enabled: false }
+  claude-code: { enabled: true, home: "~/.claude/projects" }
 
 collection:
   projects:
@@ -109,7 +108,7 @@ analysis:
 | 목적지         | 대기 파일에 Workspace·계정·기기·정책 버전을 고정. 설정을 바꿔도 기존 파일의 목적지는 바뀌지 않음                                                                                                                                                |
 
 프로젝트 경로는 전송 대상을 고르는 기준이며, 붙여넣은 내용까지 개인 데이터라고 판별하지는 않는다.
-현재 Source Adapter는 Codex의 `~/.codex/sessions`와 `~/.codex/archived_sessions` JSONL만 읽는다. Claude Code 전용 사용자 기록은 아직 수집·전송하지 않는다. 설정 예시의 `claude_code: false`는 후속 어댑터 범위 표시이며, 활성화할 구현이 없다.
+Source Adapter는 Codex의 `~/.codex/sessions`·`~/.codex/archived_sessions`와 Claude Code의 `~/.claude/projects` JSONL을 읽는다. 기본은 두 source 전체이며 `exclude`가 우선한다. source 유형·세션 ID·generation을 함께 checkpoint 조회에 사용해 서로 다른 adapter의 읽기 위치를 섞지 않는다.
 브라우저 파일 업로드도 같은 서버 수신·마스킹 경로를 사용한다.
 로컬 대기 파일과 HTTPS 요청에는 원본 본문이 포함된다. 마스킹이 켜져 있으면 치환 후 Storage·DB에 저장하고, 꺼져 있으면 치환 없이 저장한다. 두 경우 모두 본문을 서버 로그·Workflow 실행 기록에 남기지 않는다.
 
@@ -232,6 +231,8 @@ Outbox는 raw canonical JSON의 `events` 배열을 보관하고, 전송할 때 �
 
 `batch_id`는 처음 만들 때 고정하고 재시도에서도 유지한다. 현재 서버의 배치 유일 키는 `(owner, batch_id)`이며, 기기·workspace 확장은 설계 범위다.
 이벤트에도 출처 ID 또는 `(device, file_generation, byte_offset)`을 부여해 재수집·배치 재구성 시 중복을 제거한다.
+
+Collector가 발견 시점에 고정한 마지막 완성 JSONL 줄까지 만든 배치가 모두 ACK된 경우에만 `POST /api/checkpoints/complete`로 **수집 snapshot 완료**를 표시한다. 서버는 같은 source·session·generation의 terminal ACK offset이 요청 offset과 정확히 같을 때만 완료 시각을 기록한다. 이후 새 배치는 완료 표시를 지운다. 따라서 계속 쓰이는 파일을 영구 완료로 표시하지 않는다.
 
 읽기 위치는 **로컬에 안전하게 복사한 지점**, 접수증은 **서버에 안전하게 접수된 지점**이다.
 전송 상태는 `pending → sending → acknowledged`, 실패하면 `pending`, 조치가 필요하면 `blocked`로 관리한다.

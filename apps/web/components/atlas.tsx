@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Select } from "./select";
+import { displayDate, timezoneFrom } from "../lib/timezone";
 import { NavigationIcon } from "./navigation-icon";
 import { signIn, signOut } from "next-auth/react";
 import { type AtlasBatch } from "@agent-observatory/contracts";
@@ -15,6 +16,7 @@ import {
 } from "../lib/ai-provenance";
 type Settings = {
   language: "ko" | "en";
+  timezone: string;
   theme: "dark" | "light" | "system";
   masking: boolean;
   provider: "free" | "openrouter" | "custom";
@@ -37,6 +39,8 @@ type Session = {
   first_received: string;
   expires_at: string;
   status?: string;
+  attempts?: number;
+  status_reason?: string;
   metrics?: Record<string, number | null>;
   candidate_count?: number;
 };
@@ -47,10 +51,14 @@ type Job = {
   total: number;
   completed: number;
   failed: number;
+  running?: number;
+  queued?: number;
+  retrying?: number;
   created_at: string;
 };
 const defaults: Settings = {
   language: "ko",
+  timezone: "system",
   theme: "dark",
   masking: true,
   provider: "free",
@@ -65,7 +73,10 @@ const collectorCommands = {
 const settingsFrom = (value?: Partial<Settings>): Settings => ({
   ...defaults,
   ...value,
-  provider: normalizedProvider(value?.provider) as Settings["provider"],
+  timezone: timezoneFrom(value?.timezone),
+  provider: normalizedProvider(
+    value?.provider || "free",
+  ) as Settings["provider"],
 });
 async function api(url: string, body?: unknown, method?: string) {
   const r = await fetch(url, {
@@ -93,7 +104,21 @@ const digest = async (text: string) =>
     .join("");
 type AtlasView = "sessions" | "jobs" | "settings";
 
-export function Atlas({ view }: { view: AtlasView }) {
+type Listing = { page: number; pageSize: number; q: string };
+const defaultListing: Listing = { page: 1, pageSize: 20, q: "" };
+const emptyOverview = {
+  sessions: 0,
+  completed: 0,
+  toolCalls: 0,
+  candidateCount: 0,
+};
+export function Atlas({
+  view,
+  listing = defaultListing,
+}: {
+  view: AtlasView;
+  listing?: Listing;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null),
     [settings, setSettings] = useState<Settings>(defaults),
@@ -103,7 +128,18 @@ export function Atlas({ view }: { view: AtlasView }) {
     [summaries, setSummaries] = useState<any[]>([]),
     [selected, setSelected] = useState<string[]>([]),
     [detail, setDetail] = useState<any>(null),
-    [filter, setFilter] = useState(""),
+    [filter, setFilter] = useState(listing.q),
+    [pagination, setPagination] = useState({
+      page: listing.page,
+      pageSize: listing.pageSize,
+      total: 0,
+      totalPages: 1,
+    }),
+    [overview, setOverview] = useState(emptyOverview),
+    [projectAggregates, setProjectAggregates] = useState<
+      { project: string; sessions: number; toolCalls: number }[]
+    >([]),
+    [listLoading, setListLoading] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
@@ -116,10 +152,46 @@ export function Atlas({ view }: { view: AtlasView }) {
   const userIdRef = useRef<string | null | undefined>(undefined);
   const loadRequestRef = useRef(0);
   const t = (ko: string, en: string) => (settings.language === "ko" ? ko : en);
+  const date = (
+    value: string,
+    kind: "date" | "time" | "datetime" = "datetime",
+  ) => displayDate(value, settings.language, settings.timezone, kind);
+  const listingQuery = new URLSearchParams({
+    page: String(listing.page),
+    pageSize: String(listing.pageSize),
+    q: listing.q,
+  }).toString();
+  const updateListing = (next: Partial<Listing>, replace = false) => {
+    const values = { ...listing, ...next };
+    const url = new URL(location.href);
+    url.searchParams.set("page", String(values.page));
+    url.searchParams.set("pageSize", String(values.pageSize));
+    if (values.q) url.searchParams.set("q", values.q);
+    else url.searchParams.delete("q");
+    setSelected([]);
+    setListLoading(true);
+    const path = url.pathname + url.search;
+    if (replace) router.replace(path, { scroll: false });
+    else router.push(path, { scroll: false });
+  };
+  useEffect(() => {
+    setFilter(listing.q);
+    setSelected([]);
+  }, [listing.q, listing.page, listing.pageSize]);
+  useEffect(() => {
+    const normalized = filter.trim().slice(0, 200);
+    if (normalized === listing.q) return;
+    const timer = setTimeout(
+      () => updateListing({ q: normalized, page: 1 }, true),
+      350,
+    );
+    return () => clearTimeout(timer);
+  }, [filter, listing.q, listing.pageSize]);
   const apply = (s: Settings) => {
     setSettings(s);
     localStorage.setItem("atlas-theme", s.theme);
     localStorage.setItem("atlas-language", s.language);
+    localStorage.setItem("atlas-timezone", s.timezone);
     document.documentElement.lang = s.language;
     document.documentElement.dataset.theme =
       s.theme === "system"
@@ -139,6 +211,14 @@ export function Atlas({ view }: { view: AtlasView }) {
 
     if (identityChanged) {
       setSessions([]);
+      setOverview(emptyOverview);
+      setProjectAggregates([]);
+      setPagination({
+        page: 1,
+        pageSize: listing.pageSize,
+        total: 0,
+        totalPages: 1,
+      });
       setJobs([]);
       setSummaries([]);
       setSelected([]);
@@ -154,6 +234,7 @@ export function Atlas({ view }: { view: AtlasView }) {
         ? settingsFrom(nextUser.settings)
         : {
             ...defaults,
+            timezone: timezoneFrom(localStorage.getItem("atlas-timezone")),
             language:
               localStorage.getItem("atlas-language") === "en" ? "en" : "ko",
             theme: (["dark", "light", "system"] as const).includes(
@@ -170,21 +251,34 @@ export function Atlas({ view }: { view: AtlasView }) {
     setUser(nextUser);
     setFreeCandidates(me.freeCandidates || []);
     if (nextUser) {
-      const data = await api("/api/sessions");
+      const data = await api("/api/sessions?" + listingQuery);
       if (request !== loadRequestRef.current) return null;
       setSessions(data.sessions);
+      setPagination(data.pagination);
+      setOverview(data.overview);
+      setProjectAggregates(data.projects);
+      setListLoading(false);
       setJobs(data.jobs);
       setSummaries(data.summaries);
     } else {
       setSessions([]);
+      setOverview(emptyOverview);
+      setProjectAggregates([]);
+      setPagination({
+        page: 1,
+        pageSize: listing.pageSize,
+        total: 0,
+        totalPages: 1,
+      });
       setJobs([]);
       setSummaries([]);
       setSelected([]);
       setDetail(null);
     }
     return nextUser;
-  }, []);
+  }, [listingQuery]);
   useEffect(() => {
+    setListLoading(true);
     load()
       .then(async (currentUser) => {
         if (currentUser) {
@@ -197,7 +291,10 @@ export function Atlas({ view }: { view: AtlasView }) {
         setPair(new URLSearchParams(location.search).get("connect") || "");
       })
       .catch((e) => setError(e.message))
-      .finally(() => setReady(true));
+      .finally(() => {
+        setReady(true);
+        setListLoading(false);
+      });
   }, [load]);
   useEffect(() => {
     if (!ready) return;
@@ -397,33 +494,39 @@ export function Atlas({ view }: { view: AtlasView }) {
       );
     });
   }
-  const visible = sessions.filter((s) =>
-    `${s.project} ${s.source_id}`.toLowerCase().includes(filter.toLowerCase()),
-  );
-  const sum = (k: string) =>
-    sessions.reduce((n, s) => n + (Number(s.metrics?.[k]) || 0), 0);
-  const complete = sessions.filter((s) => s.status === "completed").length;
-  const projectAggregates = Array.from(
-    sessions
-      .reduce((groups, session) => {
-        const current = groups.get(session.project) || {
-          project: session.project,
-          sessions: 0,
-          toolCalls: 0,
-        };
-        current.sessions += 1;
-        current.toolCalls += Number(session.metrics?.toolCalls) || 0;
-        groups.set(session.project, current);
-        return groups;
-      }, new Map<string, { project: string; sessions: number; toolCalls: number }>())
-      .values(),
-  ).sort((a, b) => b.toolCalls - a.toolCalls || b.sessions - a.sessions);
+  const visible = sessions;
+  const detailMetrics = detail?.results?.find(
+    (r: any) =>
+      r.status === "completed" && r.revision === detail.session.revision,
+  )?.result?.metrics;
+  const formatBytes = (value: number) =>
+    value >= 1048576
+      ? `${(value / 1048576).toFixed(2)} MiB`
+      : value >= 1024
+        ? `${(value / 1024).toFixed(1)} KiB`
+        : `${value} B`;
   const settingsDirty =
     JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  const analysisStatus = (state: string, attempts = 0) =>
+    state === "queued"
+      ? attempts > 0
+        ? t("재시도 대기", "Retry waiting")
+        : t("순서 대기", "Queued")
+      : status(state);
+  const attemptOutcome = (outcome: string) =>
+    ({
+      connection_error: t("연결 오류·시간 초과", "Connection error / timeout"),
+      http_error: t("제공자 오류", "Provider error"),
+      invalid_output: t(
+        "응답 형식·근거 검증 실패",
+        "Response validation failed",
+      ),
+      success: t("성공", "Succeeded"),
+    })[outcome] || outcome;
   const status = (s: string) =>
     ({
       queued: t("대기", "Queued"),
-      running: t("분석 중", "Running"),
+      running: t("요청 중", "Requesting"),
       completed: t("완료", "Completed"),
       failed: t("실패", "Failed"),
       partial: t("일부 실패", "Partial"),
@@ -572,7 +675,7 @@ export function Atlas({ view }: { view: AtlasView }) {
             {view === "sessions" && (
               <button
                 className="primary"
-                disabled={busy || !sessions.length}
+                disabled={busy || !overview.sessions}
                 onClick={() => run(() => analyze("all"))}
               >
                 {t("전체 세션 지금 분석", "Analyze all sessions")} ↗
@@ -654,22 +757,22 @@ export function Atlas({ view }: { view: AtlasView }) {
                 {[
                   [
                     t("전체 세션", "Sessions"),
-                    sessions.length,
+                    overview.sessions,
                     t("보관 중인 기록", "Available sessions"),
                   ],
                   [
                     t("분석 완료", "Analyzed"),
-                    complete,
-                    `${sessions.length ? Math.round((complete / sessions.length) * 100) : 0}% ${t("완료", "complete")}`,
+                    overview.completed,
+                    `${overview.sessions ? Math.round((overview.completed / overview.sessions) * 100) : 0}% ${t("완료", "complete")}`,
                   ],
                   [
                     t("도구 호출", "Tool calls"),
-                    sum("toolCalls").toLocaleString(),
+                    overview.toolCalls.toLocaleString(),
                     t("관측된 실행", "Observed calls"),
                   ],
                   [
                     t("개선 후보", "Candidates"),
-                    sessions.reduce((n, s) => n + (s.candidate_count || 0), 0),
+                    overview.candidateCount,
                     t("근거를 보고 판단하세요", "Review the evidence"),
                   ],
                 ].map(([label, value, note]) => (
@@ -683,7 +786,8 @@ export function Atlas({ view }: { view: AtlasView }) {
               <section className="panel">
                 <div className="section-heading">
                   <h2>
-                    {t("세션 목록", "Sessions")} <small>{visible.length}</small>
+                    {t("세션 목록", "Sessions")}{" "}
+                    <small>{pagination.total}</small>
                   </h2>
                   <div className="actions">
                     <input
@@ -732,8 +836,8 @@ export function Atlas({ view }: { view: AtlasView }) {
                           <input
                             type="checkbox"
                             aria-label={t(
-                              "검색 결과 전체 선택",
-                              "Select filtered sessions",
+                              "이 페이지 전체 선택",
+                              "Select this page",
                             )}
                             checked={
                               !!visible.length &&
@@ -749,7 +853,14 @@ export function Atlas({ view }: { view: AtlasView }) {
                           />
                         </th>
                         <th>{t("프로젝트 / 세션", "Project / session")}</th>
-                        <th>{t("접수일", "Imported")}</th>
+                        <th>
+                          {t("접수 시각", "Imported at")}
+                          <small>
+                            {settings.timezone === "system"
+                              ? Intl.DateTimeFormat().resolvedOptions().timeZone
+                              : settings.timezone}
+                          </small>
+                        </th>
                         <th>{t("도구 호출", "Tool calls")}</th>
                         <th>{t("개선 후보", "Candidates")}</th>
                         <th>{t("분석 상태", "Status")}</th>
@@ -791,29 +902,80 @@ export function Atlas({ view }: { view: AtlasView }) {
                               <small>{s.source_id}</small>
                             </button>
                           </td>
-                          <td>
-                            {new Date(s.first_received).toLocaleDateString(
-                              settings.language,
-                            )}
-                          </td>
+                          <td>{date(s.first_received)}</td>
                           <td>{s.metrics?.toolCalls ?? "—"}</td>
                           <td>{s.candidate_count ?? "—"}</td>
                           <td>
                             <span className={"badge " + (s.status || "")}>
-                              {status(s.status || "")}
+                              {analysisStatus(s.status || "", s.attempts)}
                             </span>
+                            {!!s.attempts && s.status !== "completed" && (
+                              <small>
+                                {s.attempts} {t("회 시도", "attempts")}
+                              </small>
+                            )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                <div
+                  className="pagination"
+                  aria-label={t("세션 페이지", "Session pages")}
+                  aria-busy={listLoading}
+                >
+                  <span aria-live="polite">
+                    {pagination.total
+                      ? `${(pagination.page - 1) * pagination.pageSize + 1}–${Math.min(pagination.page * pagination.pageSize, pagination.total)} / ${pagination.total}`
+                      : t("0개", "0 sessions")}
+                  </span>
+                  <div className="pagination-controls">
+                    <Select
+                      label={t("페이지당 개수", "Rows per page")}
+                      value={String(listing.pageSize)}
+                      options={[10, 20, 50, 100].map((n) => ({
+                        value: String(n),
+                        label: t(`${n}개씩`, `${n} rows`),
+                      }))}
+                      onChange={(value) =>
+                        updateListing({ pageSize: Number(value), page: 1 })
+                      }
+                    />
+                    <button
+                      disabled={listLoading || pagination.page <= 1}
+                      onClick={() =>
+                        updateListing({ page: pagination.page - 1 })
+                      }
+                    >
+                      {t("이전", "Previous")}
+                    </button>
+                    <span>
+                      {pagination.page} / {pagination.totalPages}
+                    </span>
+                    <button
+                      disabled={
+                        listLoading || pagination.page >= pagination.totalPages
+                      }
+                      onClick={() =>
+                        updateListing({ page: pagination.page + 1 })
+                      }
+                    >
+                      {t("다음", "Next")}
+                    </button>
+                  </div>
+                </div>
                 {!visible.length && (
                   <div className="empty">
                     <span>◈</span>
                     <h3>
                       {ready
-                        ? t("첫 세션을 가져오세요", "Import your first session")
+                        ? listing.q
+                          ? t("검색 결과가 없습니다", "No matching sessions")
+                          : t(
+                              "첫 세션을 가져오세요",
+                              "Import your first session",
+                            )
                         : t("불러오는 중", "Loading")}
                     </h3>
                     <p>
@@ -911,13 +1073,109 @@ export function Atlas({ view }: { view: AtlasView }) {
                     {detail.session.source_id} · revision{" "}
                     {detail.session.revision}
                   </p>
+                  {detail.aggregate && (
+                    <dl className="session-metrics">
+                      {[
+                        [
+                          t("저장 용량", "Stored size"),
+                          formatBytes(detail.aggregate.storedBytes),
+                          t("압축 후 서버 파일", "Compressed server files"),
+                        ],
+                        [
+                          t("수집 이벤트", "Collected events"),
+                          detail.aggregate.collectedEvents,
+                          `${detail.aggregate.batches} ${t("배치", "batches")}`,
+                        ],
+                        [
+                          t("사용자 메시지", "User messages"),
+                          detail.aggregate.userMessages,
+                          t("사용자가 보낸 메시지", "Messages from the user"),
+                        ],
+                        [
+                          t("AI 메시지", "Assistant messages"),
+                          detail.aggregate.assistantMessages,
+                          t("수집된 응답", "Collected responses"),
+                        ],
+                        [
+                          t("도구 호출", "Tool calls"),
+                          detail.aggregate.toolCalls,
+                          t("관측된 실행", "Observed calls"),
+                        ],
+                        [
+                          t("이미지 참조", "Image references"),
+                          detail.aggregate.imageOccurrences,
+                          `${detail.aggregate.uniqueImages ?? "—"} ${t("고유 이미지 · 메타데이터만", "unique · metadata only")}`,
+                        ],
+                        [
+                          t("입력 토큰", "Input tokens"),
+                          detailMetrics?.inputTokens ?? "—",
+                          t("분석된 사용량", "Analyzed usage"),
+                        ],
+                        [
+                          t("출력 토큰", "Output tokens"),
+                          detailMetrics?.outputTokens ?? "—",
+                          `${t("캐시", "Cached")}: ${detailMetrics?.cachedTokens ?? "—"}`,
+                        ],
+                      ].map(([label, value, note]) => (
+                        <div key={label}>
+                          <dt>{label}</dt>
+                          <dd>
+                            {typeof value === "number"
+                              ? value.toLocaleString()
+                              : (value ?? "—")}
+                          </dd>
+                          <small>{note}</small>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  {detail.aggregate &&
+                    !detail.aggregate.available?.analysisMetrics && (
+                      <p className="muted">
+                        {t(
+                          "메시지·이벤트·토큰 지표는 현재 세션의 분석이 완료되면 표시됩니다.",
+                          "Message, event and token metrics appear after the current session revision is analyzed.",
+                        )}
+                      </p>
+                    )}
                   {detail.results.length ? (
                     detail.results.map((r: any) => (
                       <article key={r.id}>
                         <span className={"badge " + r.status}>
-                          {status(r.status)}
+                          {analysisStatus(r.status, r.attempts)}
                         </span>
-                        {r.error && <p className="muted">{r.error}</p>}
+                        {r.error && r.status !== "running" && (
+                          <p className="muted">{r.error}</p>
+                        )}
+                        {!!r.result?.aiAttempts?.length &&
+                          r.status !== "completed" && (
+                            <details className="attempt-history">
+                              <summary>
+                                {t("요청 이력", "Request history")} ·{" "}
+                                {r.attempts ?? r.result.aiAttempts.length}
+                                {t("회", " attempts")}
+                              </summary>
+                              <ul>
+                                {r.result.aiAttempts.map(
+                                  (attempt: any, index: number) => (
+                                    <li key={index}>
+                                      <time>{date(attempt.at)}</time>
+                                      <span>
+                                        {providerName(attempt.provider)} ·{" "}
+                                        {attempt.model}
+                                      </span>
+                                      <small>
+                                        {attemptOutcome(attempt.outcome)}
+                                        {attempt.status
+                                          ? ` · HTTP ${attempt.status}`
+                                          : ""}
+                                      </small>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </details>
+                          )}
                         {r.result && (
                           <>
                             <p>
@@ -997,11 +1255,7 @@ export function Atlas({ view }: { view: AtlasView }) {
                                       <summary>
                                         <time>
                                           {e.timestamp
-                                            ? new Date(
-                                                e.timestamp,
-                                              ).toLocaleTimeString(
-                                                settings.language,
-                                              )
+                                            ? date(e.timestamp, "time")
                                             : "—"}
                                         </time>{" "}
                                         {e.name || e.kind}{" "}
@@ -1156,11 +1410,7 @@ export function Atlas({ view }: { view: AtlasView }) {
                               ? t("단일 세션", "Single session")
                               : t("선택 세션", "Selected sessions")}
                         </strong>
-                        <small>
-                          {new Date(j.created_at).toLocaleString(
-                            settings.language,
-                          )}
-                        </small>
+                        <small>{date(j.created_at)}</small>
                       </div>
                       <progress
                         value={j.completed + j.failed}
@@ -1169,9 +1419,20 @@ export function Atlas({ view }: { view: AtlasView }) {
                       <span>
                         {j.completed}/{j.total} · {t("실패", "failed")}{" "}
                         {j.failed}
+                        <small>
+                          {t("요청 중", "Requesting")} {j.running || 0} ·{" "}
+                          {t("대기", "Queued")} {j.queued || 0}
+                          {j.retrying
+                            ? ` (${t("재시도", "retry")}: ${j.retrying})`
+                            : ""}
+                        </small>
                       </span>
                       <span className={"badge " + j.status}>
-                        {status(j.status)}
+                        {j.status === "running" && !j.running
+                          ? j.retrying
+                            ? t("재시도 대기", "Retry waiting")
+                            : t("순서 대기", "Queued")
+                          : status(j.status)}
                       </span>
                     </div>
                   ))
@@ -1197,10 +1458,7 @@ export function Atlas({ view }: { view: AtlasView }) {
                         {t("개선 후보", "Candidates")} {s.candidate_count}
                       </span>
                       <small>
-                        {t("만료", "Expires")}{" "}
-                        {new Date(s.expires_at).toLocaleDateString(
-                          settings.language,
-                        )}
+                        {t("만료", "Expires")} {date(s.expires_at)}
                       </small>
                     </div>
                   ))
@@ -1251,6 +1509,41 @@ export function Atlas({ view }: { view: AtlasView }) {
                     }
                   />
                 </label>
+                <label>
+                  {t("타임존", "Time zone")}
+                  <Select
+                    label={t("타임존", "Time zone")}
+                    value={settings.timezone}
+                    searchable
+                    options={[
+                      {
+                        value: "system",
+                        label: t("기기 설정 사용", "Use device time zone"),
+                      },
+                      { value: "UTC", label: "UTC" },
+                      ...Array.from(
+                        new Set([
+                          "Asia/Seoul",
+                          settings.timezone,
+                          ...Intl.supportedValuesOf("timeZone"),
+                        ]),
+                      )
+                        .filter((zone) => !["system", "UTC"].includes(zone))
+                        .sort()
+                        .map((zone) => ({
+                          value: zone,
+                          label: zone.replaceAll("_", " "),
+                        })),
+                    ]}
+                    onChange={(timezone) => apply({ ...settings, timezone })}
+                  />
+                </label>
+                <p className="muted">
+                  {t(
+                    "목록과 분석 기록의 시간을 이 타임존으로 표시합니다.",
+                    "Dates and times use this time zone.",
+                  )}
+                </p>
               </section>
               <section className="panel settings">
                 <h2>{t("개인정보", "Privacy")}</h2>
@@ -1453,8 +1746,8 @@ export function Atlas({ view }: { view: AtlasView }) {
                 {(!user || user.guest) && (
                   <p>
                     {t(
-                      "언어·테마는 이 기기에 저장됩니다. 나머지 설정은 로그인 후 변경할 수 있어요.",
-                      "Language and theme are saved on this device. Sign in to change other settings.",
+                      "언어·테마·타임존은 이 기기에 저장됩니다. 나머지 설정은 로그인 후 변경할 수 있어요.",
+                      "Language, theme and time zone are saved on this device. Sign in to change other settings.",
                     )}
                   </p>
                 )}

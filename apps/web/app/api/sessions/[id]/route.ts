@@ -8,8 +8,35 @@ export const GET = (req: Request, ctx: { params: Promise<{ id: string }> }) =>
       await db()`SELECT * FROM atlas.sessions WHERE id=${id} AND owner=${user} AND expires_at>now() AND deleted=false`;
     if (!s) throw new Response("세션 없음", { status: 404 });
     const results =
-      await db()`SELECT i.id,i.status,i.result,i.error,i.revision FROM atlas.job_items i JOIN atlas.jobs j ON j.id=i.job_id WHERE i.session_id=${id} AND j.owner=${user} AND i.expires_at>now() ORDER BY j.created_at DESC LIMIT 10`;
-    return Response.json({ session: s, results });
+      await db()`SELECT i.id,i.status,i.result,i.error,i.revision,i.attempts,j.created_at FROM atlas.job_items i JOIN atlas.jobs j ON j.id=i.job_id WHERE i.session_id=${id} AND j.owner=${user} AND i.expires_at>now() ORDER BY j.created_at DESC LIMIT 10`;
+    const [manifest] =
+      await db()`SELECT count(*)::int AS batches,coalesce(sum(bytes),0)::bigint AS stored_bytes FROM atlas.batches WHERE session_id=${id} AND owner=${user} AND purged=false`;
+    const completed = results.find(
+      (result) =>
+        result.status === "completed" &&
+        Number(result.revision) === Number(s.revision),
+    );
+    const metrics = completed?.result?.metrics;
+    const images = completed?.result?.imageInput;
+    const aggregate = {
+      available: {
+        storageManifest: true,
+        analysisMetrics: Boolean(metrics),
+        imageMetadata: Boolean(images),
+      },
+      metricRevision: metrics ? Number(completed.revision) : null,
+      storedBytes: Number(manifest.stored_bytes),
+      batches: Number(manifest.batches),
+      collectedEvents: metrics ? Number(metrics.events) : null,
+      userMessages: metrics ? Number(metrics.userMessages) : null,
+      assistantMessages: metrics ? Number(metrics.assistantMessages) : null,
+      toolCalls: metrics ? Number(metrics.toolCalls) : null,
+      toolResults: null,
+      usageEvents: null,
+      imageOccurrences: images ? Number(images.occurrences) : null,
+      uniqueImages: images ? Number(images.unique) : null,
+    };
+    return Response.json({ session: s, results, aggregate });
   });
 export const DELETE = (
   req: Request,

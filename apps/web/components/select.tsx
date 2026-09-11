@@ -8,28 +8,39 @@ export function Select({
   options,
   onChange,
   disabled = false,
+  searchable = false,
 }: {
   label: string;
   value: string;
   options: Option[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  searchable?: boolean;
 }) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [search, setSearch] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
+  const filtered = options.filter((option) =>
+    option.label.toLowerCase().includes(search.toLowerCase()),
+  );
   const selected = options.findIndex((option) => option.value === value);
   const show = () => {
+    setSearch("");
     setActive(Math.max(0, selected));
     setOpen(true);
   };
   const choose = (index: number) => {
-    if (options[index]) onChange(options[index].value);
+    if (filtered[index]) onChange(filtered[index].value);
     setOpen(false);
     trigger.current?.focus();
   };
+  useEffect(() => {
+    if (open && searchable) searchInput.current?.focus();
+  }, [open, searchable]);
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => {
@@ -71,15 +82,16 @@ export function Select({
               show();
               return;
             }
+            if (!filtered.length) return;
             setActive((index) =>
               event.key === "Home"
                 ? 0
                 : event.key === "End"
-                  ? options.length - 1
+                  ? filtered.length - 1
                   : (index +
                       (event.key === "ArrowDown" ? 1 : -1) +
-                      options.length) %
-                    options.length,
+                      filtered.length) %
+                    filtered.length,
             );
           } else if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -90,7 +102,7 @@ export function Select({
             setOpen(false);
           } else if (event.key === "Tab") setOpen(false);
           else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
-            const index = options.findIndex((option) =>
+            const index = filtered.findIndex((option) =>
               option.label.toLowerCase().startsWith(event.key.toLowerCase()),
             );
             if (index >= 0) {
@@ -125,7 +137,35 @@ export function Select({
           role="listbox"
           aria-label={label}
         >
-          {options.map((option, index) => (
+          {searchable && (
+            <input
+              ref={searchInput}
+              type="search"
+              aria-label={`${label} 검색 / Search`}
+              className="select-search"
+              value={search}
+              placeholder="Asia/Seoul, UTC…"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setActive(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setOpen(false);
+                  trigger.current?.focus();
+                } else if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActive(0);
+                  trigger.current?.focus();
+                } else if (e.key === "Enter" && filtered.length) {
+                  e.preventDefault();
+                  choose(active);
+                }
+              }}
+            />
+          )}
+          {filtered.map((option, index) => (
             <div
               id={`${id}-option-${index}`}
               key={option.value}

@@ -10,7 +10,7 @@ export default async function Home({
   const incoming = await searchParams;
   const preserved = new URLSearchParams();
 
-  for (const name of ["session", "connect"] as const) {
+  for (const name of ["session", "connect", "page", "pageSize", "q"] as const) {
     const value = incoming[name];
     if (typeof value === "string" && value) preserved.set(name, value);
   }

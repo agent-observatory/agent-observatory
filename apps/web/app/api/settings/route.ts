@@ -2,8 +2,10 @@ import { z } from "zod";
 import { endpoint, owner, limitedJson, seal } from "../../../lib/security";
 import { db } from "../../../lib/db";
 import { validateEndpoint } from "../../../lib/provider";
+import { validTimezone } from "../../../lib/timezone";
 const Settings = z.object({
   language: z.enum(["ko", "en"]),
+  timezone: z.string().max(100).refine(validTimezone).default("system"),
   theme: z.enum(["dark", "light", "system"]),
   masking: z.boolean(),
   provider: z.enum(["free", "zai", "openrouter", "custom"]),

@@ -83,10 +83,37 @@ async function main() {
     checks.push(
       "large logical event / zstd / canonical hash ACK / duplicate idempotency",
     );
-    const list = await (await call("/api/sessions")).json();
+    const list = await (
+      await call(`/api/sessions?page=1&pageSize=10&q=${encodeURIComponent(id)}`)
+    ).json();
+    assert.deepEqual(list.pagination, {
+      page: 1,
+      pageSize: 10,
+      total: 1,
+      totalPages: 1,
+    });
+    assert.ok(list.overview.sessions >= 1);
+    assert.ok(Array.isArray(list.projects));
     sid = list.sessions.find((s: any) => s.source_id === id)?.id;
     assert.ok(sid);
-    checks.push("authenticated ownership list");
+    const overshoot = await (
+      await call(
+        `/api/sessions?page=999999&pageSize=10&q=${encodeURIComponent(id)}`,
+      )
+    ).json();
+    assert.equal(overshoot.sessions.length, 1);
+    assert.equal(overshoot.pagination.page, 1);
+    const detail = await (await call("/api/sessions/" + sid)).json();
+    assert.equal(detail.aggregate.batches, 1);
+    assert.equal(detail.aggregate.collectedEvents, null);
+    assert.equal(detail.aggregate.userMessages, null);
+    assert.equal(detail.aggregate.toolResults, null);
+    assert.equal(detail.aggregate.imageOccurrences, null);
+    assert.equal(detail.aggregate.available.analysisMetrics, false);
+    assert.ok(detail.aggregate.storedBytes > 0);
+    checks.push(
+      "owned pagination / literal search / overview / detail aggregate",
+    );
     for (const name of [".env.remote.local", ".env.local"])
       try {
         process.loadEnvFile(name);

@@ -186,9 +186,17 @@ async function main() {
       ],
       { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
     ).trim();
+    const ledgerPath = path.join(root, "delivery.json");
+    let ledger = { requests: 0, requestBytes: 0 };
+    try {
+      ledger = JSON.parse(await fs.readFile(ledgerPath, "utf8"));
+    } catch (e: any) {
+      if (e.code !== "ENOENT") throw e;
+    }
     let sent = 0,
-      requests = 0,
-      requestBytes = 0;
+      requests = ledger.requests,
+      requestBytes = ledger.requestBytes;
+    let acknowledged = 0;
     for (const item of plan.selected) {
       const state = new State(item.work);
       try {
@@ -216,7 +224,16 @@ async function main() {
                 if (requestBytes > cap)
                   throw new Error("Request budget exceeded");
               }
-              return fetch(input, init);
+              await fs.writeFile(
+                ledgerPath,
+                JSON.stringify({ requests, requestBytes }),
+                { mode: 0o600 },
+              );
+              const response = await fetch(input, init);
+              console.log(
+                JSON.stringify({ request: requests, status: response.status }),
+              );
+              return response;
             },
           );
           sent += count;
@@ -235,6 +252,13 @@ async function main() {
           )
         )
           throw new Error("Blocked batch");
+        acknowledged += Number(
+          state.db
+            .prepare(
+              "SELECT count(*) AS n FROM batches WHERE status='acknowledged'",
+            )
+            .get()!.n,
+        );
       } finally {
         state.close();
       }
@@ -242,7 +266,7 @@ async function main() {
     const receipt = {
       completedAt: new Date().toISOString(),
       sessions: plan.selected.length,
-      acknowledged: sent,
+      acknowledged,
       requests,
       requestBytes,
       plannedWireBytes: plan.wireBytes,

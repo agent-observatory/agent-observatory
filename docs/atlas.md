@@ -131,7 +131,7 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 | 구성 | 책임 |
 |---|---|
-| 규칙 모듈 | `apps/web/lib/analysis/rules/`에 규칙별 파일을 둔다. 공통 이벤트·계산된 지표·설정을 받아 후보를 반환하는 순수 함수로 작성. DB·네트워크·AI 호출은 하지 않음 |
+| 규칙 모듈 | 현재 구현은 `packages/contracts/src/index.ts`의 규칙 목록. 확장 시 규칙별 파일로 분리한다. 공통 이벤트·계산된 지표·설정을 받아 후보를 반환하는 순수 함수로 작성. DB·네트워크·AI 호출은 하지 않음 |
 | 규칙 계약 | 고유 `id`, `version`, 필요한 입력, 기본 설정, 설정 검증, `evaluate(context, config)`를 정의. 에이전트별 원본 형식 해석은 Source Adapter에 유지 |
 | 규칙 목록·설정 | 명시적 목록에서 규칙 등록·제거, 활성화 여부·임계값을 관리. 초기에는 저장소의 설정으로 변경하고 배포. 별도 플러그인 서비스나 사용자 규칙 편집기는 도입하지 않음 |
 | 공통 후보 | 규칙 ID·버전, 후보 종류, 관측값·임계값, 근거 이벤트 ID를 반환. 대시보드와 AI는 이 공통 형식만 사용 |
@@ -198,7 +198,7 @@ Z.ai 후보는 일반 API `https://api.z.ai/api/paas/v4/chat/completions`를 사
 Supabase 서울 프로젝트의 DB·비공개 Storage를 사용하고, Vercel 함수도 서울 `icn1`로 고정한다. GitHub Actions와 외부 AI API의 실행 위치는 별도다.
 
 GitHub OAuth Homepage URL은 `https://agent-session-atlas.vercel.app`, callback은 `https://agent-session-atlas.vercel.app/api/auth/callback/github`로 등록한다.
-GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 운영 URL 배포와 실제 OAuth 진입을 확인했다. GitHub Actions의 CI·수동 유지관리·일일 분석 기동·Collector packaging도 성공했으며 자연 schedule 실행은 아직 관찰하지 않았다. GitHub 자동 배포 연결은 별도 관리자 승인 대기 상태다.
+GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 운영 URL 배포와 실제 OAuth 진입을 확인했다. GitHub Actions의 CI·수동 유지관리·일일 분석 기동·Collector packaging이 성공했다. 유지관리 자연 예약 실행도 확인했고 일일 분석의 자연 예약은 미관찰이다. 2026-09-11 재확인 시 Vercel 프로젝트의 Git link는 없었다.
 
 | 구성요소 | 어디에 배포하나 | 무료 범위·설계 선택 |
 |---|---|---|
@@ -213,50 +213,110 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 2026-09-11 공식 문서 확인 기준이다. **Hobby는 개인 비상업 용도**이며 회사 업무·팀 서비스는 플랜을 재검토한다.  
 무료 할당은 무기한 가동 보장이 아니다. 한도를 넘으면 기능이 중단될 수 있고 유료 전환은 별도 결정한다.
 
-### 인프라 관리: 설정 파일 + 스크립트
+### 운영 리소스와 연결 상태
 
-**초기에는 Terraform 없이 설정 파일·TypeScript 스크립트·GitHub Actions로 관리한다.**  
-리소스 수가 적으므로 Vercel CLI/API를 감싼 스크립트로 시작한다. `ops/production.json`과 루트 `vercel.json`은 현재 리소스·서울 리전 설정을 기록한다. 웹·API·Workflow를 배포했고 예약 작업의 수동 원격 실행을 검증했다. 자연 schedule 실행은 아직 관찰하지 않았다.
+**운영 URL은 이미 배포되어 있다. 이어서 작업할 때 프로젝트나 DB를 새로 만들지 않는다.** 식별자·확인 시각은 [ops/production.json](../ops/production.json)에서 관리한다. 값이 다른 환경을 다룬다면 먼저 대상을 확인한다.
 
-| 관리 대상 | 코드로 관리할 위치·방식 |
+| 대상 | 현재 구성 |
 |---|---|
-| Vercel 프로젝트 | `ops/production.json`에 이름·리전·`apps/web` 경로·리소스 ID. `scripts/infra.ts`로 조회·생성·연결 |
-| 비공개 Storage | Supabase Storage API로 버킷 조회·생성. `public: false`와 JSON·최대 파일 크기 제한 확인 |
-| Supabase | Marketplace로 Free·서울 프로젝트 연결. 프로젝트 ID·리전 기록. SQL migration으로 스키마 관리. 서버리스는 transaction pooler, 마이그레이션은 direct 또는 session pooler 사용. 공식 CA `ops/certs/supabase-prod-ca-2021.crt`로 TLS 인증서 검증 유지 |
-| 예약 작업 | `.github/workflows/maintenance.yml`·`analysis-daily.yml`에 일정·수동 실행·동시 실행 제한. Vercel의 `/api/jobs/maintenance`·`/api/jobs/analysis`를 호출 |
-| Workflow | `workflows/*.ts`의 `use workflow`·`use step`, `next.config.ts`의 `withWorkflow`. Next.js와 함께 배포. 서울 상태 저장은 SDK `5.0.0-beta.33` 이상에서 지원하므로 설치 버전·실제 실행 리전 확인 |
-| 환경변수 | `.env.example`에 이름만 기록. 실제 키는 Vercel 환경변수·GitHub Secrets, CLI 기기 토큰과 분리 |
-| 웹 배포 | 현재 Actions CI 검사 후 Vercel CLI로 production 배포·원격 smoke 검증. GitHub App 저장소 접근 승인 후 push 자동 배포 연결 가능 |
-| CLI 배포 | CLI 태그 → 빌드·패키지 설치 검사 → GitHub Release 게시. npm 공개 게시와 npm Trusted Publishing 연결은 후속 |
+| GitHub | `agent-observatory/agent-session-atlas`, 기본 브랜치 `main` |
+| Vercel | 프로젝트 `agent-session-atlas`, scope `dans-projects-155a19b3`, Root Directory `apps/web`, Node `22.x`, 함수 `icn1` |
+| 웹 주소 | [운영 앱](https://agent-session-atlas.vercel.app) · [Vercel 설정](https://vercel.com/dans-projects-155a19b3/agent-session-atlas/settings) |
+| Supabase | 프로젝트 `dgmecutgijgegtmrsygo`, 서울 `ap-northeast-2`, Free. [관리 화면](https://supabase.com/dashboard/project/dgmecutgijgegtmrsygo) |
+| DB·파일 | PostgreSQL `atlas` 스키마와 비공개 `sessions` 버킷. 로그인은 Supabase Auth가 아닌 Auth.js + GitHub OAuth |
+| 파일 제약 | 현재 버킷은 `application/json`·1 MiB. 압축 파일·이미지 저장을 구현할 때 MIME·크기 정책·다운로드 경로도 함께 변경해야 함 |
+| DB 이력 | `db/migrations/001`~`004` 적용 확인. 적용 기록은 `atlas.migrations` |
+| Git 연동 | Vercel Git link 없음. main push는 Actions CI를 실행하지만 웹 배포를 자동으로 만들지 않음 |
+| 최근 앱 변경 | 무료 풀 구현 `36ba51d`. 운영은 해당 변경을 커밋하기 전 작업 디렉터리에서 CLI 배포한 것이므로 배포 Git SHA와 동일하다고 단정하지 않음 |
 
-웹 자동 배포와 PR Preview 연결은 아직 완료하지 않았다.  
-Vercel은 `apps/web`만 배포하되 `packages/contracts`를 빌드에 포함한다. 수집기는 Vercel 배포 대상에서 제외한다.
+### 키 관리와 로컬 환경
 
-유지관리 API는 Next.js 앱 안의 작은 엔드포인트이며 별도 서비스로 배포하지 않는다.
-원격 예약 작업은 GitHub Actions로 통일하고 `vercel.json`에는 Cron 일정을 등록하지 않는다. 워크플로 파일과 수동 dispatch는 검증했으며 자연 schedule 실행은 아직 관찰하지 않았다.
+**변수 이름은 [.env.example](../.env.example), 실제 값은 Git에서 제외된 로컬 파일과 서비스 환경변수에 둔다.** 다음 표는 이 컴퓨터에서 확인한 역할이며, 새 컴퓨터에 파일이 자동 복원되는 것은 아니다.
 
-| 작업 | GitHub Actions 일정(UTC) | 실행 범위 |
+| 위치 | 역할·주의점 |
+|---|---|
+| 루트 `.env.local` | 사용자가 입력한 GitHub OAuth·무료 AI 키와 앱 secret. DB 연결값은 현재 이 파일에 없음 |
+| `apps/web/.env.local` | Next.js가 읽는 앱 환경. DB·Storage·OAuth·AI·앱 secret을 포함. 현재 운영 DB를 가리키므로 격리된 테스트 환경으로 간주하지 않음 |
+| 루트 `.env.remote.local` | 운영 환경 pull에서 확보한 DB·Storage 연결값. 운영 스크립트 입력 |
+| 루트 `.env.supabase.local` | Supabase 연결 당시 확보한 환경 사본. 현재 앱/운영 스크립트가 자동으로 읽는 파일은 아님 |
+| Vercel Production | 배포된 앱의 실제 환경. 로컬 파일 수정만으로 바뀌지 않으며, 환경변수 변경 후 새 배포가 필요 |
+| GitHub Actions Secrets | 현재 `SCHEDULER_SECRET`만 등록. 웹·DB·AI 키를 모두 복제하지 않음. `NPM_TOKEN`은 아직 없음 |
+| Vercel CLI 로그인 | `vercel login`으로 관리. 현재 Mac의 로그인 세션을 재사용하므로 별도 `VERCEL_TOKEN` 입력은 필요 없음. 인증 파일을 문서·출력·커밋에 복사하지 않음 |
+| Collector 기기 토큰 | macOS Keychain. `~/.agent-session-atlas/config.json`은 설정, `state.sqlite`는 읽기 위치·접수 상태. 앱 서비스 키와 별개 |
+
+키 원문을 열거하는 대신 저장소 루트에서 다음을 실행한다. 이름·존재·로컬 사본 일치 여부·암호화 키 형식만 출력하며, 키의 유효성이나 원격 값 일치까지 보장하지 않는다.
+
+```sh
+node scripts/check-environment.mjs
+vercel env ls production
+gh secret list
+```
+
+| 변수 | 쓰임·변경 시 영향 |
+|---|---|
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | GitHub OAuth 앱 인증. [OAuth Apps](https://github.com/settings/developers)에서 기존 앱 관리. callback은 이 문서 상단 주소 유지 |
+| `AUTH_SECRET` | 로그인·방문자 인증 서명. 교체 시 기존 인증이 무효화될 수 있으므로 단순 설정 복구에서 재생성하지 않음 |
+| `BYOK_ENCRYPTION_KEY` | 32바이트 hex AES-256-GCM 키. 잃거나 임의 교체하면 DB에 저장한 사용자 BYOK를 복호화할 수 없음. 새 키 발급과 기존 암호문 이전을 별도 작업으로 설계 |
+| `POSTGRES_URL` | 서버·마이그레이션 DB 연결. 비밀번호를 포함하므로 URL 전체 출력 금지 |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 비공개 파일 접근. service role 키는 서버 전용이며 `NEXT_PUBLIC_`로 복사하지 않음 |
+| `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY` | 서비스 무료 후보용 키. 설정된 제공자만 사용하며 사용자 BYOK 키와 혼용하지 않음 |
+| `SCHEDULER_SECRET` | Vercel 예약 API와 Actions의 공통 Bearer 값. 변경 시 양쪽을 맞추고 앱을 재배포한 뒤 호출 확인 |
+| `APP_URL` | OAuth·Origin 검증 기준 주소. 운영은 고정 `https://agent-session-atlas.vercel.app` |
+
+현재 `.env.local`에 남은 빈 `VERCEL_TOKEN`과 `ZAI_MAX_CONCURRENCY`는 앱이 사용하지 않는다. 전역 직렬 호출은 코드·DB lease에서 제어하며, `VERCEL_OIDC_TOKEN`은 CLI 배포 인증을 대신하는 장기 키가 아니다. 이들을 채워야 앱이 작동한다고 오해하지 않는다.
+
+`migrate.mjs`·`configure-production.mjs`·`verify-retention.mjs`는 루트 `.env.remote.local` → `.env.local`을 명시적으로 읽는다. `process.loadEnvFile`은 이미 설정된 환경변수를 덮어쓰지 않으므로 shell 값과 먼저 읽은 파일을 주의한다. Next.js와 standalone 스크립트의 로딩 경로가 같다고 가정하지 않는다.
+
+**기존 파일에 `vercel env pull --yes`를 실행하지 않는다.** 새로 확보해야 한다면 별도 Git 제외 파일 `.env.vercel-pull.local`에 받고, 필요한 이름만 기존 사본과 비교해 병합한다. Sensitive 변수는 원문을 다시 읽을 수 없으므로 pull에 없다고 기존 값을 빈 값으로 덮어쓰지 않는다. [.env pull](https://vercel.com/docs/cli/env) · [Sensitive 변수](https://vercel.com/docs/environment-variables/sensitive-environment-variables)
+
+한 키를 변경할 때는 대상을 지정해 Vercel에 갱신하고, 해당 값을 사용하는 로컬 사본만 함께 맞춘다. 값은 대화·셸 명령 인자에 직접 쓰지 않고 대화형 입력이나 프로세스 stdin으로 전달한다. `configure-production.mjs`는 프로젝트 설정과 여러 키를 `--force`로 덮어쓰므로 평소 재개·확인용으로 실행하지 않는다.
+
+### 배포와 운영 명령
+
+**아래 명령은 저장소 루트에서 실행한다.** Vercel의 Root Directory 설정이 `apps/web`를 선택하므로 CLI 실행 위치까지 무작정 `apps/web`로 바꾸지 않는다. 현재 로컬 도구는 Node 22·pnpm 9.12.1·Vercel CLI 50.0.1이며 새 환경에서는 설치 버전을 확인한다.
+
+새 clone에서 `.vercel/project.json`이 없을 때만 기존 프로젝트에 연결한다. CLI 로그인이 없다면 `vercel login`, GitHub CLI 인증이 없다면 `gh auth login`을 사용한다.
+
+```sh
+vercel link --yes --project agent-session-atlas --scope dans-projects-155a19b3
+vercel project inspect agent-session-atlas
+node scripts/check-environment.mjs
+pnpm install --frozen-lockfile
+```
+
+| 작업 | 실제 명령·영향 |
+|---|---|
+| 코드 검증 | `pnpm test`, `pnpm build`, `pnpm typecheck` |
+| 웹 운영 배포 | 검증 후 `vercel --prod --yes --scope dans-projects-155a19b3`. 현재 작업 디렉터리를 업로드하므로 커밋·미커밋 범위를 먼저 확인 |
+| 배포 상태 | `vercel inspect https://agent-session-atlas.vercel.app`. Ready·Production·alias·`icn1`을 확인하고 배포 ID를 기록 |
+| DB migration | SQL 변경 시에만 `node scripts/migrate.mjs`. 실제 원격 DB를 변경하며 `atlas.migrations`에 없는 파일을 트랜잭션으로 적용 |
+| 프로젝트·키 일괄 설정 | `node scripts/configure-production.mjs`. 초기 구성용 변경 스크립트. 기존 로컬 Vercel 인증 파일 경로에 의존하므로 다른 OS에서 그대로 실행하지 않음 |
+| 원격 기능 smoke | `ATLAS_SMOKE_REPORT=ops/free-routing-remote-smoke.json node scripts/smoke-remote.mjs`. 합성 업로드·AI 호출·단건/선택/전체 분석을 실행하며 quota를 사용 |
+| 인증·소유권 경계 | `node scripts/verify-boundaries.mjs`. 합성 원격 변경 포함 |
+| 보관 정책 | `node scripts/verify-retention.mjs`. 합성 데이터 생성·삭제와 실제 유지관리 API 호출 포함. 만료된 운영 데이터 정리도 실행될 수 있음 |
+| 제공자 연결 | `pnpm exec tsx scripts/verify-free-providers.ts`. 로컬 키로 외부 합성 호출, 호출량 사용 |
+| 압축 비교 | `pnpm exec tsx scripts/benchmark-compression.ts --synthetic`. 실제 기록을 읽는 실행은 [Collector 측정 절차](collector.md#로컬-압축-비교--2026-09-11) 참고 |
+| CI 확인 | `gh run list --workflow ci.yml`, `gh run view <run-id>`. CLI 배포와 별도 확인 |
+| 앱 rollback | 검증된 이전 배포를 지정해 `vercel rollback <deployment-url-or-id>`. DB·환경변수 변경을 자동으로 되돌리지는 않음 |
+
+`pnpm infra:*`, `pnpm db:migrate`, `pnpm deploy:*`, `pnpm smoke:remote` 별칭과 `scripts/infra.ts`는 구현되어 있지 않다. 위 실제 명령을 사용한다.
+
+DB 인증서 검증은 앱 `apps/web/lib/certs/supabase.crt`, 운영 스크립트 `ops/certs/supabase-prod-ca-2021.crt`를 사용한다. `rejectUnauthorized: true`를 유지하고 인증 오류를 우회하기 위해 TLS 검증을 끄지 않는다. 현재 연결 코드는 `POSTGRES_URL`과 `prepare: false`를 사용한다. SQL 변경은 설치된 구버전 Collector·기존 앱과의 호환성을 확인하고 적용한다.
+
+Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았다. 운영 자격증명을 그대로 복사해 Preview 검증을 구성하지 않는다. [환경변수 변경](https://vercel.com/docs/environment-variables)은 새 배포에 반영되므로 env 수정 성공과 운영 반영 성공을 구분한다.
+
+### GitHub Actions와 Collector 릴리스
+
+| 작업 | 파일·일정(UTC) | 재확인한 상태 |
 |---|---|---|
-| 유지관리 | `17 * * * *` | 매시 17분에 DB 연결 확인·만료 데이터 정리. 외부 AI 호출 없음 |
-| 일일 분석 | `37 18 * * *` | 한국 시간 다음 날 03:37에 누락 작업 복구·신규 분석 등록 |
-| 수동 복구 | `workflow_dispatch` | 동일 작업을 운영자가 재실행. 대시보드 수동 분석도 같은 분석 실행기를 사용 |
+| CI | `ci.yml`, main push·PR | 테스트·빌드·타입 검사. 웹 배포 단계 없음 |
+| 유지관리 | `maintenance.yml`, `17 * * * *` | [자연 예약 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34549506560) 확인. 정시 실행 보장은 아님 |
+| 일일 분석 | `analysis-daily.yml`, `37 18 * * *` | KST 다음 날 03:37. [수동 실행 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), 자연 예약 미관찰 |
+| Collector 릴리스 | `collector-release.yml`, `collector-v*` 태그·수동 | tarball artifact 생성. 현재 `NPM_TOKEN` 부재로 npm 게시 단계는 건너뜀 |
 
-일정은 정시 실행을 보장하지 않는다. Actions는 짧은 인증 HTTP 요청만 보내고, 분석은 Vercel Workflow가 이어서 실행한다. API 접수 성공과 분석 완료 상태를 구분한다.
-호출용 `SCHEDULER_SECRET`은 GitHub Actions의 운영 Secrets와 Vercel 서버 환경변수에만 저장한다. Actions에는 DB·사용자 세션·AI 키를 전달하지 않는다. API는 인증 후 고정된 작업만 실행하며 임의 SQL·URL을 받지 않는다.
-워크플로별 `concurrency`와 제한된 재시도·timeout을 두고, 서버에서도 작업 종류·예정 실행 구간을 유일 키로 사용해 재호출을 중복 처리하지 않는다. 분석은 기존 session·revision·분석 버전의 멱등성을 추가로 적용한다. 누락된 정리·분석 범위는 다음 실행에서 복구한다. 만료 데이터는 정리 실행 지연과 무관하게 조회에서 제외한다.
-공개 저장소의 기본 GitHub 호스팅 실행기는 무료다. 예약 실행은 지연·누락될 수 있고, 저장소 활동이 60일 없으면 비활성화될 수 있다. 운영 화면에 마지막 성공 시각·실패·지연 상태를 표시하고 수동 복구 경로를 제공한다. [예약 실행 제약](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) · [사용 요금](https://docs.github.com/en/actions/concepts/billing-and-usage)
+`gh workflow run maintenance.yml`은 만료 정리를, `gh workflow run analysis-daily.yml`은 분석 기동을 실제 실행한다. 단순 상태 조회로 사용하지 않는다. Actions는 `SCHEDULER_SECRET`으로 고정 API만 호출하고, DB·AI 키는 Vercel에 둔다. 접수 `202`와 Workflow 분석 완료는 별개다.
 
-| 운영 명령 제안 | 책임 |
-|---|---|
-| `pnpm infra:plan` / `pnpm infra:apply` | 현재 리소스와 설정 비교 / 없는 리소스 생성·연결. 반복 실행 가능하며 자동 삭제 없음 |
-| `pnpm db:migrate` | 버전이 있는 SQL을 한 번만 적용. 웹 배포보다 먼저 실행 |
-| `pnpm deploy:preview` / `pnpm deploy:prod` | 지정 환경 빌드·배포. 운영 키를 PR Preview에 전달하지 않음 |
-| `pnpm smoke:remote` | 합성 세션 접수·중복 ACK·수동 분석·조회·삭제까지 확인 |
-
-계정 가입·OAuth/Marketplace 동의·최초 npm 게시와 신뢰 연결은 초기 수동 절차로 기록한다.  
-그 이후 반복 운영을 스크립트로 재현한다. `infra:plan`은 자체 비교 명령이며 Terraform 수준의 상태 관리까지 구현하지 않는다.
-
-팀·환경이 늘어 리소스 변경 추적이 복잡해지면 Terraform을 도입한다. 그때도 분석 코드·SQL·CLI 설치 코드는 각각 유지한다.
+웹·Collector는 각각 `atlas-vX.Y.Z`, `collector-vX.Y.Z`로 버전을 관리한다. 기존 0.1.0 GitHub Release tarball은 공개되어 있다. 현재 workflow의 artifact 생성·npm 게시와 GitHub Release 페이지 게시는 같은 동작이 아니다. 새 릴리스에서는 버전·태그·패키징·실제 게시 여부를 각각 확인한다.
 
 ### 무료 운영 범위
 
@@ -293,7 +353,7 @@ Supabase의 500 MB 제한은 DB 용량이며, 세션 본문 파일은 별도 비
 | 운영 배포 | org public 연결 → Supabase DB·Supabase Storage 생성 → 환경변수 설정 → 마이그레이션 → Vercel 운영 배포. DB와 함수는 같은 리전 우선 |
 | 배포 검증 | 30분 전송·수동/일일 분석·조회·삭제 확인. 서버 장애와 ACK 유실 후 재전송해도 중복 없는지 검증 |
 | 재배포 | PR Preview는 합성 데이터·별도 DB/Storage. 운영 자격증명을 전달하지 않고 CI 통과 후 main 병합 |
-| 복구 | 배포 전 DB export, 이전 앱 버전과 호환되는 마이그레이션. 앱 rollback과 DB 복원은 별도로 검증 |
+| 복구 | 이전 앱과 호환되는 마이그레이션을 우선. 필요한 임시 DB export도 비밀값·7일/30일 보관 정책을 지키며 앱 rollback과 DB 복원을 별도로 검증 |
 
 Functions의 **4.5 MB 본문 제한** 안에서 동작하도록, MVP는 JSON 요청 전체를 **1 MiB** 이하로 제한한다.
 큰 입력은 이벤트 경계로 배치를 나누며, 단일 이벤트도 초과하면 조용히 자르지 않고 격리·표시한다.  

@@ -13,9 +13,27 @@
 | [Collector](collector.md) | 설치·30분 실행·증분 수집·전송·복구 |
 | [실제 작업 기록](implementation.md) | 소요 시간·검증 결과·남은 연결 작업 |
 
+## 이어서 작업하기
+
+Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에서 같은 공통 지침을 읽는다. 이 문서의 현재 상태를 확인한 뒤 작업에 해당하는 상세 문서로 이동한다.
+
+| 필요한 정보 | 기준 문서·코드 |
+|---|---|
+| 키 위치·사본·교체 영향 | [키 관리와 로컬 환경](atlas.md#키-관리와-로컬-환경), `.env.example`, `node scripts/check-environment.mjs` |
+| Vercel·Supabase·예약 작업 | [배포와 운영 명령](atlas.md#배포와-운영-명령), [리소스 식별자](../ops/production.json) |
+| Collector 구현·큰 이벤트 경계 | `apps/collector/src/core.ts`, [수집 정책](collector.md#근거를-보존하는-수집) |
+| 공통 이벤트·마스킹·기본 규칙 | `packages/contracts/src/index.ts` |
+| 수신·저장 | `apps/web/lib/ingest.ts`, `apps/web/lib/storage.ts` |
+| 무료 후보·직렬 실행·분석 | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts` |
+| 실제 완료·검증 범위 | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json` |
+
+현재 이어갈 순서는 **큰 이벤트 때문에 중단되는 수집 보완 → 정제·이미지 분리와 호환 계약 → Zstd 전송/저장 → 서버 구간별 증류·품질 검증**이다. 압축은 로컬 비교만 끝났으며, 운영은 비압축 JSON이다. 로컬 Collector는 `paused: true`다. 개인 기록 분석이 완료됐다고 가정하지 않는다.
+
+먼저 `git status --short`로 기존 변경을 확인한다. 이전 모델 연결 조사에서 남은 미추적 `ops/openrouter-*.json`·`ops/zai-vision-*.json`은 현재 커밋에 포함되지 않았다. 자동 삭제·일괄 커밋하지 말고 출처와 내용을 확인한다.
+
 ## 현재 상태
 
-2026-09-11 확인 기준이다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
+2026-09-11 확인 기준이다. 운영 리소스·키 이름·DB migration·비공개 버킷은 13:43 KST에 다시 조회했다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
 
 | 대상 | 확인한 상태 |
 |---|---|
@@ -24,7 +42,7 @@
 | GitHub OAuth | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공 |
 | 기본 AI | 서버 설정 키가 있는 6개 무료 모델 후보와 공통 직렬 슬롯·모델/제공자 범위 cooldown 구현. 최종 6개 후보 배포와 원격 합성 분석 검증 완료. NVIDIA timeout → OpenRouter 성공 및 실제 모델 기록 확인. [검증 기록](../ops/free-routing-remote-smoke.json) |
 | 개인 BYOK | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증 |
-| GitHub Actions | main push 후 CI 성공. 유지관리 수동 실행·일일 분석 완료·Collector packaging 성공. 자연 예약 실행은 아직 관찰하지 않음 |
+| GitHub Actions | main push 후 CI 성공. 유지관리 자연 예약 실행 성공, 일일 분석은 수동 기동·완료 확인. 일일 자연 예약 미관찰. 웹 Git 자동 배포는 미연결 |
 | Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 14, 총 26개 테스트 통과. 경계 8건·보관 5건 검증 통과. GitHub Release에서 tarball 설치 가능. npm은 인증 부재로 미게시. 개인 자동 수집은 사용자가 범위를 확인하도록 중지 |
 
 

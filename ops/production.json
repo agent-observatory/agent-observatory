@@ -4,8 +4,14 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_5gTEvkph4akNnxX1yinKyEJfwkKv",
-    "sourceCommit": "3a455baf19eb1e80296f97079acb277c49b82a66"
+    "latestReadyDeployment": "dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp",
+    "projectName": "agent-session-atlas",
+    "scope": "dans-projects-155a19b3",
+    "rootDirectory": "apps/web",
+    "nodeVersion": "22.x",
+    "gitIntegration": "not-linked",
+    "deploymentSource": "local-working-tree-before-commit",
+    "runtimeChangesRecordedIn": "36ba51dcad1004f06fbb1576abda4d900d8956df"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -17,13 +23,23 @@
     "maxFileBytes": 1048576,
     "retentionMigration": "004-applied",
     "databaseUrlEnv": "POSTGRES_URL",
-    "databaseCaFile": "ops/certs/supabase-prod-ca-2021.crt"
+    "databaseCaFile": "ops/certs/supabase-prod-ca-2021.crt",
+    "allowedMimeTypes": ["application/json"],
+    "storedEncoding": "identity",
+    "appliedMigrations": [
+      "001_initial.sql",
+      "002_rate_limits.sql",
+      "003_job_settings.sql",
+      "004_retention.sql"
+    ]
   },
   "scheduling": {
     "provider": "github-actions",
     "maintenance": "17 * * * *",
     "analysis": "37 18 * * *",
-    "status": "dispatch-verified-schedule-unobserved"
+    "status": "maintenance-schedule-verified;analysis-dispatch-verified",
+    "maintenanceScheduleRun": 34549506560,
+    "analysisDispatchRun": 34536855783
   },
   "retention": {
     "detailsDays": 7,
@@ -33,26 +49,36 @@
     "orphanStorageGraceSeconds": 3600
   },
   "ai": {
-    "provider": "zai",
-    "model": "glm-4.7-flash",
-    "baseUrl": "https://api.z.ai/api/paas/v4",
-    "apiKeyEnv": "ZAI_API_KEY",
-    "status": "remote-single-selected-all-passed",
+    "provider": "free",
+    "model": "auto",
+    "routingVersion": "free-pool-2",
+    "candidateConfig": "apps/web/lib/ai-routing.ts",
+    "candidateCount": 6,
+    "apiKeyEnvs": ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "ZAI_API_KEY"],
+    "status": "remote-fallback-single-selected-all-passed",
+    "verificationReport": "ops/free-routing-remote-smoke.json",
     "maxConcurrency": 1,
-    "concurrencySource": "user-selected-serial-execution",
-    "concurrentVerification": "two-succeeded; earlier-three-rate-limited",
+    "leaseKey": "zai-global",
+    "maxAttempts": 15,
     "byok": {
       "status": "implemented-unverified",
       "apiFormat": "openai-chat-completions",
-      "presets": [
-        "openrouter"
-      ],
+      "presets": ["openrouter"],
       "customEndpoint": true,
-      "fields": [
-        "endpoint",
-        "apiKey",
-        "model"
-      ]
+      "fields": ["endpoint", "apiKey", "model"],
+      "maxAttempts": 5
     }
+  },
+  "checkedAt": "2026-09-11T04:43:30Z",
+  "collector": {
+    "installedVersion": "0.1.0",
+    "localSnapshot": {
+      "paused": true,
+      "projectMode": "all"
+    },
+    "npmPublished": false,
+    "compression": "not-implemented",
+    "preferredCompressionCandidate": "zstd-3",
+    "compressionReport": "ops/compression-local.json"
   }
 }

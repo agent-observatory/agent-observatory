@@ -30,7 +30,11 @@
 | --- | --- | --- |
 | `tabler-terminal-2.svg` | Coding sessions | [Tabler terminal-2](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/terminal-2.svg) |
 | `tabler-cloud-upload.svg` | Collector | [Tabler cloud-upload](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/cloud-upload.svg) |
-| `tabler-chart-bar.svg` | Atlas analysis | [Tabler chart-bar](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/chart-bar.svg) |
+| `tabler-chart-bar.svg` | Session analysis | [Tabler chart-bar](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/chart-bar.svg) |
 | `tabler-clipboard-check.svg` | Findings | [Tabler clipboard-check](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/clipboard-check.svg) |
 | `tabler-device-laptop.svg` | Local device | [Tabler device-laptop](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/device-laptop.svg) |
 | `tabler-cloud.svg` | Remote service | [Tabler cloud](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/cloud.svg) |
+
+## 포털 탐색
+
+Wiki 아이콘은 [Tabler book-2 v3.34.1](https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/book-2.svg)의 원본 경로를 사용한다. 원본은 `tabler-book-2.svg`, 라이선스는 [MIT](TABLER-LICENSE.md)다. 제품의 공통 선 굵기로 표시한다.

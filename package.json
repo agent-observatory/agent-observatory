@@ -1,5 +1,5 @@
 {
-  "name": "agent-session-atlas",
+  "name": "agent-observatory",
   "private": true,
   "packageManager": "pnpm@9.12.1",
   "scripts": {

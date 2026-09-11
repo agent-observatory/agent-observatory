@@ -1,10 +1,10 @@
 # 세션 평가 기준과 규칙 운영
 
-Atlas는 코딩 에이전트의 **관측 기록으로 개선 후보와 다음 행동**을 제안한다. 모델·스킬을 썼다는 사실이나 반복 횟수만으로 낭비·실패를 판정하지 않는다.
+Agent Observatory는 코딩 에이전트의 **관측 기록으로 개선 후보와 다음 행동**을 제안한다. 모델·스킬을 썼다는 사실이나 반복 횟수만으로 낭비·실패를 판정하지 않는다.
 
 ## 규칙과 구현의 단일 원본
 
-규칙 정의는 [`evaluation-catalog.ts`](../packages/contracts/src/evaluation-catalog.ts)에 둔다. 서버와 문서 생성기가 같은 ID·버전·필수 사실·적용 조건·rubric을 읽는다. 전체 규칙은 이 문서의 [평가 규칙 카탈로그](#평가-규칙-카탈로그)에 있다. 평가 원칙과 운영 설명은 직접 수정하고, `evaluation-rules:start/end` 주석 사이의 규칙 목록만 자동 생성한다. 생성기는 나머지 내용을 보존한다.
+규칙 정의는 [`evaluation-catalog.ts`](../../packages/contracts/src/evaluation-catalog.ts)에 둔다. 서버와 문서 생성기가 같은 ID·버전·필수 사실·적용 조건·rubric을 읽는다. 전체 규칙은 이 문서의 [평가 규칙 카탈로그](#평가-규칙-카탈로그)에 있다. 평가 원칙과 운영 설명은 직접 수정하고, `evaluation-rules:start/end` 주석 사이의 규칙 목록만 자동 생성한다. 생성기는 나머지 내용을 보존한다.
 
 ```sh
 pnpm generate:evaluation-docs

@@ -1,18 +1,37 @@
-# 전체 흐름
+# Portal architecture
 
-![GitHub Actions가 원격 일정을 관리하고 Vercel 서울에서 웹·API·Workflow를 실행한다. Supabase 서울의 DB와 비공개 Storage에 세션·분석 결과를 저장하며 서버가 설정한 무료 AI 제공자 풀 또는 OpenAI 호환 BYOK로 AI 설명을 생성한다. 에이전트는 로컬 CLI를 통해 Collector를 다루고, 점선은 아직 구현되지 않은 원격 MCP 도구 경계를 나타낸다](assets/architecture-overview.svg)
+![Current Sessions architecture: GitHub Actions manages schedules; Vercel runs the web, API, and Workflow; Supabase stores session and analysis data; the local Collector handles records. Wiki remains a separate empty portal scaffold.](assets/architecture-overview.svg)
 
-[전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
+[Portal](README.md) · [Wiki](wiki/README.md) · [Sessions](sessions/README.md) · [Collector](collector.md) · [Operations](operations.md)
 
-**AgentSession Atlas**는 세션을 보관·분석하는 웹 서비스다. **Atlas Collector**는 로컬 기록을 수집해 Atlas로 보내는 CLI다.
+**Agent Observatory**는 코딩 에이전트 작업을 살피는 포털이다. **Sessions**는 기존 세션 보관·분석 기능을 제공한다. **Atlas Collector**는 이름·패키지·명령·로컬 상태 경로를 유지한 채 로컬 기록을 포털로 보낸다.
+
+## 현재 개발 방향
+
+다음 설계는 Wiki를 중심으로 진행한다. 기존 Sessions는 동작하는 참고 구현으로 남긴다. 기존 기능의 개선이나 하위 호환성 유지보다 Wiki의 수집·지식 모델을 우선하며, Collector와 데이터 계약도 필요하면 전면 재설계한다. 현재 운영 구성은 새 설계의 제약이 아니다.
+
+## 포털 정보 구조
+
+포털은 공통 계정 설정과 작업 도메인을 분리한다. 이 구조는 화면·URL 계약이며, Wiki의 실제 지식 관리 기능은 아직 설계하지 않았다.
+
+| 영역 | 경로 | 책임 | 상태 |
+| --- | --- | --- | --- |
+| Wiki | `/wiki` | 향후 지식·문서 작업의 진입점 | 빈 scaffold |
+| Sessions | `/sessions` | 수집된 세션 검토, 분석, 근거와 개선 작업 확인 | 기존 기능 |
+| Sessions settings | `/sessions/settings` | 세션 수집에 적용할 마스킹과 AI Provider·모델 설정 | 기존 설정을 이관 |
+| Settings | `/settings` | 계정 공통 언어, 테마, 시간대, 연결된 기기 | 공통 설정 |
+
+`/settings`의 변경은 포털 전반에 적용한다. 세션 원문 처리와 AI 호출 경계는 `/sessions/settings`에 남긴다. Wiki는 현재 세션 분석·Collector·저장소 정책을 새로 만들거나 바꾸지 않는다.
 
 | 문서                                | 범위                                        |
 | ----------------------------------- | ------------------------------------------- |
 | 이 문서                             | 전체 구조·공통 계약·현재 상태·구현 순서     |
-| [Atlas](atlas.md)                   | 대시보드·로그인·AI 분석·BYOK·배포·운영      |
+| [Wiki](wiki/README.md)              | 비어 있는 Wiki scaffold와 후속 설계 경계 |
+| [Sessions](sessions/README.md)      | 세션·로그인·AI 분석·BYOK·세션 설정 |
+| [세션 평가 기준](sessions/evaluation.md) | 실행 모델·스킬 효과·근거 요구·규칙 수명주기 |
+| [Operations](operations.md)         | 배포·키 관리·Vercel·Collector 릴리스 |
 | [Collector](collector.md)           | 설치·30분 실행·증분 수집·전송·복구          |
 | [Collector의 에이전트 조작](collector.md#에이전트가-collector를-다루는-방법) | CLI 계약·안전한 sync 순서·Skill/MCP 제안 |
-| [평가 기준](evaluation.md)          | 실행 모델·스킬 효과·근거 요구·규칙 수명주기 |
 | [디자인 기준](DESIGN.md)            | 색상·타이포·간격·컴포넌트·화면 검증         |
 | [실제 작업 기록](implementation.md) | 소요 시간·검증 결과·남은 연결 작업          |
 
@@ -22,9 +41,9 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 | 필요한 정보                   | 기준 문서·코드                                                                                            |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 키 위치·사본·교체 영향        | [키 관리와 로컬 환경](atlas.md#키-관리와-로컬-환경), `.env.example`, `node scripts/check-environment.mjs` |
-| Vercel·Supabase·예약 작업     | [배포와 운영 명령](atlas.md#배포와-운영-명령), [리소스 식별자](../ops/production.json)                    |
-| 평가 기준·규칙 운영           | [모델 적합성·스킬 효과와 규칙 수명주기](evaluation.md)                                                    |
+| 키 위치·사본·교체 영향        | [키 관리와 로컬 환경](operations.md#키-관리와-로컬-환경), `.env.example`, `node scripts/check-environment.mjs` |
+| Vercel·Supabase·예약 작업     | [배포와 운영 명령](operations.md#배포와-운영-명령), [리소스 식별자](../ops/production.json)                    |
+| 평가 기준·규칙 운영           | [모델 적합성·스킬 효과와 규칙 수명주기](sessions/evaluation.md)                                                    |
 | Collector 구현·큰 이벤트 경계 | `apps/collector/src/core.ts`, [수집 정책](collector.md#근거를-보존하는-수집)                              |
 | 에이전트의 Collector 조작 | [CLI 계약과 안전한 순서](collector.md#에이전트가-collector를-다루는-방법), 웹의 `/docs/collector.md`·`/llms.txt` |
 | 공통 이벤트·마스킹·기본 규칙  | `packages/contracts/src/index.ts`                                                                         |
@@ -47,8 +66,8 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | GitHub OAuth    | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공                                                                                                                                                                      |
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
-| GitHub Actions  | [CI run 34640646926](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34640646926) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
-| Atlas·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. 배포판 0.4.2는 [npm](https://www.npmjs.com/package/@agent-observatory/collector)·[GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.2)에 게시됐고 OIDC 자동 게시를 확인했다             |
+| GitHub Actions  | [CI run 34640646926](https://github.com/agent-observatory/agent-observatory/actions/runs/34640646926) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
+| Portal·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. 배포판 0.4.3은 [npm](https://www.npmjs.com/package/@agent-observatory/collector)·[GitHub Release](https://github.com/agent-observatory/agent-observatory/releases/tag/collector-v0.4.3)에 게시됐고 OIDC 자동 게시를 확인했다             |
 
 ## 에이전트 인터페이스 경계
 
@@ -61,13 +80,13 @@ Collector를 자동화하는 에이전트의 정식 실행면은 **로컬 CLI**�
 | 현재 설정 조회 | 연결된 기기에서 요청 → 상주 Collector가 로컬 설정·프로젝트 목록 응답 | 조회 전용. 미응답 시 `atlas-collector start` 안내; 확인 시각 표시 |
 | 웹 문서 | `/docs/collector.md`, `/llms.txt` | 사람과 에이전트가 같은 canonical 내용을 찾는 읽기 경로 |
 | Skill | 제안 | CLI와 문서를 참조해 inventory → 범위 확인 → sync 순서를 안내하는 얇은 절차 |
-| MCP | 제안 | 원격 Atlas의 device·세션·분석 상태가 필요할 때만. 현재 MCP 서버나 tool은 없음 |
+| MCP | 제안 | 원격 Portal의 device·세션·분석 상태가 필요할 때만. 현재 MCP 서버나 tool은 없음 |
 
 에이전트가 범위를 좁혀도 이미 만들어진 pending Outbox나 접수된 원격 세션은 자동 철회되지 않는다. 이 차이와 쓰기 권한은 [Collector 안전 절차](collector.md#에이전트가-collector를-다루는-방법)를 따른다.
 
 ## 설계 결정: 사람과 에이전트가 같은 제품을 사용한다
 
-Atlas는 대시보드 사용자를 위한 별도 제품과 에이전트용 자동화 제품을 만들지 않는다. 사람은 웹에서, 에이전트는 문서와 로컬 CLI 또는 향후 MCP를 통해 **같은 Workspace·소유권·보관·평가 규칙**을 사용한다. 이 결정은 UI를 자동화하기 위한 것이 아니라, 세션 근거와 분석 결과의 의미가 호출 주체에 따라 달라지지 않게 하기 위한 것이다.
+Agent Observatory는 대시보드 사용자를 위한 별도 제품과 에이전트용 자동화 제품을 만들지 않는다. 사람은 웹에서, 에이전트는 문서와 로컬 CLI 또는 향후 MCP를 통해 **같은 Workspace·소유권·보관·평가 규칙**을 사용한다. 이 결정은 UI를 자동화하기 위한 것이 아니라, 세션 근거와 분석 결과의 의미가 호출 주체에 따라 달라지지 않게 하기 위한 것이다.
 
 | 계층 | 책임 | 재구현하지 않는 것 |
 | --- | --- | --- |
@@ -75,7 +94,7 @@ Atlas는 대시보드 사용자를 위한 별도 제품과 에이전트용 자�
 | 로컬 CLI | PC의 세션 파일 발견, Outbox, Keychain token, `pause`·범위 설정·`sync` | 원격 세션 삭제·분석 권한을 로컬에서 추정하지 않음 |
 | 문서 | 기능 발견, 명령 계약, 데이터·권한 경계, 안전한 절차 | 실행이나 권한 부여를 하지 않음 |
 | 얇은 Skill | canonical 문서를 찾아 읽고 inspect → plan → execute → verify 순서를 안내 | 별도 상태·정책·비밀값을 보관하지 않음 |
-| 원격 MCP adapter | 인증된 Atlas API를 tool 형식으로 노출해 세션·분석 상태를 읽고 원격 분석·삭제를 요청 | PC 파일, Keychain, 로컬 Collector 제어를 원격에서 직접 수행하지 않음 |
+| 원격 MCP adapter | 인증된 Portal API를 tool 형식으로 노출해 세션·분석 상태를 읽고 원격 분석·삭제를 요청 | PC 파일, Keychain, 로컬 Collector 제어를 원격에서 직접 수행하지 않음 |
 | plugin | Skill·MCP·문서 같은 배포 단위를 설치·발견하게 묶음 | 새 비즈니스 기능이나 새로운 권한 모델을 만들지 않음 |
 
 에이전트 자동화의 목표 흐름은 다음과 같다. **inspect**는 상태·인벤토리·세션을 읽고, **plan**은 대상·범위·크기·기존 pending을 요약한다. **execute**는 확인된 쓰기만 수행하며, **verify**는 idempotency key, 서버 접수증, 분석 상태와 근거 ID로 결과를 확인한다. 자동화가 새 해석이나 더 넓은 범위를 만들지 않도록, 각 단계의 입력과 결과를 같은 API 계약에 남기는 것을 목표로 한다. 현재는 inventory/status와 수집 ACK를 제공하며, 별도의 plan 기록과 원격 MCP는 후속이다.
@@ -101,10 +120,10 @@ Atlas는 대시보드 사용자를 위한 별도 제품과 에이전트용 자�
 | 단계                                                | 핵심 책임                                                    | 현재 상태                                                                                        |
 | --------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | [Collector 정제](collector.md#근거를-보존하는-수집) | 원본 형식 해석·기계적 정규화·중복 구분·근거 연결·압축 전송   | Zstd 전송·이미지 metadata 분리 배포. 최근 4개 세션의 선택 업로드와 cursor 완료 확인              |
-| [서버 증류](atlas.md#서버-증류와-분석-품질)         | 수신 검증·마스킹·결정적 근거 구성·세션 전체 평가             | 마스킹·지표·공통 규칙·근거 선택·구조화된 개선안 구현. 계층적 구간 증류와 전체 맥락 연결은 미구현 |
+| [서버 증류](sessions/README.md#서버-증류와-분석-품질) | 수신 검증·마스킹·결정적 근거 구성·세션 전체 평가             | 마스킹·지표·공통 규칙·근거 선택·구조화된 개선안 구현. 계층적 구간 증류와 전체 맥락 연결은 미구현 |
 | 품질 검증                                           | 프롬프트·스킬 사용·실패 후 수정·결과의 연결과 근거 누락 평가 | 합성 데이터로 형식·기본 근거 검증. 정제 전후 분석 품질 비교는 미검증                             |
 
-**다음 개발은 수집 계약과 Collector 정제 → 서버 구간별 증류 → 정제 전후 품질 검증 순으로 우선한다.** 모델 후보 확대나 화면 확장보다 앞선 과제다. 상세 구현·검증 기준은 위 문서에서 관리한다.
+아래 수집·증류 기준은 기존 Sessions의 설계 기록이다. Wiki의 요구를 먼저 정한 뒤 필요한 부분을 채택하거나 다시 설계한다.
 
 전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과이다.
 
@@ -130,13 +149,13 @@ Codex·Claude Code 어댑터를 제공한다. Hermes는 후속 대상이다. 통
 | ---- | -------------- | ------------------------------------------------------------------------------------ |
 | 1    | Collector      | 컴퓨터당 스케줄러 하나가 30분마다 Codex 신규·변경 기록을 확인하고 프로젝트 정책 적용 |
 | 2    | Collector      | 전송 본문을 Outbox에 확정하고 로컬 읽기 위치 저장                                    |
-| 3    | Atlas 접수 API | 인증·검증·마스킹 설정 적용 후 Supabase Storage 저장과 Supabase DB 접수 확정          |
+| 3    | Portal 접수 API | 인증·검증·마스킹 설정 적용 후 Supabase Storage 저장과 Supabase DB 접수 확정          |
 | 4    | Collector      | 서버 ACK 확인 후 접수증 저장·대기 파일 정리                                          |
-| 5    | Atlas          | GitHub Actions의 일일 호출 또는 수동 요청으로 확정된 데이터 범위를 분석              |
+| 5    | Portal         | GitHub Actions의 일일 호출 또는 수동 요청으로 확정된 데이터 범위를 분석              |
 | 6    | 대시보드       | 지표·근거·AI 설명·실제 모델 정보를 표시                                              |
 
 브라우저는 Collector가 설치된 PC와 다른 기기에서도 접속할 수 있다. 웹 서비스는 Vercel에 배포하고 브라우저는 접속자의 기기에서 실행한다.
-브라우저 수동 업로드는 Collector 설치 없이 Atlas의 수신·마스킹 경로를 사용한다. [전송·복구 상세](collector.md#30분-전송과-장애-복구) · [분석 상세](atlas.md#원격-분석-자동과-수동)
+브라우저 수동 업로드는 Collector 설치 없이 Portal의 수신·마스킹 경로를 사용한다. [전송·복구 상세](collector.md#30분-전송과-장애-복구) · [분석 상세](sessions/README.md#원격-분석-자동과-수동)
 
 ## 애플리케이션과 저장소 구성
 
@@ -158,7 +177,7 @@ Storage는 **리소스 설정 + 사용 코드**, Actions 예약 작업은 **일�
 Vercel이 실행 기반을 제공하며, 이 서비스의 분석 로직까지 만들어주지는 않는다.
 
 ```text
-agent-session-atlas/             # 이 저장소의 구현 구조 제안
+agent-observatory/                # 이 저장소의 구현 구조 제안
 ├── apps/
 │   ├── web/                    # 유일한 Vercel 프로젝트, Root Directory
 │   │   ├── app/api/            # ingest, analyses, jobs, device 연결
@@ -199,7 +218,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 | 에이전트 조작 | 문서로 계약을 읽고 로컬 Collector를 안전하게 제어 | `/docs/collector.md`·`/llms.txt` + CLI. 향후 얇은 Skill, 원격 상태가 필요할 때만 MCP                                                       |
 | Source Adapter | 에이전트별 기록을 공통 이벤트로 변환           | Codex·Claude Code 구현, Hermes 후속                                                                                                       |
 | API            | 인증·JSON 수신·마스킹·멱등 접수·조회·수동 분석 | Next.js Route Handlers → Vercel Functions                                                                                                 |
-| 분석           | 지표·규칙 분석, AI 요청·결과 검증              | Vercel Workflow가 Functions의 짧은 단계를 실행. [개선 후보 규칙](atlas.md#개선-후보-규칙의-확장)은 개별 모듈·등록 목록·설정으로 추가·제거 |
+| 분석           | 지표·규칙 분석, AI 요청·결과 검증              | Vercel Workflow가 Functions의 짧은 단계를 실행. [개선 후보 규칙](sessions/README.md#개선-후보-규칙의-확장)은 개별 모듈·등록 목록·설정으로 추가·제거 |
 | Web            | 목록에서 세션 선택, 타임라인·개선안 조회       | Next.js + React. API와 같은 주소·프로젝트                                                                                                 |
 
 공통 이벤트는 세션·턴·모델 요청·도구 실행·사용량이다.  
@@ -223,7 +242,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 
 ## 구현 순서
 
-초기 구축 순서는 아래와 같다. 구축 이후의 최우선 과제는 [근거를 보존하는 수집과 증류](#제품의-핵심-근거를-보존하는-수집과-증류)다.
+아래는 기존 Sessions의 초기 구축 순서다. 다음 개발 순서는 Wiki 설계에서 새로 정한다.
 
 | 단계          | 결과물                                                                                                                           |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------- |

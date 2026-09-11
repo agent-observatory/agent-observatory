@@ -1,13 +1,15 @@
-# AgentSession Atlas
+# Agent Observatory
 
-Understand your coding agent sessions.
+The portal for understanding your coding agent sessions.
 
-![How Atlas works: collect sessions on your device, analyze them remotely with Atlas, and apply findings with your coding agent.](docs/assets/overview-cycle.svg)
+Agent Observatory keeps the evidence needed to evaluate prompts, skills, and agent workflows. The portal brings sessions, account settings, and future knowledge work into one place.
 
-Our focus is evidence-preserving collection and distillation: keep the context needed to evaluate prompts, skills, and agent workflows.
+## Sessions
 
-Collect Codex and Claude Code records, explore usage, and turn analysis into concrete actions with supporting evidence. Sign in with GitHub to keep your history and configure your own AI provider.
+![How Sessions works: collect sessions on your device, analyze them remotely, and apply findings with your coding agent.](docs/assets/overview-cycle.svg)
 
-[Open Atlas](https://agent-session-atlas.vercel.app) · [Collector on npm](https://www.npmjs.com/package/@agent-observatory/collector) · [User guide](https://agent-session-atlas.vercel.app/docs) · [Architecture (Korean)](docs/README.md)
+Sessions keeps the existing collection, review, and analysis workflow. Settings holds account-wide language, theme, timezone, and connected-device preferences. Session settings holds masking and AI provider/model choices. Wiki is an intentionally empty `/wiki` scaffold for a later knowledge-work design.
+
+[Open Agent Observatory](https://agent-session-atlas.vercel.app) · [Collector on npm](https://www.npmjs.com/package/@agent-observatory/collector) · [User guide](https://agent-session-atlas.vercel.app/docs) · [Architecture (Korean)](docs/README.md) · [Source](https://github.com/agent-observatory/agent-observatory)
 
 Korean and English. Dark and light themes. Hermes support is planned.

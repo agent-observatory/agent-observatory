@@ -1,63 +1,43 @@
 {
-  "checkedAt": "2026-09-11T14:00:40.975Z",
+  "checkedAt": "2026-09-11T20:20:45.180Z",
   "package": "@agent-observatory/collector",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "status": 200,
   "dist": {
-    "shasum": "ba49bfaa1fe068077f02eedb89f247628c5c303d",
-    "tarball": "https://registry.npmjs.org/@agent-observatory/collector/-/collector-0.4.2.tgz",
+    "shasum": "a92d0c1fb722d01c0c3620613696af8a6eb8e658",
+    "tarball": "https://registry.npmjs.org/@agent-observatory/collector/-/collector-0.4.3.tgz",
     "fileCount": 5,
-    "integrity": "sha512-NZXHEhb/PQnPOCW2zQKHVodbp75MPJjKn5iHtIvMJgQfocsG+vDZlDOIGkHDG4Vwr+/LfWm9ycA6JS/JbmgFLA==",
+    "integrity": "sha512-1NQcjS6I4/h+77MORj7R0WTaGmbFW0fCtfgptJ40eYUyNjd8YocEiEDewYu3rl0hWphHDOOMKy7Z3VaLJ/26/Q==",
     "signatures": [
       {
-        "sig": "MEUCIAU/Gk0jTsyCrEm+tTsOHUrkg1s1Cv9no+zr5FO9Sb3wAiEAq7vTEx3iGTvPhu1qwIuGrEpTcYecdLoDpmVfrk6+ccA=",
+        "sig": "MEYCIQCZ9F/5BdZXkXE0O5AyHvZZTglp4T+ktGZ2xBJMgbixLQIhAPSB4khY+GQ1vTopaLJyMp+gBqFMeBVsTsIfs95xbjGj",
         "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
       }
     ],
     "attestations": {
-      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@agent-observatory%2fcollector@0.4.2",
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@agent-observatory%2fcollector@0.4.3",
       "provenance": {
         "predicateType": "https://slsa.dev/provenance/v1"
       }
     },
-    "unpackedSize": 830730
+    "unpackedSize": 830722
   },
-  "releaseRun": 34607507564,
-  "source": "cade8f2b522a7f05a79a8a1528d955e9eced2e0f",
+  "releaseRun": 34643650693,
+  "source": "09c4718185b514c11ec2896e2af470ede361243e",
   "trustedPublisher": {
     "provider": "github",
-    "repository": "agent-observatory/agent-session-atlas",
+    "repository": "agent-observatory/agent-observatory",
     "workflow": "collector-release.yml"
   },
   "installVerification": {
     "source": "npm registry by package name and version",
     "prefix": "temporary isolated prefix",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "doctorExitCode": 0,
     "syntheticConfig": true,
     "connected": false,
     "paused": true,
     "batches": 0,
     "existingLocalCollectorChanged": false
-  },
-  "guideChecks": [
-    {
-      "path": "/docs",
-      "status": 200,
-      "npmCommand": true,
-      "oldTarballCommand": false
-    },
-    {
-      "path": "/docs/collector.md",
-      "status": 200,
-      "npmCommand": true,
-      "oldTarballCommand": false
-    },
-    {
-      "path": "/docs/collector.md?lang=en",
-      "status": 200,
-      "npmCommand": true,
-      "oldTarballCommand": false
-    }
-  ]
+  }
 }

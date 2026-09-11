@@ -1,8 +1,8 @@
 export function GET() {
   return new Response(
-    `# AgentSession Atlas
+    `# Agent Observatory
 
-Coding-agent session collection and analysis.
+A personal portal for coding-agent work. Sessions provides collection and analysis. Wiki currently offers an empty starting page; knowledge ingestion and search are not implemented.
 
 ## Documentation
 - [Collector guide (Korean)](https://agent-session-atlas.vercel.app/docs/collector.md): installation, project/time/source filters, sync, residency, retention, agent workflow.

@@ -15,6 +15,9 @@ export default async function Home({
     if (typeof value === "string" && value) preserved.set(name, value);
   }
 
+  const opensSessionSurface =
+    preserved.has("session") || preserved.has("connect");
   const query = preserved.toString();
-  redirect(`/sessions${query ? `?${query}` : ""}`);
+  // Device pairing and direct-session links still need the session surface.
+  redirect(opensSessionSurface ? `/sessions?${query}` : "/wiki");
 }

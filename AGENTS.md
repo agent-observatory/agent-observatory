@@ -1,4 +1,4 @@
-# AgentSession Atlas 작업 원칙
+# Agent Observatory 작업 원칙
 
 - 제품 결정과 현재 상태는 README와 `docs/README.md`에서 확인한다. 상세 설계는 문서 안내의 링크를 따른다. 설계 내용을 구현 완료로 표현하지 않는다.
 - README는 글로벌 독자를 위해 영어로 쓴다. `docs/`는 한글로 작성해도 된다. 문장은 짧게 쓰고 반복 정보는 표로 정리한다.
@@ -7,15 +7,16 @@
 - 새 의존성과 서비스는 필요성이 확인될 때 추가한다.
 - 현재는 초기 개발 단계다. 구버전 호환 계층 없이 공통 계약·서버·Collector를 한 번에 전환한다. 계약 버전은 추적용으로 관리한다.
 - 실제 세션·인증정보·환경변수 값은 저장소에 넣지 않는다. 검증에는 합성 데이터를 사용한다.
-- 최우선 과제는 근거를 보존하는 Collector 정제와 서버 증류다. 압축률만으로 분석 품질을 판단하지 않는다.
+- 다음 설계의 중심은 Wiki다. 기존 Sessions는 참고 구현으로 보관하며, 기존 Collector·계약·저장 구조나 하위 호환성을 새 설계의 제약으로 삼지 않는다. 필요하면 전면 재작성한다.
+- 수집·증류는 근거 보존을 기준으로 설계한다. 압축률만으로 분석 품질을 판단하지 않는다.
 - 새 에이전트는 `docs/README.md`의 이어서 작업하기부터 읽는다. Claude Code는 `CLAUDE.md`에서 이 파일을 가져오며 공통 지침을 복제하지 않는다.
-- 키 위치·변경 절차는 `docs/atlas.md`의 키 관리와 로컬 환경을 따른다. `.env*`·CLI 인증 파일을 통째로 출력하지 않고 `node scripts/check-environment.mjs`로 이름·존재·일치 여부만 확인한다. 기존 암호화 키를 임의 재생성하지 않는다.
+- 키 위치·변경 절차는 `docs/operations.md`의 키 관리와 로컬 환경을 따른다. `.env*`·CLI 인증 파일을 통째로 출력하지 않고 `node scripts/check-environment.mjs`로 이름·존재·일치 여부만 확인한다. 기존 암호화 키를 임의 재생성하지 않는다.
 
 ## 문서와 그림
 
 - 제품 UI를 수정할 때 [docs/DESIGN.md](docs/DESIGN.md)를 먼저 읽는다. 색상·타이포·간격은 공통 토큰으로 관리하고, 새 패턴이나 사용자 결정이 생기면 같은 문서를 갱신한다. 다크·라이트·모바일과 실제 내용이 채워진 화면을 검증한다.
 
-- 전체 아키텍처는 `docs/README.md` 최상단에, 대시보드 예시는 `docs/atlas.md`에 둔다. Collector는 `docs/collector.md`로 분리하고 배포·운영은 Atlas 문서에 포함한다.
+- 포털 구조는 `docs/README.md` 최상단에, Sessions 설계는 `docs/sessions/README.md`에 둔다. Wiki의 현재 빈 범위는 `docs/wiki/README.md`에 둔다. Collector는 `docs/collector.md`로 분리하고 배포·운영은 `docs/operations.md`에 둔다.
 - 상시 갱신하는 설계 문서와 그림 파일명에는 날짜를 넣지 않는다. 외부 정보의 확인 날짜는 본문에 기록한다.
 - 서술을 반복하기보다 표와 그림으로 구조·책임·흐름을 보여준다.
 - SVG는 `docs/assets/<문서명>-<주제>.svg`에 두며 편집 가능한 text·tspan을 사용한다.

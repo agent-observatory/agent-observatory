@@ -113,7 +113,7 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 상세 용량·배치 수는 DB 파일 집계, 나머지 메트릭은 현재 revision의 완료 결과에서 읽는다. 상세 조회 때 원본 Storage를 다시 다운로드하지 않는다. 미집계는 `—`다.
 - 분석의 순서 대기·재시도 대기·실제 요청 중을 구분하고 요청 이력에 시각·모델·오류를 표시했다.
 - 15:39 KST에는 개인 표본 3/4 분석 완료·1개 대기였고, 완료된 3개 결과 JSON은 합계 733,639 B였다. 539개 이벤트 세션은 7회 시도 후 Nex Mini로 완료되어 백오프 복구를 확인했다. 나머지 결과 확인은 기존 Workflow와 후속 검증이 이어간다.
-- [평가 기준](evaluation.md)에 모델 적합성과 스킬 버전 효과, 관측·추론 구분, 규칙 검토·폐기 기준과 필요한 수집 보강을 기록했다. 이 고급 평가 기준의 구현은 아직 아니다.
+- [평가 기준](sessions/evaluation.md)에 모델 적합성과 스킬 버전 효과, 관측·추론 구분, 규칙 검토·폐기 기준과 필요한 수집 보강을 기록했다. 이 고급 평가 기준의 구현은 아직 아니다.
 - Collector는 Codex 예약 기능에 의존하지 않는 macOS LaunchAgent임을 문서에 명시했다. 현재 Codex JSONL만 지원하며 Claude Code 어댑터와 웹 기기 상태 조회는 미구현이다.
 
 ## 2026-09-11 — 행동 중심 분석과 접수·인증 개선
@@ -166,7 +166,7 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 
 ## 2026-09-11 · 현재 Collector 조회와 Docs 정리
 
-- 평가 원칙과 코드에서 생성한 규칙을 `evaluation.md`로 통합했다. 생성기는 주석 경계 안의 카탈로그만 갱신하며, 기존 설명 보존과 drift 검사를 확인했다.
+- 평가 원칙과 코드에서 생성한 규칙을 `sessions/evaluation.md`로 통합했다. 생성기는 주석 경계 안의 카탈로그만 갱신하며, 기존 설명 보존과 drift 검사를 확인했다.
 - 연결된 기기에서 조회 요청을 보내면 Collector가 그때 로컬 설정·대상 프로젝트와 Outbox 집계를 읽는다. 자동 전송과 독립된 상주 프로세스가 10초마다 조회 요청을 확인한다. 무응답에는 `atlas-collector start`를 안내한다.
 - `start`/`stop`은 두 LaunchAgent를 제어하고 pause 설정을 유지한다. 기존 기기 토큰·설정·Outbox는 보존한다. 조회 응답은 허용한 필드만 포함하며, 요청 60초·응답 열람 5분 만료와 소유권/기기 인증을 적용했다.
 - 설치 안내를 전역 CLI 설치와 `atlas-collector ...`로 통일했다. Collector 0.4.0 tarball은 132,863 bytes다. npm registry 게시는 하지 않았다.
@@ -209,3 +209,13 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 데스크톱·모바일 SVG 렌더링과 생성기 사본 일치, XML을 검사했다.
 
 - 운영 배포 `dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp` Ready·icn1 확인. `/docs`의 데스크톱·모바일 및 다크·라이트에서 이미지 로드·가로 넘침 없음·브라우저 예외 없음을 확인했다. 기록: `ops/overview-ui-verification.json`.
+
+## 2026-09-12 · Agent Observatory 포털 전환
+
+- GitHub 저장소를 `agent-observatory/agent-observatory`, 기존 Vercel 프로젝트를 `agent-observatory`로 바꿨다. 프로젝트 ID·DB·Storage·환경변수는 유지했다. 운영 주소는 `https://agent-session-atlas.vercel.app`을 유지해 OAuth callback과 설치된 Collector 연결을 보존했다. 현재 작업 디렉터리 이름도 유지했다.
+- 웹 0.5.0의 상단에서 Wiki와 Sessions를 구분한다. 기본 주소는 `/wiki`, 세션 메뉴는 Sessions 영역의 사이드바에 둔다. Wiki는 빈 화면만 제공하며 지식 수집·생성·검색은 후속 설계다. `?session=`·`?connect=` 진입은 세션 화면으로 보낸다.
+- 언어·테마·시간대·연결 기기는 `/settings`, 마스킹·AI Provider·모델은 `/sessions/settings`에 둔다. 공통 설정 저장에서도 세션 설정을 보존하고, 공통 AccountProvider로 화면 전환 중 인증 상태를 유지한다.
+- 문서를 `docs/sessions/`와 `docs/wiki/`로 구분했다. 전체 구조·디자인·Collector·운영 및 키 관리는 공통 문서에 남기고 상대 링크와 평가 문서 생성 경로를 함께 옮겼다.
+- npm Trusted Publisher를 새 저장소로 연결하고 이전 저장소의 권한을 제거했다. Collector 0.4.3의 [Release 자동 게시](https://github.com/agent-observatory/agent-observatory/actions/runs/34643650693), npm 버전·provenance 및 별도 임시 경로의 설치·doctor 실행을 확인했다. 기존 로컬 Collector 설치본과 pause 상태는 유지했다.
+- 초기 UI 구현, UI 재검토·브라우저 검증, 문서 이전은 에이전트에 나눠 맡겼다. 통합 검토에서 헤더/사이드바 구분과 공통 설정 저장 누락을 수정했다.
+- 최종 방향: 기존 Sessions와 Collector는 참고 구현으로 남긴다. 다음 Wiki 설계에 맞춰 수집 모델·계약·구현을 다시 정하며 하위 호환성은 제약으로 두지 않는다.

@@ -1,6 +1,6 @@
-# Atlas 디자인 규칙
+# Agent Observatory 디자인 규칙
 
-Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 개선 작업의 문제·조치·검증을 빠르게 비교할 수 있어야 한다. 근거는 판단할 때만 여는 상세 정보다. 마케팅 문구나 장식보다 정보의 출처와 상태를 우선한다.
+Agent Observatory는 에이전트 작업을 살피는 포털이다. Sessions는 다음 개선 작업의 문제·조치·검증을 빠르게 비교할 수 있어야 한다. 근거는 판단할 때만 여는 상세 정보다. 마케팅 문구나 장식보다 정보의 출처와 상태를 우선한다.
 
 [다크 세션 검토](assets/atlas-dashboard-review.png) · [라이트 세션 검토](assets/atlas-dashboard-review-light.png) · [모바일 세션 검토](assets/atlas-dashboard-review-mobile.png) · [다크 설정 예시](assets/atlas-settings-dark.png) · [라이트 설정 예시](assets/atlas-settings-light.png) — 합성 데이터로 검증한 화면.
 
@@ -43,28 +43,29 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 
 ## 화면 경로와 공통 구현
 
-| 경로        | 화면                     |
-| ----------- | ------------------------ |
-| `/sessions` | 세션 검토·근거           |
-| `/analyses` | 분석 작업·진행 상태      |
-| `/settings` | 개인 설정·모델·연결된 기기 |
+| 경로 | 화면 |
+| --- | --- |
+| `/wiki` | 빈 Wiki scaffold |
+| `/sessions` | 세션 검토·근거·분석 작업 |
+| `/sessions/settings` | 세션 마스킹·AI Provider·모델 |
+| `/settings` | 계정 언어·테마·시간대·연결된 기기 |
 | `/docs` | Collector 설치·연결·동기화 사용 가이드 |
 
 세션 목록의 페이지·개수·검색어는 URL 쿼리에 유지한다. 전체 지표를 현재 페이지 집계처럼 표시하지 않는다. 목록은 계정 타임존과 초 단위로 `접수 시작`과 `접수 완료`를 분리한다. Collector가 caught-up을 선언하지 않은 세션의 완료 시각은 `—`로 표시하며, 마지막 배치 수신 시각을 완료로 부르지 않는다. 대기·재시도·실제 요청 중을 구별한다.
 
 새로고침·뒤로 가기·직접 접근은 같은 화면을 유지한다. 루트 URL은 `/sessions`로 이동하며 기존 세션·Collector 연결 링크의 쿼리를 보존한다. 페이지 이동은 Next.js Link를 사용하고 활성 메뉴에 `aria-current`를 표시한다.
 
-공통 화면은 `apps/web/components/atlas.tsx`, 선택 메뉴는 `components/select.tsx`, 디자인 토큰은 `app/globals.css`에서 관리한다. 제품 이름과 `Agent Observatory`는 왼쪽 위에 두고 브랜드 설명은 한 줄로 표시한다. 리전·버전은 바로 아래 제품 정보에 묶는다. 로그인·계정은 구분선 아래 별도 영역에 둔다. 모바일에서도 같은 정보 위계를 유지한다. 포커스를 되찾으면 인증을 새로 확인하고, 계정이 바뀌면 이전 계정의 화면 데이터와 입력한 API key를 제거한다.
+공통 화면은 `apps/web/components/atlas.tsx`, 선택 메뉴는 `components/select.tsx`, 디자인 토큰은 `app/globals.css`에서 관리한다. 왼쪽 위에는 `Agent Observatory`와 한 줄 브랜드 설명을 둔다. 헤더 탐색은 Wiki를 먼저 두고 Sessions, Settings를 잇는다. Wiki의 왼쪽 탐색은 Home만, Sessions의 왼쪽 탐색은 Sessions·Analyses·Sessions settings만 표시한다. Settings, Docs, 계정은 전역 헤더 영역에 둔다. Wiki는 빈 상태에서 향후 지식 작업의 범위나 기능을 추정하지 않는다. 모바일에서도 같은 정보 위계를 유지한다. 포커스를 되찾으면 인증을 새로 확인하고, 계정이 바뀌면 이전 계정의 화면 데이터와 입력한 API key를 제거한다.
 
 ## 컴포넌트
 
-- 메뉴는 문자 기호 대신 동일한 24px 격자·1.75px 선의 SVG 아이콘을 사용한다. 세션은 대화, 분석 기록은 보고서, 설정은 톱니바퀴로 표현한다. 원본은 `components/navigation-icon.tsx`에서 관리한다.
+- 메뉴는 문자 기호 대신 동일한 24px 격자·1.75px 선의 SVG 아이콘을 사용한다. Sessions는 대화, Wiki는 문서, Settings는 톱니바퀴로 표현한다. 원본은 `components/navigation-icon.tsx`에서 관리한다.
 - 분석 결과의 Free tier/BYOK·Provider·모델·비용은 결과 상단에 한 번만 표시한다. 하단에 반복하지 않는다.
 
 - 주 버튼은 두 테마 모두 `#2563EB` 배경과 흰 글자를 사용한다. 한 구역에 하나만 둔다.
 - 보조 버튼은 투명 배경과 명확한 경계선을 사용한다.
 - 가입·로그인 같은 핵심 안내는 강조색을 섞은 전용 배경, 선명한 테두리와 4px 왼쪽 선으로 일반 패널과 구분한다. 주 행동은 채움 버튼으로 표시한다.
-- Collector 명령과 설명은 `/docs`에 두고 설정에는 연결된 기기·활동 상태와 가이드 링크만 둔다. 명령마다 복사 버튼을 제공한다. 저장 위치·보관 기간·외부 AI 처리 범위는 가이드의 Data residency & retention 섹션에서 설명한다.
+- Collector 명령과 설명은 `/docs`에 둔다. `/settings`에는 연결된 기기·활동 상태와 가이드 링크를, `/sessions/settings`에는 마스킹과 Provider·모델을 둔다. 명령마다 복사 버튼을 제공한다. 저장 위치·보관 기간·외부 AI 처리 범위는 가이드의 Data residency & retention 섹션에서 설명한다.
 - `/docs`는 720px 안팎의 읽기 폭과 명확한 제목 위계를 사용한다. 데스크톱 목차는 본문 오른쪽에 고정하고 좁은 화면에서는 본문 위의 링크 목록으로 바꾼다. 절은 카드로 감싸지 않고 구분선과 여백으로 나누며, 명령과 주의 사항만 별도 표면으로 강조한다.
 - 페이지네이션은 빈 목록·검색 결과 안내 뒤, 목록 패널의 마지막 영역에 둔다. 표의 가로 스크롤과 분리하고 오른쪽 정렬과 하단 여백을 유지한다.
 - 세션 테이블은 행 전체를 읽을 수 있게 유지한다. 선택 행은 teal, 실행 상태는 상태별 색으로 구분한다.
@@ -109,7 +110,7 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 
 ## 참고
 
-아래 자료는 구성 요소와 토큰 체계를 비교하기 위한 참고다. Atlas는 해당 서비스와 관련이 없으며 레이아웃이나 브랜드 표현을 복제하지 않는다.
+아래 자료는 구성 요소와 토큰 체계를 비교하기 위한 참고다. Agent Observatory는 해당 서비스와 관련이 없으며 레이아웃이나 브랜드 표현을 복제하지 않는다.
 
 - [getdesign.md](https://getdesign.md/)
 - [IBM DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/ibm/DESIGN.md) — 평면적 정보 구조와 강한 주 행동
@@ -118,8 +119,8 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 
 ## 사용자 Overview
 
-README와 사용 가이드 첫머리에는 영어 Overview를 둔다. 코딩 세션 → Collector → Atlas 분석 → 개선안 확인·적용 → 다음 세션의 순환을 보여 준다. 인프라 상세 아키텍처와 별개이며 제공자·리전·내부 API는 넣지 않는다. 개선안 적용은 사용자와 코딩 에이전트의 행동으로 표현한다.
+README와 사용 가이드 첫머리에는 영어 Overview를 둔다. 코딩 세션 → Collector → Agent Observatory 분석 → 개선안 확인·적용 → 다음 세션의 순환을 보여 준다. 인프라 상세 아키텍처와 별개이며 제공자·리전·내부 API는 넣지 않는다. 개선안 적용은 사용자와 코딩 에이전트의 행동으로 표현한다.
 
 `docs/assets/overview-cycle.svg`가 데스크톱용, `overview-cycle-mobile.svg`가 모바일용이다. 내용은 같고 모바일에서는 순환 배치로 읽기 크기를 유지한다. `scripts/generate-overview.mjs`가 두 SVG와 웹 공개 사본을 함께 생성하고 CI에서 일치를 검사한다. SVG의 text·tspan은 편집 가능하며 아이콘 출처는 기존 라이선스를 유지한다.
 
-Overview는 **LOCAL · Your device**와 **REMOTE · Atlas service** 영역을 구분한다. 세션·Collector는 로컬, 분석·결과는 원격에 둔다. 결과 검토와 코딩 에이전트에 개선을 적용하는 행동은 로컬 세션으로 돌아오는 화살표에 둔다. 브라우저를 원격 실행 컴포넌트로 표현하지 않는다. 일반 기능 아이콘은 Iconify에 등록된 Tabler Icons의 공식 SVG를 사용하고 직접 그리지 않는다. 기술 로고는 기존 출처 우선순위를 유지한다.
+Overview는 **LOCAL · Your device**와 **REMOTE · Observatory** 영역을 구분한다. 세션·Collector는 로컬, 분석·결과는 원격에 둔다. 결과 검토와 코딩 에이전트에 개선을 적용하는 행동은 로컬 세션으로 돌아오는 화살표에 둔다. 브라우저를 원격 실행 컴포넌트로 표현하지 않는다. 일반 기능 아이콘은 Iconify에 등록된 Tabler Icons의 공식 SVG를 사용하고 직접 그리지 않는다. 기술 로고는 기존 출처 우선순위를 유지한다.

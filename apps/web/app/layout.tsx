@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AccountProvider, type AtlasAccount } from "../components/account-provider";
+import {
+  AccountProvider,
+  type AtlasAccount,
+} from "../components/account-provider";
 import { owner } from "../lib/security";
 import { db } from "../lib/db";
 import { normalizeSettings } from "../lib/ai-routing";
 export const metadata: Metadata = {
-  title: "AgentSession Atlas",
+  title: "Agent Observatory",
   description: "내 코딩 에이전트 세션을 기록하고 분석합니다.",
 };
 const themeScript = `try{var t=localStorage.getItem('atlas-theme')||'dark';document.documentElement.dataset.theme=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.lang=localStorage.getItem('atlas-language')||'ko'}catch(e){}`;
@@ -20,7 +23,9 @@ async function initialAccount(): Promise<AtlasAccount | null | undefined> {
           name: String(user.name),
           guest: Boolean(user.guest),
           has_key: Boolean(user.has_key),
-          settings: normalizeSettings(user.settings) as AtlasAccount["settings"],
+          settings: normalizeSettings(
+            user.settings,
+          ) as AtlasAccount["settings"],
         }
       : null;
   } catch {
@@ -29,7 +34,11 @@ async function initialAccount(): Promise<AtlasAccount | null | undefined> {
     return undefined;
   }
 }
-export default async function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const account = await initialAccount();
   return (
     <html lang="ko" data-theme="dark" suppressHydrationWarning>

@@ -1,8 +1,8 @@
-// Original Atlas navigation assets. Shared 24px grid and 1.75px stroke.
+// Shared 24px navigation grid. Wiki uses Tabler book-2 (MIT); see docs/assets/icons/SOURCES.md.
 export function NavigationIcon({
   name,
 }: {
-  name: "sessions" | "jobs" | "settings" | "docs";
+  name: "wiki" | "sessions" | "jobs" | "settings" | "session-settings" | "docs";
 }) {
   return (
     <svg
@@ -16,7 +16,14 @@ export function NavigationIcon({
       aria-hidden="true"
       focusable="false"
     >
-      {name === "sessions" ? (
+      {name === "wiki" ? (
+        // Tabler Icons book-2, MIT: https://github.com/tabler/tabler-icons/blob/v3.34.1/icons/outline/book-2.svg
+        <>
+          <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12z" />
+          <path d="M19 16h-12a2 2 0 0 0 -2 2" />
+          <path d="M9 8h6" />
+        </>
+      ) : name === "sessions" ? (
         <>
           <path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3v-3a2 2 0 0 1-2-2V7" />
           <path d="M7 9h10M7 13h6" />

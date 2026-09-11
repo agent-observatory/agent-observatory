@@ -6,7 +6,7 @@ import {
   type EvaluationCatalogRule,
 } from "../packages/contracts/src/evaluation-catalog.ts";
 
-const outputPath = resolve(import.meta.dirname, "../docs/evaluation.md");
+const outputPath = resolve(import.meta.dirname, "../docs/sessions/evaluation.md");
 const checkOnly = process.argv.includes("--check");
 const startMarker = "<!-- evaluation-rules:start -->";
 const endMarker = "<!-- evaluation-rules:end -->";
@@ -75,7 +75,7 @@ async function main() {
     current.indexOf(endMarker, end + endMarker.length) !== -1
   ) {
     throw new Error(
-      "docs/evaluation.md must contain exactly one ordered pair of evaluation-rules markers",
+      "docs/sessions/evaluation.md must contain exactly one ordered pair of evaluation-rules markers",
     );
   }
   const rendered =
@@ -85,7 +85,7 @@ async function main() {
   if (checkOnly) {
     if (current !== rendered) {
       throw new Error(
-        "docs/evaluation.md rule catalog is stale; run pnpm generate:evaluation-docs",
+        "docs/sessions/evaluation.md rule catalog is stale; run pnpm generate:evaluation-docs",
       );
     }
   } else {

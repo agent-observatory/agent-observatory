@@ -5,7 +5,7 @@
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
     "latestReadyDeployment": "dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp",
-    "projectName": "agent-session-atlas",
+    "projectName": "agent-observatory",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
@@ -96,17 +96,19 @@
     "compression": "zstd-3",
     "preferredCompressionCandidate": "zstd-3",
     "compressionReport": "ops/compression-local.json",
-    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.2",
+    "release": "https://github.com/agent-observatory/agent-observatory/releases/tag/collector-v0.4.3",
     "verificationReport": "ops/collector-install-verification.json",
     "inspectionReport": "ops/collector-live-inspection-verification.json",
     "controlPollSeconds": 10,
-    "publishedVersion": "0.4.2",
+    "publishedVersion": "0.4.3",
     "npmVerificationReport": "ops/npm-release-verification.json"
   },
   "ui": {
     "routes": [
+      "/wiki",
       "/sessions",
       "/analyses",
+      "/sessions/settings",
       "/settings",
       "/docs"
     ],

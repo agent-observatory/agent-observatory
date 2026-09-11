@@ -17,6 +17,7 @@ import {
   normalizedProvider,
   providerName,
 } from "../lib/ai-provenance";
+import webPackage from "../package.json";
 type Settings = {
   language: "ko" | "en";
   timezone: string;
@@ -114,6 +115,28 @@ const settingsFrom = (value?: Partial<Settings>): Settings => ({
     value?.provider || "free",
   ) as Settings["provider"],
 });
+const settingsWithLocalPreferences = (value?: Partial<Settings>): Settings => {
+  const serverSettings = settingsFrom(value);
+  if (typeof window === "undefined") return serverSettings;
+  const storedLanguage = localStorage.getItem("atlas-language");
+  const storedTimezone = localStorage.getItem("atlas-timezone");
+  const storedTheme = localStorage.getItem("atlas-theme");
+  return {
+    ...serverSettings,
+    language:
+      storedLanguage === "en" || storedLanguage === "ko"
+        ? storedLanguage
+        : serverSettings.language,
+    timezone: storedTimezone
+      ? timezoneFrom(storedTimezone)
+      : serverSettings.timezone,
+    theme: (["dark", "light", "system"] as const).includes(
+      storedTheme as Settings["theme"],
+    )
+      ? (storedTheme as Settings["theme"])
+      : serverSettings.theme,
+  };
+};
 async function api(url: string, body?: unknown, method?: string) {
   const r = await fetch(url, {
     method: method || (body ? "POST" : "GET"),
@@ -138,7 +161,13 @@ const digest = async (text: string) =>
   ]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-type AtlasView = "sessions" | "jobs" | "settings" | "docs";
+type AtlasView =
+  | "wiki"
+  | "sessions"
+  | "jobs"
+  | "settings"
+  | "session-settings"
+  | "docs";
 
 type Listing = { page: number; pageSize: number; q: string };
 const defaultListing: Listing = { page: 1, pageSize: 20, q: "" };
@@ -233,6 +262,20 @@ export function Atlas({
     else router.push(path, { scroll: false });
   };
   useEffect(() => {
+    if (
+      !localStorage.getItem("atlas-language") &&
+      !localStorage.getItem("atlas-theme") &&
+      !localStorage.getItem("atlas-timezone")
+    )
+      return;
+    const localSettings = settingsWithLocalPreferences(user?.settings);
+    apply(localSettings);
+    setSavedSettings(localSettings);
+    // Local display preferences remain usable while account lookup is pending
+    // or temporarily unavailable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
     setFilter(listing.q);
     setSelected([]);
   }, [listing.q, listing.page, listing.pageSize]);
@@ -288,19 +331,7 @@ export function Atlas({
         history.replaceState(null, "", url.pathname + url.search);
       }
 
-      const nextSettings: Settings = nextUser
-        ? settingsFrom(nextUser.settings)
-        : {
-            ...defaults,
-            timezone: timezoneFrom(localStorage.getItem("atlas-timezone")),
-            language:
-              localStorage.getItem("atlas-language") === "en" ? "en" : "ko",
-            theme: (["dark", "light", "system"] as const).includes(
-              localStorage.getItem("atlas-theme") as Settings["theme"],
-            )
-              ? (localStorage.getItem("atlas-theme") as Settings["theme"])
-              : "dark",
-          };
+      const nextSettings = settingsWithLocalPreferences(nextUser?.settings);
       apply(nextSettings);
       setSavedSettings(nextSettings);
       userIdRef.current = nextUserId;
@@ -308,7 +339,7 @@ export function Atlas({
 
     setAccount(nextUser);
     setFreeCandidates(me.freeCandidates || []);
-    if (view === "docs") return nextUser;
+    if (view === "docs" || view === "wiki") return nextUser;
     if (nextUser) {
       const [data, deviceData] = await Promise.all([
         api("/api/sessions?" + listingQuery),
@@ -733,7 +764,9 @@ export function Atlas({
   };
   const toggleFinding = (id: string, checked: boolean) =>
     setSelectedFindings((current) =>
-      checked ? [...new Set([...current, id])] : current.filter((x) => x !== id),
+      checked
+        ? [...new Set([...current, id])]
+        : current.filter((x) => x !== id),
     );
   const findingTask = (finding: ReviewFinding, resultRow: any) => {
     const result = resultRow.result || resultRow;
@@ -770,7 +803,9 @@ export function Atlas({
       `Source: ${source}`,
       "",
       "## Problem",
-      finding.problem || finding.observation || "Not supplied by this saved result.",
+      finding.problem ||
+        finding.observation ||
+        "Not supplied by this saved result.",
       "",
       "## Bounded change",
       finding.action ||
@@ -793,7 +828,8 @@ export function Atlas({
       await navigator.clipboard.writeText(findingTask(finding, result));
       setCopiedTask(finding.id);
       window.setTimeout(
-        () => setCopiedTask((current) => (current === finding.id ? null : current)),
+        () =>
+          setCopiedTask((current) => (current === finding.id ? null : current)),
         1800,
       );
     } catch {
@@ -851,83 +887,52 @@ export function Atlas({
     if (deleteDialog && !dialog.open) dialog.showModal();
     if (!deleteDialog && dialog.open) dialog.close();
   }, [deleteDialog]);
+  const portal =
+    view === "wiki"
+      ? "wiki"
+      : view === "sessions" || view === "jobs" || view === "session-settings"
+        ? "sessions"
+        : null;
   return (
     <div className="app">
-      <aside>
-        <div className="product-identity">
-          <Link className="brand" href="/sessions">
-            <span>
-              Atlas<small>Agent Observatory</small>
-            </span>
+      <header className="portal-header">
+        <Link className="brand" href="/wiki">
+          Agent Observatory
+          <small>v{webPackage.version} · Seoul · icn1</small>
+        </Link>
+        <nav className="portal-tabs" aria-label={t("제품", "Products")}>
+          <Link
+            className={portal === "wiki" ? "active" : ""}
+            aria-current={portal === "wiki" ? "page" : undefined}
+            href="/wiki"
+          >
+            Wiki
           </Link>
-          <div className="product-meta">
-            <span>
-              <span className="dot" />
-              Seoul · icn1
-            </span>
-            <span>v0.4.0</span>
-          </div>
-        </div>
-        <div className="workspace">
-          <span className="avatar">
-            {user?.name?.[0]?.toUpperCase() || "A"}
-          </span>
-          <span>
-            {user?.guest
-              ? t("방문자 공간", "Guest workspace")
-              : user?.name || t("개인 워크스페이스", "Personal workspace")}
-          </span>
-        </div>
-        <div className="aside-account">
-          {!accountKnown ? (
-            <span className="account-loading" aria-live="polite">
-              {t("계정 확인 중", "Checking account")}
-            </span>
-          ) : user && !user.guest ? (
-            <button onClick={() => signOut()}>
-              {t("로그아웃", "Sign out")}
-            </button>
-          ) : (
-            <button
-              onClick={() => signIn("github", { redirectTo: location.href })}
-            >
-              {t("GitHub로 시작하기", "Continue with GitHub")} ↗
-            </button>
-          )}
-        </div>
-        <nav>
-          {[
-            ["sessions", "/sessions", t("세션", "Sessions")],
-            ["jobs", "/analyses", t("분석 기록", "Analyses")],
-            ["settings", "/settings", t("설정", "Settings")],
-            ["docs", "/docs", t("사용 가이드", "Docs")],
-          ].map(([id, href, label]) => (
-            <Link
-              className={`nav-link ${view === id ? "active" : ""}`}
-              key={id}
-              aria-current={view === id ? "page" : undefined}
-              href={href}
-            >
-              <NavigationIcon name={id as AtlasView} />
-              {label}
-            </Link>
-          ))}
+          <Link
+            className={portal === "sessions" ? "active" : ""}
+            aria-current={portal === "sessions" ? "page" : undefined}
+            href="/sessions"
+          >
+            Sessions
+          </Link>
         </nav>
-      </aside>
-      <main>
-        <header>
-          <span>
-            {t("개인 공간", "Personal workspace")} /{" "}
-            <strong>
-              {view === "docs"
-                ? t("사용 가이드", "Docs")
-                : view === "settings"
-                  ? t("설정", "Settings")
-                  : view === "jobs"
-                    ? t("분석 기록", "Analyses")
-                    : t("세션", "Sessions")}
-            </strong>
-          </span>
+        <nav className="header-actions" aria-label={t("공통", "Common")}>
+          <Link
+            className={view === "settings" ? "active" : ""}
+            aria-current={view === "settings" ? "page" : undefined}
+            href="/settings"
+          >
+            <NavigationIcon name="settings" />
+            <span>{t("설정", "Settings")}</span>
+          </Link>
+          <Link
+            className={view === "docs" ? "active" : ""}
+            aria-current={view === "docs" ? "page" : undefined}
+            href="/docs"
+          >
+            <NavigationIcon name="docs" />
+            <span>{t("가이드", "Docs")}</span>
+          </Link>
           <button
             className="icon-button"
             aria-label={t("테마 전환", "Toggle theme")}
@@ -940,34 +945,132 @@ export function Atlas({
           >
             {settings.theme === "dark" ? "☀" : "☾"}
           </button>
-        </header>
+          <span className="header-account">
+            <span className="avatar">
+              {user?.name?.[0]?.toUpperCase() || "A"}
+            </span>
+            <span className="header-account-name">
+              {!accountKnown
+                ? t("계정 확인 중", "Checking account")
+                : user?.guest
+                  ? t("방문자", "Guest")
+                  : user?.name || t("개인 공간", "Personal workspace")}
+            </span>
+          </span>
+          {accountKnown &&
+            (user && !user.guest ? (
+              <button onClick={() => signOut()}>
+                {t("로그아웃", "Sign out")}
+              </button>
+            ) : (
+              <button
+                onClick={() => signIn("github", { redirectTo: location.href })}
+              >
+                {t("GitHub로 시작", "Continue with GitHub")} ↗
+              </button>
+            ))}
+        </nav>
+      </header>
+      <aside>
+        <div className="workspace">
+          <span>
+            <span className="dot" />
+            {portal === "sessions"
+              ? "Sessions"
+              : portal === "wiki"
+                ? "Wiki"
+                : t("공통", "Common")}
+          </span>
+        </div>
+        <nav
+          className="context-nav"
+          aria-label={t("현재 공간", "Current space")}
+        >
+          {portal === "wiki" && (
+            <Link className="nav-link active" aria-current="page" href="/wiki">
+              <NavigationIcon name="wiki" />
+              {t("Wiki 홈", "Wiki home")}
+            </Link>
+          )}
+          {portal === "sessions" &&
+            [
+              ["sessions", "/sessions", t("세션", "Sessions")],
+              ["jobs", "/analyses", t("분석 기록", "Analyses")],
+              [
+                "session-settings",
+                "/sessions/settings",
+                t("세션 설정", "Session settings"),
+              ],
+            ].map(([id, href, label]) => (
+              <Link
+                className={`nav-link ${view === id ? "active" : ""}`}
+                key={id}
+                aria-current={view === id ? "page" : undefined}
+                href={href}
+              >
+                <NavigationIcon name={id as AtlasView} />
+                {label}
+              </Link>
+            ))}
+        </nav>
+      </aside>
+      <main>
+        <div className="context-header">
+          <span>
+            {t("개인 공간", "Personal workspace")} /{" "}
+            <strong>
+              {view === "wiki"
+                ? "Wiki"
+                : view === "docs"
+                  ? t("사용 가이드", "Docs")
+                  : view === "session-settings"
+                    ? t("세션 설정", "Session settings")
+                    : view === "settings"
+                      ? t("설정", "Settings")
+                      : view === "jobs"
+                        ? t("분석 기록", "Analyses")
+                        : t("세션", "Sessions")}
+            </strong>
+          </span>
+        </div>
         <div className="content">
           <div className="title-row">
             <div>
               <h1>
-                {view === "docs"
-                  ? t("사용 가이드", "Docs")
-                  : view === "settings"
-                    ? t("설정", "Settings")
-                    : view === "jobs"
-                      ? t("분석 기록", "Analysis history")
-                      : t("세션 검토", "Session review")}
+                {view === "wiki"
+                  ? "Wiki"
+                  : view === "docs"
+                    ? t("사용 가이드", "Docs")
+                    : view === "session-settings"
+                      ? t("세션 설정", "Session settings")
+                      : view === "settings"
+                        ? t("설정", "Settings")
+                        : view === "jobs"
+                          ? t("분석 기록", "Analysis history")
+                          : t("세션 검토", "Session review")}
               </h1>
               <p className="muted">
-                {view === "docs"
-                  ? t(
-                      "Collector 설치부터 세션 분석까지.",
-                      "From Collector setup to session analysis.",
-                    )
-                  : view === "settings"
+                {view === "wiki"
+                  ? t("개인 지식 공간", "Personal knowledge space")
+                  : view === "docs"
                     ? t(
-                        "언어부터 분석 모델까지 직접 선택하세요.",
-                        "Choose your language, appearance, and analysis model.",
+                        "Collector 설치부터 세션 분석까지.",
+                        "From Collector setup to session analysis.",
                       )
-                    : t(
-                        "세션을 선택해 발견 사항과 원문 근거를 함께 검토하세요.",
-                        "Select a session to review findings alongside source evidence.",
-                      )}
+                    : view === "session-settings"
+                      ? t(
+                          "수집한 세션과 분석 연결을 관리합니다.",
+                          "Manage collection and analysis connections.",
+                        )
+                      : view === "settings"
+                        ? t(
+                            "언어, 화면 테마와 타임존을 선택하세요.",
+                            "Choose your language, appearance, and time zone.",
+                          )
+                        : t(
+                            "세션을 선택해 발견 사항과 원문 근거를 함께 검토하세요.",
+                            "Select a session to review findings alongside source evidence.",
+                          )}
               </p>
             </div>
             {view === "sessions" && (
@@ -1024,6 +1127,23 @@ export function Atlas({
                   {t("GitHub 가입·로그인", "Sign up / sign in with GitHub")}
                 </button>
               )}
+            </section>
+          )}
+          {view === "wiki" && (
+            <section className="wiki-empty panel">
+              <span className="wiki-mark" aria-hidden="true">
+                <NavigationIcon name="wiki" />
+              </span>
+              <div>
+                <p className="eyebrow">AGENT OBSERVATORY WIKI</p>
+                <h2>{t("아직 작성된 문서가 없습니다", "No pages yet")}</h2>
+                <p className="muted">
+                  {t(
+                    "작업에서 확인한 지식을 모을 Wiki를 준비하고 있습니다.",
+                    "A Wiki for knowledge from your work is being prepared.",
+                  )}
+                </p>
+              </div>
             </section>
           )}
           {view === "sessions" && (
@@ -1423,58 +1543,58 @@ export function Atlas({
                         )}
                       </summary>
                       <dl className="session-metrics">
-                      {[
-                        [
-                          t("저장 용량", "Stored size"),
-                          formatBytes(detail.aggregate.storedBytes),
-                          t("압축 후 서버 파일", "Compressed server files"),
-                        ],
-                        [
-                          t("수집 이벤트", "Collected events"),
-                          detail.aggregate.collectedEvents,
-                          `${detail.aggregate.batches} ${t("배치", "batches")}`,
-                        ],
-                        [
-                          t("사용자 메시지", "User messages"),
-                          detail.aggregate.userMessages,
-                          t("사용자가 보낸 메시지", "Messages from the user"),
-                        ],
-                        [
-                          t("AI 메시지", "Assistant messages"),
-                          detail.aggregate.assistantMessages,
-                          t("수집된 응답", "Collected responses"),
-                        ],
-                        [
-                          t("도구 호출", "Tool calls"),
-                          detail.aggregate.toolCalls,
-                          t("관측된 실행", "Observed calls"),
-                        ],
-                        [
-                          t("이미지 참조", "Image references"),
-                          detail.aggregate.imageOccurrences,
-                          `${detail.aggregate.uniqueImages ?? "—"} ${t("고유 이미지 · 메타데이터만", "unique · metadata only")}`,
-                        ],
-                        [
-                          t("입력 토큰", "Input tokens"),
-                          detailMetrics?.inputTokens ?? "—",
-                          t("분석된 사용량", "Analyzed usage"),
-                        ],
-                        [
-                          t("출력 토큰", "Output tokens"),
-                          detailMetrics?.outputTokens ?? "—",
-                          `${t("캐시", "Cached")}: ${detailMetrics?.cachedTokens ?? "—"}`,
-                        ],
-                      ].map(([label, value, note]) => (
-                        <div key={label}>
-                          <dt>{label}</dt>
-                          <dd>
-                            {typeof value === "number"
-                              ? value.toLocaleString()
-                              : (value ?? "—")}
-                          </dd>
-                          <small>{note}</small>
-                        </div>
-                      ))}
+                        {[
+                          [
+                            t("저장 용량", "Stored size"),
+                            formatBytes(detail.aggregate.storedBytes),
+                            t("압축 후 서버 파일", "Compressed server files"),
+                          ],
+                          [
+                            t("수집 이벤트", "Collected events"),
+                            detail.aggregate.collectedEvents,
+                            `${detail.aggregate.batches} ${t("배치", "batches")}`,
+                          ],
+                          [
+                            t("사용자 메시지", "User messages"),
+                            detail.aggregate.userMessages,
+                            t("사용자가 보낸 메시지", "Messages from the user"),
+                          ],
+                          [
+                            t("AI 메시지", "Assistant messages"),
+                            detail.aggregate.assistantMessages,
+                            t("수집된 응답", "Collected responses"),
+                          ],
+                          [
+                            t("도구 호출", "Tool calls"),
+                            detail.aggregate.toolCalls,
+                            t("관측된 실행", "Observed calls"),
+                          ],
+                          [
+                            t("이미지 참조", "Image references"),
+                            detail.aggregate.imageOccurrences,
+                            `${detail.aggregate.uniqueImages ?? "—"} ${t("고유 이미지 · 메타데이터만", "unique · metadata only")}`,
+                          ],
+                          [
+                            t("입력 토큰", "Input tokens"),
+                            detailMetrics?.inputTokens ?? "—",
+                            t("분석된 사용량", "Analyzed usage"),
+                          ],
+                          [
+                            t("출력 토큰", "Output tokens"),
+                            detailMetrics?.outputTokens ?? "—",
+                            `${t("캐시", "Cached")}: ${detailMetrics?.cachedTokens ?? "—"}`,
+                          ],
+                        ].map(([label, value, note]) => (
+                          <div key={label}>
+                            <dt>{label}</dt>
+                            <dd>
+                              {typeof value === "number"
+                                ? value.toLocaleString()
+                                : (value ?? "—")}
+                            </dd>
+                            <small>{note}</small>
+                          </div>
+                        ))}
                       </dl>
                     </details>
                   )}
@@ -1490,8 +1610,9 @@ export function Atlas({
                   {detail.results.length ? (
                     detail.results.map((r: any) => {
                       const findings = reviewFindings(r.result);
-                      const selectedResultFindings = findings.filter((finding) =>
-                        selectedFindings.includes(`${r.id}:${finding.id}`),
+                      const selectedResultFindings = findings.filter(
+                        (finding) =>
+                          selectedFindings.includes(`${r.id}:${finding.id}`),
                       );
                       return (
                         <article key={r.id}>
@@ -1856,10 +1977,7 @@ export function Atlas({
                     className="danger"
                     disabled={busy}
                     onClick={(event) =>
-                      requestDeletion(
-                        [detail.session.id],
-                        event.currentTarget,
-                      )
+                      requestDeletion([detail.session.id], event.currentTarget)
                     }
                   >
                     {t("세션 삭제", "Delete session")}
@@ -1965,358 +2083,435 @@ export function Atlas({
               </section>
             </>
           )}
-          {view === "settings" && (
+          {(view === "settings" || view === "session-settings") && (
             <>
-              <section className="panel settings">
-                <h2>{t("일반", "General")}</h2>
-                <label>
-                  {t("언어", "Language")}
-                  <Select
-                    label={t("언어", "Language")}
-                    value={settings.language}
-                    options={[
-                      { value: "ko", label: "한국어" },
-                      { value: "en", label: "English" },
-                    ]}
-                    onChange={(value) =>
-                      apply({
-                        ...settings,
-                        language: value as Settings["language"],
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Appearance
-                  <Select
-                    label="Appearance"
-                    value={settings.theme}
-                    options={[
-                      { value: "dark", label: "Dark" },
-                      { value: "light", label: "Light" },
-                      { value: "system", label: "System" },
-                    ]}
-                    onChange={(value) =>
-                      apply({ ...settings, theme: value as Settings["theme"] })
-                    }
-                  />
-                </label>
-                <label>
-                  {t("타임존", "Time zone")}
-                  <Select
-                    label={t("타임존", "Time zone")}
-                    value={settings.timezone}
-                    searchable
-                    options={[
-                      {
-                        value: "system",
-                        label: `${t("기기 설정 사용", "Use device time zone")}${deviceTimezone ? ` · ${deviceTimezone}` : ""}`,
-                      },
-                      { value: "UTC", label: "UTC" },
-                      ...Array.from(
-                        new Set([
-                          "Asia/Seoul",
-                          settings.timezone,
-                          ...Intl.supportedValuesOf("timeZone"),
-                        ]),
-                      )
-                        .filter((zone) => !["system", "UTC"].includes(zone))
-                        .sort()
-                        .map((zone) => ({
-                          value: zone,
-                          label: zone.replaceAll("_", " "),
-                        })),
-                    ]}
-                    onChange={(timezone) => apply({ ...settings, timezone })}
-                  />
-                </label>
-                <p className="muted">
-                  {t(
-                    "목록과 분석 기록의 시간을 이 타임존으로 표시합니다.",
-                    "Dates and times use this time zone.",
-                  )}
-                </p>
-              </section>
-              <section className="panel settings">
-                <h2>{t("개인정보", "Privacy")}</h2>
-                <label>
-                  {t("민감정보 마스킹", "Mask sensitive information")}
-                  <input
-                    type="checkbox"
-                    checked={settings.masking}
-                    disabled={!user || user.guest}
-                    onChange={(e) =>
-                      setSettings({ ...settings, masking: e.target.checked })
-                    }
-                  />
-                </label>
-                <p className="muted">
-                  {settings.masking
-                    ? t(
-                        "저장·분석 전에 API 키, 비밀번호, 이메일 등을 치환합니다.",
-                        "Masks common API keys, passwords and email addresses before storage and analysis.",
-                      )
-                    : t(
-                        "마스킹을 끄면 원문이 원격 저장소와 AI 제공자에게 전달됩니다.",
-                        "Without masking, original text is sent to remote storage and the AI provider.",
-                      )}
-                </p>
-              </section>
-              <section className="panel settings">
-                <h2>{t("AI 모델", "AI model")}</h2>
-                <label>
-                  Provider
-                  <Select
-                    label="Provider"
-                    value={settings.provider}
-                    options={[
-                      {
-                        value: "free",
-                        label: t(
-                          "Free tier · 자동 선택",
-                          "Free tier · Auto select",
-                        ),
-                      },
-                      { value: "openrouter", label: "OpenRouter · BYOK" },
-                      { value: "custom", label: "Custom · OpenAI compatible" },
-                    ]}
-                    onChange={(value) => {
-                      const provider = value as Settings["provider"];
-                      setSettings({
-                        ...settings,
-                        provider,
-                        endpoint:
-                          provider === "free"
-                            ? defaults.endpoint
-                            : provider === "openrouter"
-                              ? "https://openrouter.ai/api/v1"
-                              : "",
-                        model: provider === "free" ? defaults.model : "",
-                      });
-                    }}
-                  />
-                </label>
-                {settings.provider === "free" ? (
-                  <div>
-                    <p className="muted">
-                      {t(
-                        "서버에 설정된 무료 후보를 위에서부터 순서대로 시도합니다. 목록은 연결 상태를 뜻하지 않습니다.",
-                        "Configured free candidates are tried in order. This list does not indicate provider health.",
-                      )}
-                    </p>
-                    {freeCandidates.length ? (
-                      <ol className="model-candidates">
-                        {freeCandidates.map((candidate, index) => (
-                          <li
-                            key={`${candidate.provider}:${candidate.model}:${candidate.endpoint}`}
-                          >
-                            <span>{index + 1}</span>
-                            <strong>{candidate.model}</strong>
-                            <small>{providerName(candidate.provider)}</small>
-                          </li>
-                        ))}
-                      </ol>
-                    ) : ready ? (
-                      <p className="muted">
-                        {t(
-                          "서버에 무료 모델이 설정되어 있지 않습니다.",
-                          "No free models are configured on the server.",
-                        )}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <>
-                    <label>
-                      Endpoint
-                      <input
-                        value={settings.endpoint}
-                        disabled={settings.provider !== "custom"}
-                        onChange={(e) =>
-                          setSettings({ ...settings, endpoint: e.target.value })
-                        }
-                      />
-                    </label>
-                    <label>
-                      Model
-                      <input
-                        value={settings.model}
-                        onChange={(e) =>
-                          setSettings({ ...settings, model: e.target.value })
-                        }
-                      />
-                    </label>
-                  </>
-                )}
-                {settings.provider !== "free" && (
+              {view === "settings" && (
+                <section className="panel settings">
+                  <h2>{t("일반", "General")}</h2>
                   <label>
-                    API key
-                    <input
-                      type="password"
-                      autoComplete="off"
-                      value={key}
-                      placeholder={
-                        user?.has_key
-                          ? t(
-                              "저장된 키 있음 · 변경할 때만 입력",
-                              "Key saved · enter to replace",
-                            )
-                          : t("개인 API key", "Your API key")
+                    {t("언어", "Language")}
+                    <Select
+                      label={t("언어", "Language")}
+                      value={settings.language}
+                      options={[
+                        { value: "ko", label: "한국어" },
+                        { value: "en", label: "English" },
+                      ]}
+                      onChange={(value) =>
+                        apply({
+                          ...settings,
+                          language: value as Settings["language"],
+                        })
                       }
-                      onChange={(e) => setKey(e.target.value)}
                     />
                   </label>
-                )}
-                <p className="muted">
-                  {t(
-                    "기본 모델은 한 번에 1개씩 처리합니다. BYOK 요금은 개인 계정에 청구되며, 연결한 제공자의 데이터 정책이 적용됩니다.",
-                    "The default model processes one request at a time. BYOK usage is charged to your provider account under its data policy.",
-                  )}
-                </p>
-                <div className="actions">
-                  <button
-                    className="primary"
-                    disabled={busy || !user || user.guest}
-                    onClick={() =>
-                      run(async () => {
-                        const r = await api("/api/settings", {
+                  <label>
+                    Appearance
+                    <Select
+                      label="Appearance"
+                      value={settings.theme}
+                      options={[
+                        { value: "dark", label: "Dark" },
+                        { value: "light", label: "Light" },
+                        { value: "system", label: "System" },
+                      ]}
+                      onChange={(value) =>
+                        apply({
                           ...settings,
-                          ...(key ? { apiKey: key } : {}),
-                        });
-                        apply(r.settings);
-                        setSavedSettings(r.settings);
-                        setKey("");
-                        await load();
-                        setMessage(
-                          t("설정을 저장했습니다.", "Settings saved."),
-                        );
-                      })
-                    }
-                  >
-                    {t("계정 설정 저장", "Save account settings")}
-                  </button>
-                  <button
-                    disabled={busy || !user || user.guest || settingsDirty}
-                    onClick={() =>
-                      run(async () => {
-                        const result = await api("/api/settings/test", {});
-                        setMessage(
-                          t(
-                            `저장된 ${formatAiProvenance(result, "ko")} 연결을 확인했습니다. 합성 요청만 사용했으며 세션 데이터는 전송하지 않았습니다.`,
-                            `Saved ${formatAiProvenance(result, "en")} connection works. A synthetic request was used; no session data was sent.`,
-                          ),
-                        );
-                      })
-                    }
-                  >
-                    {t("저장된 AI 연결 테스트", "Test saved AI connection")}
-                  </button>
-                  {user?.has_key && (
+                          theme: value as Settings["theme"],
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    {t("타임존", "Time zone")}
+                    <Select
+                      label={t("타임존", "Time zone")}
+                      value={settings.timezone}
+                      searchable
+                      options={[
+                        {
+                          value: "system",
+                          label: `${t("기기 설정 사용", "Use device time zone")}${deviceTimezone ? ` · ${deviceTimezone}` : ""}`,
+                        },
+                        { value: "UTC", label: "UTC" },
+                        ...Array.from(
+                          new Set([
+                            "Asia/Seoul",
+                            settings.timezone,
+                            ...Intl.supportedValuesOf("timeZone"),
+                          ]),
+                        )
+                          .filter((zone) => !["system", "UTC"].includes(zone))
+                          .sort()
+                          .map((zone) => ({
+                            value: zone,
+                            label: zone.replaceAll("_", " "),
+                          })),
+                      ]}
+                      onChange={(timezone) => apply({ ...settings, timezone })}
+                    />
+                  </label>
+                  <p className="muted">
+                    {t(
+                      "목록과 분석 기록의 시간을 이 타임존으로 표시합니다.",
+                      "Dates and times use this time zone.",
+                    )}
+                  </p>
+                  <div className="actions">
                     <button
-                      disabled={busy}
+                      className="primary"
+                      disabled={busy || !user || user.guest}
                       onClick={() =>
                         run(async () => {
-                          await api("/api/settings", {
-                            ...settings,
-                            removeKey: true,
-                          });
-                          await load();
-                          setMessage(t("키를 삭제했습니다.", "Key removed."));
+                          const result = await api("/api/settings", settings);
+                          apply(result.settings);
+                          setSavedSettings(result.settings);
+                          if (user)
+                            setAccount({
+                              ...user,
+                              settings: result.settings,
+                              has_key: result.has_key,
+                            });
+                          setMessage(
+                            t(
+                              "공통 설정을 저장했습니다.",
+                              "Preferences saved.",
+                            ),
+                          );
                         })
                       }
                     >
-                      {t("API key 삭제", "Remove key")}
+                      {t("공통 설정 저장", "Save preferences")}
                     </button>
+                  </div>
+                  {accountKnown && (!user || user.guest) && (
+                    <p className="muted">
+                      {t(
+                        "이 기기에는 바로 적용됩니다. 계정에 저장하려면 로그인하세요.",
+                        "Changes apply to this device. Sign in to save them to your account.",
+                      )}
+                    </p>
                   )}
-                </div>
-                {accountKnown && (!user || user.guest) && (
-                  <p>
-                    {t(
-                      "언어·테마·타임존은 이 기기에 저장됩니다. 나머지 설정은 로그인 후 변경할 수 있어요.",
-                      "Language, theme and time zone are saved on this device. Sign in to change other settings.",
-                    )}
-                  </p>
-                )}
-                {settingsDirty && user && !user.guest && (
-                  <p className="muted">
-                    {t(
-                      "변경한 설정을 먼저 저장하면 저장된 연결을 테스트할 수 있어요.",
-                      "Save your changed settings before testing the saved connection.",
-                    )}
-                  </p>
-                )}
-              </section>
-              <section className="panel settings collector-settings">
-                <div className="section-heading">
-                  <h2>{t("연결된 기기", "Connected devices")}</h2>
-                  <Link href="/docs">
-                    {t("Collector 설치·사용 안내", "Collector setup guide")} →
-                  </Link>
-                </div>
-                {accountKnown && user && !user.guest && (
-                  <div className="collector-activity">
-                    <div className="section-heading">
-                      <h3>{t("최근 Collector 상태", "Recent Collector activity")}</h3>
-                      <small>{devices.length}</small>
-                    </div>
-                    {devices.length ? (
-                      <ul>
-                        {devices.map((device) => (
-                          <li key={device.id}>
-                            <div>
-                              <strong>{device.id.slice(0, 8)}</strong>
-                              <small>
-                                {device.collector_version || t("버전 미상", "Version unavailable")}
-                                {device.source_types?.length
-                                  ? ` · ${device.source_types.join(", ")}`
-                                  : ""}
-                              </small>
-                            </div>
-                            <div>
-                              <span className={"badge " + (device.sync_status === "failed" ? "failed" : device.paused ? "queued" : "completed")}>
-                                {device.paused
-                                  ? t("일시 중지", "Paused")
-                                  : device.sync_status === "failed"
-                                    ? t("동기화 실패", "Sync failed")
-                                    : device.sync_status === "success"
-                                      ? t("동기화 완료", "Synced")
-                                      : t("상태 미상", "Status unavailable")}
-                              </span>
-                              <small>
-                                {device.last_sync_at
-                                  ? `${t("마지막 동기화", "Last sync")}: ${date(device.last_sync_at)}`
-                                  : device.last_seen_at
-                                    ? `${t("마지막 연결", "Last seen")}: ${date(device.last_seen_at)}`
-                                    : t("수신 기록 없음", "No receipt yet")}
-                                {device.last_error_code
-                                  ? ` · ${device.last_error_code}`
-                                  : ""}
-                              </small>
-                            </div>
-                            <DeviceScope
-                              deviceId={device.id}
-                              revoked={device.revoked}
-                              language={settings.language}
-                              timezone={settings.timezone}
-                            />
-                          </li>
-                        ))}
-                      </ul>
+                </section>
+              )}
+              {view === "session-settings" && (
+                <>
+                  <section className="panel settings">
+                    <h2>{t("개인정보", "Privacy")}</h2>
+                    <label>
+                      {t("민감정보 마스킹", "Mask sensitive information")}
+                      <input
+                        type="checkbox"
+                        checked={settings.masking}
+                        disabled={!user || user.guest}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            masking: e.target.checked,
+                          })
+                        }
+                      />
+                    </label>
+                    <p className="muted">
+                      {settings.masking
+                        ? t(
+                            "저장·분석 전에 API 키, 비밀번호, 이메일 등을 치환합니다.",
+                            "Masks common API keys, passwords and email addresses before storage and analysis.",
+                          )
+                        : t(
+                            "마스킹을 끄면 원문이 원격 저장소와 AI 제공자에게 전달됩니다.",
+                            "Without masking, original text is sent to remote storage and the AI provider.",
+                          )}
+                    </p>
+                  </section>
+                  <section className="panel settings">
+                    <h2>{t("AI 모델", "AI model")}</h2>
+                    <label>
+                      Provider
+                      <Select
+                        label="Provider"
+                        value={settings.provider}
+                        options={[
+                          {
+                            value: "free",
+                            label: t(
+                              "Free tier · 자동 선택",
+                              "Free tier · Auto select",
+                            ),
+                          },
+                          { value: "openrouter", label: "OpenRouter · BYOK" },
+                          {
+                            value: "custom",
+                            label: "Custom · OpenAI compatible",
+                          },
+                        ]}
+                        onChange={(value) => {
+                          const provider = value as Settings["provider"];
+                          setSettings({
+                            ...settings,
+                            provider,
+                            endpoint:
+                              provider === "free"
+                                ? defaults.endpoint
+                                : provider === "openrouter"
+                                  ? "https://openrouter.ai/api/v1"
+                                  : "",
+                            model: provider === "free" ? defaults.model : "",
+                          });
+                        }}
+                      />
+                    </label>
+                    {settings.provider === "free" ? (
+                      <div>
+                        <p className="muted">
+                          {t(
+                            "서버에 설정된 무료 후보를 위에서부터 순서대로 시도합니다. 목록은 연결 상태를 뜻하지 않습니다.",
+                            "Configured free candidates are tried in order. This list does not indicate provider health.",
+                          )}
+                        </p>
+                        {freeCandidates.length ? (
+                          <ol className="model-candidates">
+                            {freeCandidates.map((candidate, index) => (
+                              <li
+                                key={`${candidate.provider}:${candidate.model}:${candidate.endpoint}`}
+                              >
+                                <span>{index + 1}</span>
+                                <strong>{candidate.model}</strong>
+                                <small>
+                                  {providerName(candidate.provider)}
+                                </small>
+                              </li>
+                            ))}
+                          </ol>
+                        ) : ready ? (
+                          <p className="muted">
+                            {t(
+                              "서버에 무료 모델이 설정되어 있지 않습니다.",
+                              "No free models are configured on the server.",
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
                     ) : (
-                      <p className="muted">
+                      <>
+                        <label>
+                          Endpoint
+                          <input
+                            value={settings.endpoint}
+                            disabled={settings.provider !== "custom"}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                endpoint: e.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          Model
+                          <input
+                            value={settings.model}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                model: e.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                      </>
+                    )}
+                    {settings.provider !== "free" && (
+                      <label>
+                        API key
+                        <input
+                          type="password"
+                          autoComplete="off"
+                          value={key}
+                          placeholder={
+                            user?.has_key
+                              ? t(
+                                  "저장된 키 있음 · 변경할 때만 입력",
+                                  "Key saved · enter to replace",
+                                )
+                              : t("개인 API key", "Your API key")
+                          }
+                          onChange={(e) => setKey(e.target.value)}
+                        />
+                      </label>
+                    )}
+                    <p className="muted">
+                      {t(
+                        "기본 모델은 한 번에 1개씩 처리합니다. BYOK 요금은 개인 계정에 청구되며, 연결한 제공자의 데이터 정책이 적용됩니다.",
+                        "The default model processes one request at a time. BYOK usage is charged to your provider account under its data policy.",
+                      )}
+                    </p>
+                    <div className="actions">
+                      <button
+                        className="primary"
+                        disabled={busy || !user || user.guest}
+                        onClick={() =>
+                          run(async () => {
+                            const r = await api("/api/settings", {
+                              ...settings,
+                              ...(key ? { apiKey: key } : {}),
+                            });
+                            apply(r.settings);
+                            setSavedSettings(r.settings);
+                            setKey("");
+                            await load();
+                            setMessage(
+                              t("설정을 저장했습니다.", "Settings saved."),
+                            );
+                          })
+                        }
+                      >
+                        {t("계정 설정 저장", "Save account settings")}
+                      </button>
+                      <button
+                        disabled={busy || !user || user.guest || settingsDirty}
+                        onClick={() =>
+                          run(async () => {
+                            const result = await api("/api/settings/test", {});
+                            setMessage(
+                              t(
+                                `저장된 ${formatAiProvenance(result, "ko")} 연결을 확인했습니다. 합성 요청만 사용했으며 세션 데이터는 전송하지 않았습니다.`,
+                                `Saved ${formatAiProvenance(result, "en")} connection works. A synthetic request was used; no session data was sent.`,
+                              ),
+                            );
+                          })
+                        }
+                      >
+                        {t("저장된 AI 연결 테스트", "Test saved AI connection")}
+                      </button>
+                      {user?.has_key && (
+                        <button
+                          disabled={busy}
+                          onClick={() =>
+                            run(async () => {
+                              await api("/api/settings", {
+                                ...settings,
+                                removeKey: true,
+                              });
+                              await load();
+                              setMessage(
+                                t("키를 삭제했습니다.", "Key removed."),
+                              );
+                            })
+                          }
+                        >
+                          {t("API key 삭제", "Remove key")}
+                        </button>
+                      )}
+                    </div>
+                    {accountKnown && (!user || user.guest) && (
+                      <p>
                         {t(
-                          "연결된 Collector가 없습니다.",
-                          "No connected Collector yet.",
+                          "언어·테마·타임존은 이 기기에 저장됩니다. 나머지 설정은 로그인 후 변경할 수 있어요.",
+                          "Language, theme and time zone are saved on this device. Sign in to change other settings.",
                         )}
                       </p>
                     )}
+                    {settingsDirty && user && !user.guest && (
+                      <p className="muted">
+                        {t(
+                          "변경한 설정을 먼저 저장하면 저장된 연결을 테스트할 수 있어요.",
+                          "Save your changed settings before testing the saved connection.",
+                        )}
+                      </p>
+                    )}
+                  </section>
+                </>
+              )}
+              {view === "settings" && (
+                <section className="panel settings collector-settings">
+                  <div className="section-heading">
+                    <h2>{t("연결된 기기", "Connected devices")}</h2>
+                    <Link href="/docs">
+                      {t("Collector 설치·사용 안내", "Collector setup guide")} →
+                    </Link>
                   </div>
-                )}
-              </section>
+                  {accountKnown && user && !user.guest && (
+                    <div className="collector-activity">
+                      <div className="section-heading">
+                        <h3>
+                          {t(
+                            "최근 Collector 상태",
+                            "Recent Collector activity",
+                          )}
+                        </h3>
+                        <small>{devices.length}</small>
+                      </div>
+                      {devices.length ? (
+                        <ul>
+                          {devices.map((device) => (
+                            <li key={device.id}>
+                              <div>
+                                <strong>{device.id.slice(0, 8)}</strong>
+                                <small>
+                                  {device.collector_version ||
+                                    t("버전 미상", "Version unavailable")}
+                                  {device.source_types?.length
+                                    ? ` · ${device.source_types.join(", ")}`
+                                    : ""}
+                                </small>
+                              </div>
+                              <div>
+                                <span
+                                  className={
+                                    "badge " +
+                                    (device.sync_status === "failed"
+                                      ? "failed"
+                                      : device.paused
+                                        ? "queued"
+                                        : "completed")
+                                  }
+                                >
+                                  {device.paused
+                                    ? t("일시 중지", "Paused")
+                                    : device.sync_status === "failed"
+                                      ? t("동기화 실패", "Sync failed")
+                                      : device.sync_status === "success"
+                                        ? t("동기화 완료", "Synced")
+                                        : t("상태 미상", "Status unavailable")}
+                                </span>
+                                <small>
+                                  {device.last_sync_at
+                                    ? `${t("마지막 동기화", "Last sync")}: ${date(device.last_sync_at)}`
+                                    : device.last_seen_at
+                                      ? `${t("마지막 연결", "Last seen")}: ${date(device.last_seen_at)}`
+                                      : t("수신 기록 없음", "No receipt yet")}
+                                  {device.last_error_code
+                                    ? ` · ${device.last_error_code}`
+                                    : ""}
+                                </small>
+                              </div>
+                              <DeviceScope
+                                deviceId={device.id}
+                                revoked={device.revoked}
+                                language={settings.language}
+                                timezone={settings.timezone}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="muted">
+                          {t(
+                            "연결된 Collector가 없습니다.",
+                            "No connected Collector yet.",
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
             </>
           )}
           {view === "docs" && <CollectorGuide language={settings.language} />}
-          <footer className="page-footer">AgentSession Atlas</footer>
+          <footer className="page-footer">Agent Observatory</footer>
         </div>
       </main>
       <dialog
@@ -2336,12 +2531,19 @@ export function Atlas({
           <div className="evidence-dialog-content">
             <div className="dialog-heading">
               <div>
-                <p>{t("근거", "Evidence")} · {evidenceDialog.findingTitle}</p>
+                <p>
+                  {t("근거", "Evidence")} · {evidenceDialog.findingTitle}
+                </p>
                 <h2 id="evidence-dialog-title">
-                  {evidenceDialog.evidence.name || evidenceDialog.evidence.kind || t("저장된 근거", "Saved evidence")}
+                  {evidenceDialog.evidence.name ||
+                    evidenceDialog.evidence.kind ||
+                    t("저장된 근거", "Saved evidence")}
                 </h2>
               </div>
-              <button type="button" onClick={() => evidenceDialogRef.current?.close()}>
+              <button
+                type="button"
+                onClick={() => evidenceDialogRef.current?.close()}
+              >
                 {t("닫기", "Close")}
               </button>
             </div>
@@ -2384,7 +2586,9 @@ export function Atlas({
                   <span key={`${image.sha256}-${index}`}>
                     {index > 0 && " · "}
                     {image.mimeType}
-                    {image.width && image.height ? ` ${image.width} × ${image.height}` : ""}
+                    {image.width && image.height
+                      ? ` ${image.width} × ${image.height}`
+                      : ""}
                     {` · ${Math.ceil(image.bytes / 1024)} KB`}
                   </span>
                 ))}

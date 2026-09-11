@@ -1,8 +1,10 @@
 # Atlas Collector
 
+> 현재 Sessions용 Collector의 참고 문서다. Wiki 설계에 따라 수집 모델·계약·구현을 전면 변경할 수 있으며 하위 호환성은 보장 목표가 아니다.
+
 ![30분마다 새 기록을 JSON 대기 파일로 확정하고 Next.js에 전송한다. 서버가 마스킹 설정 적용 후 Storage 저장과 Supabase DB 접수를 확정한 ACK를 확인하면 로컬 파일을 삭제하고, 실패하면 보관 후 재시도한다. 원격 분석은 하루 한 번 또는 수동으로 별도 실행한다](assets/collector-delivery.svg)
 
-[전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
+[Portal](README.md) · [Wiki](wiki/README.md) · [Sessions](sessions/README.md) · [Collector](collector.md) · [Operations](operations.md)
 
 **Codex와 Claude Code 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 0.3.0은 Claude Code adapter·기기 heartbeat·수집 snapshot 완료 handshake를 제공한다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
 
@@ -81,7 +83,7 @@ Source Adapter는 Codex와 Claude Code가 기본 활성화되지만, 현재 `con
 
 | 키 | 역할 | 변경 경로 |
 | --- | --- | --- |
-| `url` | Atlas API 기준 URL | 설치 기본값. 일반 설정에서 변경하지 않음 |
+| `url` | Portal API 기준 URL | 설치 기본값. 일반 설정에서 변경하지 않음 |
 | `sourceHome` | Codex 기본 홈 | `sources.codex.home`이 없을 때 사용 |
 | `sources.codex` / `sources.claude-code` | 각 source의 `enabled`, `home` | source 선택 CLI가 없으므로 명시적 수동 설정만 허용 |
 | `include`, `exclude` | 프로젝트 경로 목록 | `configure`; exclude를 빈 배열로 되돌릴 때만 명시적 수동 설정 |
@@ -123,12 +125,12 @@ Source Adapter는 Codex와 Claude Code가 기본 활성화되지만, 현재 `con
 | 얇은 Skill | 제안 | 위 읽기 순서와 inventory → 범위 확인 → sync 절차만 참조. 별도 상태나 명령 문서를 복제하지 않음 |
 | 원격 MCP | 제안 | 계정·device별 서버 상태와 분석 결과를 원격으로 다룰 필요가 생길 때만 추가. 현재 MCP 서버·tool은 없음 |
 
-Skill보다 먼저 CLI와 구조화 문서를 정한다. Skill은 기존 CLI의 안전한 순서를 알려 주는 얇은 래퍼여야 한다. MCP는 로컬 파일이나 Keychain을 직접 열어서는 안 되며, 원격 Atlas API에 인증된 tool 호출이 필요한 때에만 검토한다.
+Skill보다 먼저 CLI와 구조화 문서를 정한다. Skill은 기존 CLI의 안전한 순서를 알려 주는 얇은 래퍼여야 한다. MCP는 로컬 파일이나 Keychain을 직접 열어서는 안 되며, 원격 Portal API에 인증된 tool 호출이 필요한 때에만 검토한다.
 
 | 제안 MCP 범위 | 읽기 tool | 쓰기 tool |
 | --- | --- | --- |
 | Collector/device | `list_devices`, `get_device_status` | 없음. PC의 pause·configure·sync는 로컬 CLI에만 남김 |
-| 원격 Atlas | `list_sessions`, `get_analysis_status` | `request_analysis`, `request_reanalysis`, `delete_session` |
+| 원격 Portal | `list_sessions`, `get_analysis_status` | `request_analysis`, `request_reanalysis`, `delete_session` |
 
 쓰기 tool은 대상 workspace·session 범위, 확인용 요약, idempotency key를 요구하고 원문·token·절대 경로를 반환하지 않는다. `delete_session`은 별도 명시 승인과 보관 정책 검증을 요구한다. 이 표는 API 설계 제안이며, 현재 배포된 MCP tool 이름이나 권한이 아니다.
 
@@ -138,7 +140,7 @@ Skill보다 먼저 CLI와 구조화 문서를 정한다. Skill은 기존 CLI의 
 
 최근 1주 기록에서 main 세션 4개·이벤트 3,717개를 15개 배치로 전송했고, subagent 21개와 실행 중 세션 1개는 제외했다. 선택한 범위의 로컬 cursor는 모두 완료됐다. 준비한 wire는 2,107,290 bytes였고, 500 재시도 1회를 포함한 실제 17회 POST는 2,428,355 bytes였다. 이후 gap 409는 수정했다.
 
-서버에는 마스킹한 Zstd 파일 2,106,796 bytes가 저장됐고, 해제한 입력은 9,257,325 bytes였다. 이미지 본문 없이 metadata 251회·고유 binary 237개만 확인했다. 상세 데이터의 보관은 최대 7일이다. 이 확인은 업로드 범위이며, 4개 세션 분석 중 2개만 완료된 상태는 [Atlas 분석 상태](atlas.md#원격-분석-자동과-수동)에서 별도로 본다.
+서버에는 마스킹한 Zstd 파일 2,106,796 bytes가 저장됐고, 해제한 입력은 9,257,325 bytes였다. 이미지 본문 없이 metadata 251회·고유 binary 237개만 확인했다. 상세 데이터의 보관은 최대 7일이다. 이 확인은 업로드 범위이며, 4개 세션 분석 중 2개만 완료된 상태는 [Sessions 분석 상태](sessions/README.md#원격-분석-자동과-수동)에서 별도로 본다.
 
 ## 수집과 전송
 
@@ -214,7 +216,7 @@ Source Adapter는 Codex의 `~/.codex/sessions`·`~/.codex/archived_sessions`와 
 
 검증은 합성 세션으로 수행한다. 재시작·재전송 전후 이벤트 ID와 사용량이 같아야 하고, 실제 반복 호출이 중복 제거로 사라지면 실패다. 큰 프롬프트·도구 출력·이미지가 있어도 메모리와 배치 크기를 제한하며, 초과 시 조용한 손실 없이 진행 위치와 사유를 남긴다. 축약률과 함께 핵심 지시·실패·복구·스킬 근거의 보존 여부를 검사한다.
 
-[서버 증류와 품질 검증](atlas.md#서버-증류와-분석-품질)으로 이어진다.
+[서버 증류와 품질 검증](sessions/README.md#서버-증류와-분석-품질)으로 이어진다.
 
 ### 압축과 분할
 
@@ -297,7 +299,7 @@ Outbox는 raw canonical JSON의 `events` 배열을 보관하고, 전송할 때 �
 
 | 장애·경계 상황                   | 처리                                                                                                                                     |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 오프라인·timeout·5xx             | Collector는 파일을 보존하고 다음 기동에서 재시도. 원격 AI의 후보 전환·재시도는 [Atlas의 무료 AI 운영 규칙](atlas.md#ai-실행-선택)을 따름 |
+| 오프라인·timeout·5xx             | Collector는 파일을 보존하고 다음 기동에서 재시도. 원격 AI의 후보 전환·재시도는 [Sessions의 무료 AI 운영 규칙](sessions/README.md#ai-실행-선택)을 따름 |
 | 429                              | `Retry-After`와 자체 backoff 중 늦은 시각 적용. 서버가 막혀도 새 기록은 로컬 여유 공간까지 보관                                          |
 | 401·403 / 잘못된 배치            | 자격증명 오류는 목적지 전송 중지, 스키마 오류·동일 ID의 다른 해시는 해당 배치 격리. 파일 보관·사용자 조치 후 재개                        |
 | 서버 처리 중 통신 단절           | 같은 ID로 접수 상태를 먼저 조회. 미접수면 동일 JSON 재전송. 진행 중이면 대기하고, Storage만 남았으면 서버가 이어서 접수                  |
@@ -318,7 +320,7 @@ Collector가 발견 시점에 고정한 마지막 완성 JSONL 줄까지 만든 
 읽기 위치는 **로컬에 안전하게 복사한 지점**, 접수증은 **서버에 안전하게 접수된 지점**이다.
 전송 상태는 `pending → sending → acknowledged`, 실패하면 `pending`, 조치가 필요하면 `blocked`로 관리한다.
 
-[Atlas 분석](atlas.md#원격-분석-자동과-수동) · [공통 계약](README.md#공통-계약과-책임) · [참고 자료](README.md#참고-자료)
+[Sessions 분석](sessions/README.md#원격-분석-자동과-수동) · [공통 계약](README.md#공통-계약과-책임) · [참고 자료](README.md#참고-자료)
 
 ### 제안: 에이전트에게 작업을 맡기는 진입점
 

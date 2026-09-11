@@ -15,15 +15,14 @@
 npx --yes https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.3.0/agent-observatory-collector-0.3.0.tgz setup
 ```
 
-`npx`는 GitHub Release tarball을 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.**
+`npx`는 GitHub Release tarball을 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.** 설치 뒤의 명령은 `node ~/.agent-session-atlas/current/cli.js`로 실행한다.
 
-| 단계      | setup이 하는 일                                                                                       |
-| --------- | ----------------------------------------------------------------------------------------------------- |
-| 설치      | 배포 버전을 앱 전용 폴더에 설치. npm 임시 캐시와 분리하고 관리자 권한 없이 사용자 영역에 설치         |
-| 계정 연결 | 브라우저 로그인 후 일회용 코드로 기기 연결. CLI에는 해당 Workspace 전송·접수 조회용 토큰만 발급       |
-| 수집 설정 | 기본 `all`, 제외 프로젝트·목적지를 보여주고 설정 저장. 연결·설정 완료 후 자동 전송 시작               |
-| 자동 기동 | `launchd` 사용자 LaunchAgent 하나에 로그인 시와 1,800초 간격으로 등록. Node·설치 CLI의 절대 경로 사용 |
-| 확인      | 시험 연결과 스케줄러 상태 확인. 대기 배치 수·최근 ACK·다음 재시도 시각 표시                           |
+| 단계      | `setup`이 실제로 하는 일                                                                                 |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| 설치      | 실행 파일을 `~/.agent-session-atlas/versions/<version>`에 복사하고 `current` 링크를 교체                 |
+| 기본 설정 | 처음 한 번 Codex·Claude Code source를 켜고, include·exclude가 비어 있는 `all` 범위와 `paused: false` 저장 |
+| 자동 기동 | `launchd` 사용자 LaunchAgent 하나에 로그인 시와 1,800초 간격으로 등록. Node·설치 CLI의 절대 경로 사용    |
+| 다음 단계 | 계정 연결 URL·코드를 출력하지 않음. 설치가 끝나면 별도로 `connect`를 실행                                |
 
 ### 실행 주체·로그인·재부팅
 
@@ -38,22 +37,85 @@ Collector의 30분 실행은 **Codex 앱의 예약 작업이 아니라 macOS 사
 최초 연결에서는 **기존 기록 가져오기**를 제공한다. 현재 CLI는 `configure --include/--exclude/--since/--until`로 프로젝트·기간을 선택하고, `inventory`로 선택 범위의 세션 수·바이트·프로젝트 수를 집계한다. 대화형 GUI 미리보기는 아직 제공하지 않는다. 로컬 접수 이력이 없으면 서버 접수 내역을 먼저 조회해 이미 보낸 범위를 제외하고, 진행 위치를 저장해 중단 후 이어간다. 가져오기 완료 후 웹에서 **지금 분석**으로 바로 분석할 수 있으며 이후에는 30분 증분 동기화로 이어진다.
 
 30분마다 `npx …@latest`를 실행하지 않는다. **로컬에 설치된 고정 버전**을 실행해야 네트워크 장애에도 기동할 수 있다.  
-MVP는 설치된 Node를 사용하며, Node 경로가 바뀌면 `doctor`로 감지하고 `setup` 재실행으로 등록을 복구한다.
+MVP는 설치된 Node 경로를 LaunchAgent에 고정한다. `doctor`는 현재 Node 버전을 보여 주지만 경로·스케줄러·디스크를 진단하지 않는다. Node 경로가 바뀌면 `setup`을 다시 실행해 등록을 갱신한다.
 
-| CLI 명령 제안       | 동작                                                                            |
-| ------------------- | ------------------------------------------------------------------------------- |
-| `status` / `doctor` | 전송 상태 조회 / 인증·Node 경로·스케줄러·디스크 진단                            |
-| `sync`              | 즉시 한 번 전송. 원격 AI 분석은 대시보드에서 별도 기동                          |
-| `pause` / `resume`  | 로컬 자동 전송 일시 중지·재개                                                   |
-| `update`            | 새 버전 설치·검사 후 실행 경로 교체. 실패하면 기존 버전 유지, Outbox·설정 보존  |
-| `uninstall`         | 스케줄러·프로그램 제거. 미접수 기록·설정은 기본 보존하고 명시적 삭제에서만 제거 |
+### 현재 CLI 계약
 
-`setup` 재실행은 등록을 복구하며 중복 LaunchAgent를 만들지 않는다. 기기 토큰은 macOS Keychain에 보관한다.  
-npm 계정·게시 권한은 운영자만 필요하다. 사용자는 공개 패키지 설치에 npm 로그인이 필요하지 않다.
+아래는 0.3.0 코드에 있는 명령만 기록한 계약이다. `inventory`, `status`, `doctor`의 표준 출력은 JSON이고, 나머지는 사람용 짧은 메시지다. JSON schema·`--json`·`--dry-run`·source 선택 플래그는 아직 없다.
+
+| 명령 | 실제 동작 | 상태 변경 |
+| --- | --- | --- |
+| `setup` | 설치본과 LaunchAgent를 등록하고, 없을 때만 기본 설정을 만든다 | 설치본·설정·LaunchAgent |
+| `connect` | 브라우저 기기 연결을 시작하고 성공한 device token을 Keychain에 저장한다 | 기기 연결·Keychain |
+| `inventory` | 현재 범위의 `sessions`, `bytes`, `projects`를 JSON으로 집계한다. 전송하지 않는다 | 없음 |
+| `configure --include a,b --exclude c,d --since ISO --until ISO` | 준 옵션만 설정한다. 날짜는 ISO로 정규화한다 | 수집 범위 |
+| `configure --all` | include·since·until을 지워 전체 기간으로 돌린다. **기존 exclude는 유지한다** | 수집 범위 |
+| `sync` | 최대 20개 새 배치를 만들고 대기 배치도 보낸다. 일시 중지 중에도 수동 실행은 전송한다 | Outbox·cursor·원격 접수 |
+| `pause` / `resume` | 예약 실행의 전송을 중지하거나 재개한다 | `paused` |
+| `status` / `doctor` | 같은 JSON으로 버전·연결 여부·pause·30분 주기·Node 버전·배치 상태 수를 보인다 | 없음 |
+| `update` | 현재 배포물로 `setup`과 같은 설치·등록 경로를 실행한다. 버전 검사·다운로드·롤백은 아직 없다 | 설치본·LaunchAgent |
+| `uninstall` | LaunchAgent와 `current` 링크만 제거한다. 설정·Keychain token·Outbox·SQLite는 남긴다 | 자동 실행 |
+
+Source Adapter는 Codex와 Claude Code가 기본 활성화되지만, 현재 `configure`에는 `--source` 또는 source 비활성화 플래그가 없다. `--exclude`를 빈 목록으로 되돌리는 CLI도 없다. source를 끄거나 exclude를 비워야 하면 아래 설정 파일의 해당 값만 바꾸는 수동 설정이 필요하다. 에이전트는 CLI에 없는 이 변경을 임의로 우회하지 않고, 사용자에게 source 또는 제외 목록 변경을 명시적으로 받는다.
+
+#### 현재 로컬 설정 파일
+
+`~/.agent-session-atlas/config.json`은 PC별 상태다. 저장소에 넣거나 전체 내용을 대화에 출력하지 않는다. `setup`은 파일이 없을 때만 기본값을 만들며, `configure`는 include·exclude·since·until만 갱신한다.
+
+| 키 | 역할 | 변경 경로 |
+| --- | --- | --- |
+| `url` | Atlas API 기준 URL | 설치 기본값. 일반 설정에서 변경하지 않음 |
+| `sourceHome` | Codex 기본 홈 | `sources.codex.home`이 없을 때 사용 |
+| `sources.codex` / `sources.claude-code` | 각 source의 `enabled`, `home` | source 선택 CLI가 없으므로 명시적 수동 설정만 허용 |
+| `include`, `exclude` | 프로젝트 경로 목록 | `configure`; exclude를 빈 배열로 되돌릴 때만 명시적 수동 설정 |
+| `since`, `until` | 세션 시작 시각 ISO 범위 | `configure`; `--all`은 둘을 제거 |
+| `paused` | 예약 전송 중지 여부 | `pause` / `resume` |
+| `deviceId` | 연결된 기기 식별자 | `connect`가 관리. 수동 변경 금지 |
+
+수동 설정은 먼저 `pause`한 뒤, 사용자가 지정한 키만 최소 변경하고, `inventory`로 결과를 확인한다. `url`·`deviceId`·기존 범위·다른 source를 덮어쓰지 않는다. 설정 파일에는 token이 없으며 token은 Keychain에 있다.
+
+`setup` 재실행은 등록을 복구하며 중복 LaunchAgent를 만들지 않는다. 기기 토큰은 macOS Keychain에 보관한다.
 
 ## 첫 사용
 
 최근 pilot 설치본은 계정 연결 후 자동 전송이 일시 중지된 상태다. `inventory`로 범위와 용량을 확인하고, 필요하면 `configure --include/--exclude/--since/--until`로 범위를 정한 뒤 `sync`를 직접 실행한다. 웹에서 **전체 세션 지금 분석**을 눌러 분석을 시작할 수 있다. `resume`을 실행하면 30분 주기 자동 전송을 다시 켠다.
+
+### 에이전트가 Collector를 다루는 방법
+
+에이전트는 먼저 사람용 문서(`/docs/collector.md`)와 기계 탐색용 문서(`/llms.txt`)를 읽고, 실제 조작은 설치된 로컬 CLI로 한다. 이 문서와 웹 경로가 먼저인 이유는 CLI가 범위·상태·동작을 결정하는 정식 인터페이스이기 때문이다. 세션 원문, Keychain, Outbox를 직접 읽거나 바꾸는 것은 지원 경로가 아니다. source 선택이나 exclude 초기화처럼 CLI에 없는 설정 파일 변경은 [현재 로컬 설정 파일](#현재-로컬-설정-파일)의 좁은 예외로만 다룬다.
+
+| 순서 | 로컬 CLI | 권한·확인 기준 |
+| --- | --- | --- |
+| 1. 현재 상태 | `status` 또는 `doctor` | 읽기 전용 JSON. 연결·pause·배치 수를 확인한다. |
+| 2. 후보 범위 | `inventory` | 읽기 전용 JSON. 전송 없이 건수·바이트·프로젝트 수만 확인한다. |
+| 3. 자동 전송 차단 | `pause` | 사용자가 범위를 검토하는 동안 자동 실행을 멈추도록 승인한 경우에만 실행한다. |
+| 4. 범위 지정 | `configure --include <absolute-path> --since <ISO>` | 쓰기 작업이다. include, exclude, 기간 중 사용자가 명시한 값만 전달한다. |
+| 4a. source 예외 | 설정 파일의 한 source `enabled` 값 | CLI에 source 플래그가 없어 사용자가 명시한 source 전환에만 쓴다. 전체 파일·token·기기 ID를 출력하거나 덮어쓰지 않는다. |
+| 5. 재확인 | `inventory` | 변경 뒤의 집계를 보고한다. 현재 CLI에는 개별 세션 목록·`--dry-run`이 없다. |
+| 6. 업로드 | `sync` | 원격 전송을 허용받은 뒤에만 실행한다. 완료 메시지는 분석 완료가 아닌 배치 전송 결과다. |
+| 7. 자동 전송 재개 | `resume` | 사용자가 이후 30분 자동 전송을 원할 때만 실행한다. |
+
+`configure` 필터는 **새 source 발견과 새 Outbox 생성**에만 적용된다. `sync`는 먼저 기존 Outbox의 pending 배치를 전송하고, 그 뒤 현재 필터로 source를 발견한다. 따라서 필터를 바꿔도 이미 만들어진 pending 배치는 제외되지 않으며, 이미 서버에 접수된 세션도 철회되지 않는다. 원치 않는 기록을 피하려면 첫 `sync` 전에 범위를 지정해야 한다. 접수 뒤 삭제는 서버의 세션 삭제 기능으로 별도 처리해야 하며, 에이전트는 그 삭제 권한과 대상을 확인한 뒤에만 요청한다.
+
+#### 현재 인터페이스와 제안 순서
+
+| 층 | 현재 | 역할 |
+| --- | --- | --- |
+| 정식 운영 인터페이스 | 설치된 `atlas-collector` CLI | 로컬 source·Outbox·기기 token을 가진 유일한 조작 경로 |
+| 에이전트 읽기 자료 | `/docs/collector.md`와 `/llms.txt` | 웹의 같은 공유 문서에서 제공하는 설치·범위·보관·명령 계약 |
+| 얇은 Skill | 제안 | 위 읽기 순서와 inventory → 범위 확인 → sync 절차만 참조. 별도 상태나 명령 문서를 복제하지 않음 |
+| 원격 MCP | 제안 | 계정·device별 서버 상태와 분석 결과를 원격으로 다룰 필요가 생길 때만 추가. 현재 MCP 서버·tool은 없음 |
+
+Skill보다 먼저 CLI와 구조화 문서를 정한다. Skill은 기존 CLI의 안전한 순서를 알려 주는 얇은 래퍼여야 한다. MCP는 로컬 파일이나 Keychain을 직접 열어서는 안 되며, 원격 Atlas API에 인증된 tool 호출이 필요한 때에만 검토한다.
+
+| 제안 MCP 범위 | 읽기 tool | 쓰기 tool |
+| --- | --- | --- |
+| Collector/device | `list_devices`, `get_device_status` | 없음. PC의 pause·configure·sync는 로컬 CLI에만 남김 |
+| 원격 Atlas | `list_sessions`, `get_analysis_status` | `request_analysis`, `request_reanalysis`, `delete_session` |
+
+쓰기 tool은 대상 workspace·session 범위, 확인용 요약, idempotency key를 요구하고 원문·token·절대 경로를 반환하지 않는다. `delete_session`은 별도 명시 승인과 보관 정책 검증을 요구한다. 이 표는 API 설계 제안이며, 현재 배포된 MCP tool 이름이나 권한이 아니다.
+
+구조화 CLI의 다음 단계는 모든 명령에 안정된 `--json` 결과와 schema version을 제공하는 것이다. `configure --dry-run`은 변경 전후 범위 요약만, `sync --dry-run`은 pending과 새 후보를 구분한 계획만 내보내야 한다. source별 집계·필터 적용 시각·pending 배치 수를 포함하되 세션 본문·token·원본 경로는 기본 출력에서 제외한다.
 
 ### 최근 개인 pilot
 
@@ -70,8 +132,10 @@ Codex 기록 저장소에서 신규·변경 기록을 찾고 작업 경로로 �
 본문·도구 입출력을 확보하기 위해 세션 파일을 읽는 방식을 기본으로 한다.
 내장 OTel은 에이전트별 내용·잘림 범위가 달라 후속 보완 경로로 둔다.
 
+아래 YAML은 **목표 수집 정책 모델**이다. 0.3.0의 실제 설정 파일 형식은 이 YAML이 아니라 `~/.agent-session-atlas/config.json`이며, 현재 CLI는 위의 [현재 CLI 계약](#현재-cli-계약)에 적힌 옵션만 지원한다. 에이전트는 이 예시를 복사해 실제 설정 파일을 쓰지 않는다.
+
 ```yaml
-# 이 서비스의 로컬 전송기 설정
+# 목표 수집 정책 모델 — 현재 config.json 형식이 아님
 sources:
   codex: { enabled: true, home: "~/.codex" }
   claude-code: { enabled: true, home: "~/.claude/projects" }
@@ -104,7 +168,7 @@ analysis:
 | 자동·수동 전송 | 기본은 설정 범위의 새 기록 자동 전송. `manual`은 선택 시점까지의 기록만 대기열에 등록                                                                                                                                                           |
 | 본문·이미지    | 사용자·에이전트 메시지와 도구 입출력을 변환. 중첩된 user/tool data URL 이미지는 원본 bytes를 hash한 metadata(등장 횟수·MIME·bytes·PNG/JPEG 크기·`local_only`)로 바꾸고 본문에서는 제거. 인증 파일이나 프로젝트 소스 전체를 별도로 탐색하지 않음 |
 | 마스킹         | **Next.js 서버에서 기본 `enabled: true`**. Atlas의 Settings → Privacy에서 켜기·끄기. 서버가 인증된 Workspace의 설정을 읽어 새 접수에 적용하며, Collector 요청값으로 해제할 수 없음                                                              |
-| 설정 변경      | 실제 전송 직전 정책을 다시 검사. 제외된 미전송 기록은 차단하며, 이미 서버에 보낸 기록은 별도 삭제                                                                                                                                               |
+| 설정 변경      | 새 source 발견에는 현재 필터를 적용. 이미 만든 pending Outbox는 먼저 전송되므로 필터 변경으로 철회되지 않음. 이미 서버에 보낸 기록은 별도 삭제                                                                                                  |
 | 목적지         | 대기 파일에 Workspace·계정·기기·정책 버전을 고정. 설정을 바꿔도 기존 파일의 목적지는 바뀌지 않음                                                                                                                                                |
 
 프로젝트 경로는 전송 대상을 고르는 기준이며, 붙여넣은 내용까지 개인 데이터라고 판별하지는 않는다.

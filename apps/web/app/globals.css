@@ -68,7 +68,11 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 92% -12%, rgba(79, 140, 255, 0.16), transparent 32%),
+    radial-gradient(
+      circle at 92% -12%,
+      rgba(79, 140, 255, 0.16),
+      transparent 32%
+    ),
     var(--bg);
   color: var(--text);
   font-family:
@@ -136,7 +140,11 @@ aside {
   flex-shrink: 0;
   padding: 20px 14px 16px;
   border-right: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--sidebar-start) 0%, var(--sidebar-end) 68%);
+  background: linear-gradient(
+    180deg,
+    var(--sidebar-start) 0%,
+    var(--sidebar-end) 68%
+  );
   position: fixed;
   inset: 0 auto 0 0;
   display: flex;
@@ -237,7 +245,11 @@ nav .navigation-icon {
 }
 nav .active {
   color: var(--strong);
-  background: linear-gradient(90deg, var(--teal-soft), rgba(57, 198, 179, 0.03));
+  background: linear-gradient(
+    90deg,
+    var(--teal-soft),
+    rgba(57, 198, 179, 0.03)
+  );
   box-shadow: inset 2px 0 var(--teal);
   font-weight: 600;
 }
@@ -360,14 +372,16 @@ h3 {
   justify-content: space-between;
   gap: 18px;
   align-items: center;
-  padding: 13px 15px;
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--accent);
-  margin-bottom: 16px;
-  background: var(--subtle);
+  padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--border));
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
 }
 .welcome h2 {
-  margin: 0 0 3px;
+  color: var(--accent);
+  margin: 0 0 8px;
 }
 .welcome p {
   color: var(--muted);
@@ -378,7 +392,11 @@ h3 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   border: 1px solid var(--border);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 96%, var(--accent)), var(--surface));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface) 96%, var(--accent)),
+    var(--surface)
+  );
   border-radius: 10px;
   overflow: hidden;
   margin: 0 0 16px;
@@ -1430,16 +1448,25 @@ nav .nav-link.active:hover {
   background: var(--teal-soft);
 }
 
+.session-list-panel {
+  overflow: visible;
+}
+.session-list-panel > .table-scroll {
+  margin-bottom: 0;
+}
 .pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 14px 0 0;
+  margin: 0 -18px -17px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 12px;
 }
 .pagination-controls {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1483,12 +1510,14 @@ nav .nav-link.active:hover {
 }
 @media (max-width: 720px) {
   .pagination {
+    margin: 0 -14px -14px;
+    padding: 14px;
     align-items: flex-start;
     flex-direction: column;
   }
   .pagination-controls {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 6px;
   }
   .session-metrics {
@@ -1540,4 +1569,86 @@ nav .nav-link.active:hover {
   margin: 0;
   border: 0;
   border-radius: 0;
+}
+
+.collector-guide {
+  max-width: 960px;
+}
+.guide-steps {
+  padding-left: 24px;
+  margin-bottom: 0;
+}
+.guide-steps > li {
+  padding-left: 8px;
+  margin: 28px 0;
+}
+.guide-steps > li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+.guide-steps h3 {
+  margin-bottom: 8px;
+}
+.collector-guide p {
+  line-height: 1.75;
+}
+.collector-guide .command-row pre {
+  overflow-wrap: anywhere;
+}
+.collector-settings .section-heading {
+  flex-wrap: wrap;
+}
+.collector-settings .section-heading a {
+  font-size: 12px;
+}
+
+.residency-details {
+  margin-bottom: 0;
+}
+.residency-details > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.residency-details dt {
+  color: var(--muted);
+}
+.residency-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .residency-details > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.guide-links,
+.guide-index {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.guide-index a {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+}
+.collector-guide section {
+  scroll-margin-top: 24px;
+}
+.guide-items {
+  list-style: none;
+  padding: 0;
+}
+.guide-items > li {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 24px;
 }

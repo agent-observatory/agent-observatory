@@ -93,16 +93,28 @@ const batch = {
 };
 
 try {
-  await record("anonymous visitors can inspect configured free candidates", async () => {
-    const response = await fetch(url + "/api/me");
-    const payload = await response.json();
-    if (!response.ok || payload.user !== null || !payload.freeCandidates?.length)
-      throw new Error("public free candidate list missing");
-    for (const candidate of payload.freeCandidates) {
-      if (!candidate.provider || !candidate.model || "keyEnv" in candidate || "apiKey" in candidate)
-        throw new Error("invalid public candidate metadata");
-    }
-  });
+  await record(
+    "anonymous visitors can inspect configured free candidates",
+    async () => {
+      const response = await fetch(url + "/api/me");
+      const payload = await response.json();
+      if (
+        !response.ok ||
+        payload.user !== null ||
+        !payload.freeCandidates?.length
+      )
+        throw new Error("public free candidate list missing");
+      for (const candidate of payload.freeCandidates) {
+        if (
+          !candidate.provider ||
+          !candidate.model ||
+          "keyEnv" in candidate ||
+          "apiKey" in candidate
+        )
+          throw new Error("invalid public candidate metadata");
+      }
+    },
+  );
   await record("two guest accounts are isolated", async () => {
     await a.expect("/api/guest", { expected: 200, body: {} });
     await b.expect("/api/guest", { expected: 200, body: {} });
@@ -169,6 +181,50 @@ try {
       body: {},
     });
   });
+
+  await record("a guest cannot delete another guest's session", async () => {
+    await b.expect(`/api/sessions/${sessionId}`, {
+      expected: 200,
+      method: "DELETE",
+    });
+    const own = await a.json("/api/sessions");
+    if (!own.sessions.some((session) => session.id === sessionId))
+      throw new Error("another guest's delete hid the owned session");
+  });
+
+  await record(
+    "deletion hides data and blocks the retained source identity",
+    async () => {
+      await a.expect(`/api/sessions/${sessionId}`, {
+        expected: 200,
+        method: "DELETE",
+      });
+      await a.expect(`/api/sessions/${sessionId}`, {
+        expected: 200,
+        method: "DELETE",
+      });
+      await a.expect(`/api/sessions/${sessionId}`, { expected: 404 });
+      const listed = await a.json("/api/sessions");
+      if (listed.sessions.some((session) => session.id === sessionId))
+        throw new Error("deleted session remained in the list");
+      await a.expect(
+        "/api/checkpoint?source=codex&session_id=" +
+          encodeURIComponent(sourceId) +
+          "&generation=" +
+          encodeURIComponent(batch.generation),
+        { expected: 410 },
+      );
+      await a.expect("/api/ingest", {
+        expected: 410,
+        body: {
+          ...batch,
+          batch_id: randomUUID(),
+          start_offset: 128,
+          end_offset: 129,
+        },
+      });
+    },
+  );
 
   report.status = report.checks.every((check) => check.status === "passed")
     ? "passed"

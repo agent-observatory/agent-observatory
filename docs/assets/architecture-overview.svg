@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1100" viewBox="0 0 1480 1100" role="img" aria-labelledby="title desc">
-<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 raw JSON Outbox와 이미지 메타데이터를 확정하고 Zstd로 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel은 이미지를 다시 제거하고 서버 마스킹 뒤 Zstd로 재압축해 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고, 설정된 서버 무료 제공자 풀을 한 번에 하나씩 사용하거나 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다.</desc>
-<rect width="1480" height="1100" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1335" viewBox="0 0 1480 1335" role="img" aria-labelledby="title desc">
+<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 raw JSON Outbox와 이미지 메타데이터를 확정하고 Zstd로 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel은 이미지를 다시 제거하고 서버 마스킹 뒤 Zstd로 재압축해 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고, 설정된 서버 무료 제공자 풀을 한 번에 하나씩 사용하거나 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다. 에이전트는 현재 로컬 CLI를 사용하며, 원격 MCP는 점선으로 표시한 제안 경계다.</desc>
+<rect width="1480" height="1335" fill="white"/>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#3B5BA5"/></marker></defs>
 <text x="24" y="45" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.35" fill="#16213E">AgentSession Atlas<tspan dx="10" font-size="17" font-weight="700" fill="#64748B">Seoul</tspan></text>
 <rect x="350" y="110" width="720" height="275" rx="14" fill="#FBF5FF" stroke="#8B3DFF"/>
@@ -118,4 +118,19 @@
 <text x="735" y="414" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#475569">유지관리 API</text>
 <path d="M935 335 V520" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
 <text x="947" y="414" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#475569">분석 기동 API</text>
+<rect x="24" y="1090" width="1432" height="215" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.6"/>
+<text x="44" y="1124" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.35" fill="#16213E">에이전트 사용 경계</text>
+<text x="1250" y="1124" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="15" font-weight="400" fill="#64748B">황색 점선 = 제안</text>
+<rect x="44" y="1145" width="640" height="126" rx="12" fill="#EFF6FF" stroke="#3B5BA5"/>
+<text x="64" y="1177" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">현재 · Agent → 로컬 CLI</text>
+<text x="64" y="1209" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">/docs/collector.md · /llms.txt → inventory · status (읽기)</text>
+<text x="64" y="1240" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">pause · configure · sync (쓰기 · 범위 확인 뒤 실행)</text>
+<rect x="712" y="1145" width="724" height="126" rx="12" fill="#FFFBEB" stroke="#9A620A" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="732" y="1177" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#9A620A">제안 · 원격 MCP</text>
+<text x="732" y="1209" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">읽기: device · session · analysis 상태</text>
+<text x="732" y="1240" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">쓰기: analyze · reanalyze · delete (확인 + idempotency)</text>
+<path d="M364 1145 V1080 H12 V890 H44" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="192" y="1070" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="15" font-weight="400" fill="#31559F">로컬 실행</text>
+<path d="M1070 1145 V1080 H1068 V625 H1040" fill="none" stroke="#9A620A" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="1083" y="1070" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="15" font-weight="400" fill="#9A620A">원격 tool 제안</text>
 </svg>

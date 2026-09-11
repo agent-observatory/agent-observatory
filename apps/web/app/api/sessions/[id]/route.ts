@@ -62,7 +62,9 @@ export const DELETE = (
     const user = await owner(req, true),
       { id } = await ctx.params;
     await db().begin(async (sql) => {
-      await sql`UPDATE atlas.sessions SET deleted=true,expires_at=now() WHERE id=${id} AND owner=${user}`;
+      // Keep the original detailed-data expiry as the tombstone deadline.
+      // The deleted flag immediately hides the session and blocks re-ingestion.
+      await sql`UPDATE atlas.sessions SET deleted=true WHERE id=${id} AND owner=${user}`;
       await sql`UPDATE atlas.job_items SET result=null,expires_at=now(),status='expired' WHERE session_id IN (SELECT id FROM atlas.sessions WHERE id=${id} AND owner=${user})`;
       await sql`DELETE FROM atlas.summaries WHERE session_id=${id} AND owner=${user}`;
     });

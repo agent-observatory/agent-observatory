@@ -145,3 +145,11 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 | 개인 표본 | 이미 ACK된 4개 snapshot의 완료를 서버에 확정. 새 수집·파일 업로드·AI 호출 없이 완료 시각만 기록. 분석은 3/4 완료, 1개는 기존 무료 제공자 백오프 대기 |
 
 [화면 검증](../ops/actionable-review-ui-verification.json) · [수집 생명주기](../ops/collector-lifecycle-verification.json) · [설치 검증](../ops/collector-install-verification.json) · [운영 상태](../ops/production.json)
+
+## 2026-09-11 — 목록·설정 정리와 에이전트 사용 경계
+
+페이지네이션을 빈 상태 뒤의 목록 마지막 영역에 배치하고, 가입 안내를 전용 강조색·테두리로 구분했다. 기기 타임존은 실제 IANA 이름을 함께 표시하고 Appearance는 Dark/Light/System으로 표기한다. Collector 설치·프로젝트/기간/소스 설정·보관 위치는 `/docs`로 옮겼다. `/docs/collector.md`와 `/llms.txt`를 추가하고 웹·Markdown을 동일한 TypeScript 내용에서 생성한다. 설정은 연결된 기기 관리와 가이드 링크를 제공한다.
+
+세션 목록에 행별·선택 삭제와 확인창을 추가했다. 일부 실패는 실패한 세션의 선택을 유지한다. 삭제된 세션과 분석은 즉시 숨기고 파일은 예약 정리한다. 동일 세션의 재접수를 막는 행은 원래 상세 만료 시각까지만 유지한다. 프로젝트 제외는 새 수집에만 적용되며, 기존 Outbox와 업로드를 취소하지 않는다는 제한을 가이드에 명시했다.
+
+에이전트 사용을 제품 아키텍처의 일부로 기록했다. 현재 CLI·문서, 제안 단계의 Skill·원격 MCP·플러그인 역할과 도입 이유를 [설계 결정](README.md#설계-결정-사람과-에이전트가-같은-제품을-사용한다)에 정리했다. 원격 MCP가 PC의 pause/configure/sync를 수행하는 것으로 표현하지 않는다. 실제 원격 검증·배포 정보는 작업 완료 시 운영 상태와 보고서에 갱신한다.

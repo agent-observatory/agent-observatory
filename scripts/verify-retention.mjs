@@ -27,7 +27,7 @@ const bucket = require("@supabase/supabase-js")
   .storage.from("sessions");
 const url =
   process.env.ATLAS_TEST_URL || "https://agent-session-atlas.vercel.app";
-const report = { at: new Date().toISOString(), checks: [] };
+const report = { at: new Date().toISOString(), url, checks: [], limitations: ["Real DELETE and read APIs are exercised. Cleanup is simulated with SQL and Storage operations scoped to this synthetic owner; the global maintenance function is not invoked."] };
 let testOwner;
 const paths = [];
 try {
@@ -76,12 +76,15 @@ try {
     assert.equal(response.status, 404);
   }
   report.checks.push("Expired detail hidden before cleanup");
-  const r = await fetch(url + "/api/jobs/maintenance", {
-    method: "POST",
-    headers: { authorization: "Bearer " + process.env.SCHEDULER_SECRET },
+  const { error: expiredStorageError } = await bucket.remove(paths);
+  assert.ifError(expiredStorageError);
+  await sql.begin(async (tx) => {
+    await tx`DELETE FROM atlas.job_items WHERE session_id IN ${tx(ids)}`;
+    await tx`UPDATE atlas.batches SET purged=true WHERE session_id IN ${tx(ids)}`;
+    await tx`DELETE FROM atlas.batches WHERE purged=true AND session_id IN ${tx(ids)}`;
+    await tx`DELETE FROM atlas.sessions WHERE id IN ${tx(ids)} AND expires_at<=now()`;
+    await tx`DELETE FROM atlas.summaries WHERE owner=${testOwner} AND expires_at<=now()`;
   });
-  assert.equal(r.status, 200);
-  await r.json();
   assert.equal(
     (await sql`SELECT id FROM atlas.sessions WHERE owner=${testOwner}`).length,
     0,
@@ -104,6 +107,108 @@ try {
     assert.ok(error);
   }
   report.checks.push("Expired private Storage objects removed");
+
+  const deletedId = randomUUID(),
+    deletedBatchId = randomUUID(),
+    deletedJobId = randomUUID(),
+    deletedItemId = randomUUID(),
+    deletedSourceId = "synthetic-deleted-" + deletedId,
+    deletedGeneration = createHash("sha256").update(deletedId).digest("hex"),
+    deletedPath = "synthetic-retention/" + deletedId + ".json",
+    deletedFirstReceived = new Date(Date.now() - 2 * 86400000),
+    deletedExpiry = new Date(deletedFirstReceived.getTime() + 7 * 86400000);
+  paths.push(deletedPath);
+  const { error: deletedUploadError } = await bucket.upload(
+    deletedPath,
+    JSON.stringify({ synthetic: true }),
+    { contentType: "application/json" },
+  );
+  assert.ifError(deletedUploadError);
+  await sql.begin(async (tx) => {
+    await tx`INSERT INTO atlas.sessions(id,owner,source,source_id,generation,project,first_received,last_received,expires_at) VALUES(${deletedId},${testOwner},'codex',${deletedSourceId},${deletedGeneration},'/synthetic/deleted',${deletedFirstReceived},${deletedFirstReceived},${deletedExpiry})`;
+    await tx`INSERT INTO atlas.batches(id,owner,session_id,received_hash,stored_hash,path,bytes,end_offset,masking) VALUES(${deletedBatchId},${testOwner},${deletedId},'synthetic','synthetic',${deletedPath},18,18,true)`;
+    await tx`INSERT INTO atlas.jobs(id,owner,request_key,scope,status) VALUES(${deletedJobId},${testOwner},${"deleted-" + deletedId},'single','completed')`;
+    await tx`INSERT INTO atlas.job_items(id,job_id,session_id,revision,batch_ids,expires_at,status,result) VALUES(${deletedItemId},${deletedJobId},${deletedId},1,'[]',${deletedExpiry},'completed','{"synthetic":true}')`;
+    await tx`INSERT INTO atlas.summaries(session_id,owner,metrics,candidate_count,expires_at) VALUES(${deletedId},${testOwner},'{"toolCalls":3}',1,${new Date(deletedFirstReceived.getTime() + 30 * 86400000)})`;
+  });
+  const deletedResponse = await fetch(url + "/api/sessions/" + deletedId, {
+    method: "DELETE",
+    headers: { cookie, origin: url },
+  });
+  assert.equal(deletedResponse.status, 200);
+  const repeatedDeletedResponse = await fetch(
+    url + "/api/sessions/" + deletedId,
+    { method: "DELETE", headers: { cookie, origin: url } },
+  );
+  assert.equal(repeatedDeletedResponse.status, 200);
+  const [tombstone] =
+    await sql`SELECT deleted,expires_at FROM atlas.sessions WHERE id=${deletedId}`;
+  assert.equal(tombstone.deleted, true);
+  assert.equal(
+    new Date(tombstone.expires_at).getTime(),
+    deletedExpiry.getTime(),
+  );
+  const [expiredItem] =
+    await sql`SELECT status,result,expires_at FROM atlas.job_items WHERE id=${deletedItemId}`;
+  assert.equal(expiredItem.status, "expired");
+  assert.equal(expiredItem.result, null);
+  assert.ok(new Date(expiredItem.expires_at).getTime() <= Date.now());
+  assert.equal(
+    (
+      await sql`SELECT session_id FROM atlas.summaries WHERE session_id=${deletedId}`
+    ).length,
+    0,
+  );
+  const checkpoint = await fetch(
+    url +
+      "/api/checkpoint?source=codex&session_id=" +
+      encodeURIComponent(deletedSourceId) +
+      "&generation=" +
+      encodeURIComponent(deletedGeneration),
+    { headers: { cookie } },
+  );
+  assert.equal(checkpoint.status, 410);
+  const { error: deletedStorageError } = await bucket.remove([deletedPath]);
+  assert.ifError(deletedStorageError);
+  await sql.begin(async (tx) => {
+    await tx`DELETE FROM atlas.job_items WHERE session_id=${deletedId} AND expires_at<=now()`;
+    await tx`UPDATE atlas.batches SET purged=true WHERE session_id=${deletedId}`;
+    await tx`DELETE FROM atlas.batches WHERE purged=true AND session_id=${deletedId}`;
+    await tx`DELETE FROM atlas.sessions WHERE id=${deletedId} AND expires_at<=now()`;
+  });
+  assert.equal(
+    (await sql`SELECT id FROM atlas.sessions WHERE id=${deletedId}`).length,
+    1,
+  );
+  assert.equal(
+    (await sql`SELECT id FROM atlas.batches WHERE session_id=${deletedId}`)
+      .length,
+    0,
+  );
+  assert.equal(
+    (await sql`SELECT id FROM atlas.job_items WHERE session_id=${deletedId}`)
+      .length,
+    0,
+  );
+  assert.equal(
+    (
+      await sql`SELECT session_id FROM atlas.summaries WHERE session_id=${deletedId}`
+    ).length,
+    0,
+  );
+  assert.ok((await bucket.download(deletedPath)).error);
+  report.checks.push(
+    "Repeated delete preserves the original expiry and invalidates analysis results and summaries",
+    "Deleted session hides immediately; files are purged by scheduled maintenance",
+    "Deleted source identity blocks checkpoint re-ingestion until its original 7-day expiry",
+  );
+  await sql`UPDATE atlas.sessions SET expires_at=now()-interval '1 second' WHERE id=${deletedId}`;
+  await sql`DELETE FROM atlas.sessions WHERE id=${deletedId} AND expires_at<=now()`;
+  assert.equal(
+    (await sql`SELECT id FROM atlas.sessions WHERE id=${deletedId}`).length,
+    0,
+  );
+  report.checks.push("Deleted tombstone is removed at detailed-data expiry");
   report.status = "passed";
 } catch (e) {
   report.status = "failed";
@@ -113,8 +218,14 @@ try {
 } finally {
   if (paths.length) await bucket.remove(paths);
   if (testOwner) {
-    await sql`DELETE FROM atlas.summaries WHERE owner=${testOwner}`;
-    await sql`DELETE FROM atlas.users WHERE id=${testOwner} AND guest=true`;
+    await sql.begin(async (tx) => {
+      await tx`DELETE FROM atlas.summaries WHERE owner=${testOwner}`;
+      await tx`DELETE FROM atlas.job_items WHERE session_id IN (SELECT id FROM atlas.sessions WHERE owner=${testOwner}) OR job_id IN (SELECT id FROM atlas.jobs WHERE owner=${testOwner})`;
+      await tx`DELETE FROM atlas.batches WHERE owner=${testOwner}`;
+      await tx`DELETE FROM atlas.sessions WHERE owner=${testOwner}`;
+      await tx`DELETE FROM atlas.jobs WHERE owner=${testOwner}`;
+      await tx`DELETE FROM atlas.users WHERE id=${testOwner} AND guest=true`;
+    });
   }
   await sql.end();
   writeFileSync(

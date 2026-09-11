@@ -1,4 +1,5 @@
 "use client";
+import { CollectorGuide } from "./collector-guide";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -104,11 +105,6 @@ const defaults: Settings = {
   endpoint: "",
   model: "auto",
 };
-const collectorCommands = {
-  connect: "node ~/.agent-session-atlas/current/cli.js connect",
-  inventory: "node ~/.agent-session-atlas/current/cli.js inventory",
-  sync: "node ~/.agent-session-atlas/current/cli.js sync",
-} as const;
 const settingsFrom = (value?: Partial<Settings>): Settings => ({
   ...defaults,
   ...value,
@@ -141,7 +137,7 @@ const digest = async (text: string) =>
   ]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-type AtlasView = "sessions" | "jobs" | "settings";
+type AtlasView = "sessions" | "jobs" | "settings" | "docs";
 
 type Listing = { page: number; pageSize: number; q: string };
 const defaultListing: Listing = { page: 1, pageSize: 20, q: "" };
@@ -186,18 +182,30 @@ export function Atlas({
     [error, setError] = useState(""),
     [key, setKey] = useState(""),
     [pair, setPair] = useState(""),
-    [copiedCommand, setCopiedCommand] = useState<string | null>(null),
     [copiedTask, setCopiedTask] = useState<string | null>(null),
     [selectedFindings, setSelectedFindings] = useState<string[]>([]),
     [evidenceDialog, setEvidenceDialog] = useState<{
       evidence: EvidenceEntry;
       findingTitle: string;
     } | null>(null),
+    [deleteDialog, setDeleteDialog] = useState<{
+      ids: string[];
+    } | null>(null),
     [freeCandidates, setFreeCandidates] = useState<FreeCandidate[]>([]),
     [ready, setReady] = useState(false);
+  const [deviceTimezone, setDeviceTimezone] = useState("");
+  useEffect(() => {
+    const refresh = () =>
+      setDeviceTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
   const detailRef = useRef<HTMLElement>(null);
   const evidenceDialogRef = useRef<HTMLDialogElement>(null);
   const evidenceTriggerRef = useRef<HTMLElement | null>(null);
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
   const userIdRef = useRef<string | null | undefined>(undefined);
   const loadRequestRef = useRef(0);
   const t = (ko: string, en: string) => (settings.language === "ko" ? ko : en);
@@ -299,6 +307,7 @@ export function Atlas({
 
     setAccount(nextUser);
     setFreeCandidates(me.freeCandidates || []);
+    if (view === "docs") return nextUser;
     if (nextUser) {
       const [data, deviceData] = await Promise.all([
         api("/api/sessions?" + listingQuery),
@@ -330,7 +339,7 @@ export function Atlas({
       setDetail(null);
     }
     return nextUser;
-  }, [listingQuery]);
+  }, [listingQuery, view]);
   useEffect(() => {
     setListLoading(true);
     load()
@@ -440,12 +449,54 @@ export function Atlas({
     if (detail?.session.id)
       setDetail(await api("/api/sessions/" + detail.session.id));
   }
+  const requestDeletion = (ids: string[], trigger: HTMLElement) => {
+    deleteTriggerRef.current = trigger;
+    setDeleteDialog({ ids: [...new Set(ids)] });
+  };
+  async function deleteSessions(ids: string[]) {
+    const results = await Promise.allSettled(
+      ids.map((id) => api("/api/sessions/" + id, undefined, "DELETE")),
+    );
+    const deleted = new Set(
+      results.flatMap((result, index) =>
+        result.status === "fulfilled" ? [ids[index]] : [],
+      ),
+    );
+    const failed = ids.filter((id) => !deleted.has(id));
+    setDeleteDialog(null);
+    setSelected((current) => [
+      ...new Set([...current.filter((id) => !deleted.has(id)), ...failed]),
+    ]);
+    if (detail?.session.id && deleted.has(detail.session.id)) {
+      setDetail(null);
+      setSessionUrl();
+    }
+    await load();
+    if (failed.length) {
+      setError(
+        t(
+          `${deleted.size}개 삭제, ${failed.length}개 삭제하지 못했습니다. 실패한 세션은 선택 상태로 남아 있습니다.`,
+          `${deleted.size} deleted; ${failed.length} could not be deleted. Failed sessions remain selected.`,
+        ),
+      );
+    } else {
+      setMessage(
+        t(
+          `${deleted.size}개 세션과 분석 결과를 삭제했습니다.`,
+          `Deleted ${deleted.size} sessions and their analyses.`,
+        ),
+      );
+    }
+  }
   async function upload(files: FileList | null) {
     if (!files?.length) return;
     await run(async () => {
       if (!accountKnown)
         throw new Error(
-          t("계정 상태를 확인한 뒤 가져오세요.", "Wait for account status before importing."),
+          t(
+            "계정 상태를 확인한 뒤 가져오세요.",
+            "Wait for account status before importing.",
+          ),
         );
       if (!user) {
         await api("/api/guest", {});
@@ -673,7 +724,9 @@ export function Atlas({
   ) => {
     evidenceTriggerRef.current = trigger;
     setEvidenceDialog({
-      evidence: evidence || { id: evidenceId || t("누락된 근거", "Missing evidence") },
+      evidence: evidence || {
+        id: evidenceId || t("누락된 근거", "Missing evidence"),
+      },
       findingTitle,
     });
   };
@@ -743,12 +796,20 @@ export function Atlas({
         1800,
       );
     } catch {
-      setError(t("에이전트 작업을 복사하지 못했습니다.", "Could not copy the agent task."));
+      setError(
+        t(
+          "에이전트 작업을 복사하지 못했습니다.",
+          "Could not copy the agent task.",
+        ),
+      );
     }
   };
   const improvementPlan = (findings: ReviewFinding[], result: any) =>
     findings.map((finding) => findingTask(finding, result)).join("\n\n---\n\n");
-  const copyImprovementPlan = async (findings: ReviewFinding[], result: any) => {
+  const copyImprovementPlan = async (
+    findings: ReviewFinding[],
+    result: any,
+  ) => {
     setError("");
     try {
       await navigator.clipboard.writeText(improvementPlan(findings, result));
@@ -758,7 +819,12 @@ export function Atlas({
         1800,
       );
     } catch {
-      setError(t("개선 계획을 복사하지 못했습니다.", "Could not copy the improvement plan."));
+      setError(
+        t(
+          "개선 계획을 복사하지 못했습니다.",
+          "Could not copy the improvement plan.",
+        ),
+      );
     }
   };
   const downloadImprovementPlan = (findings: ReviewFinding[], result: any) => {
@@ -772,26 +838,18 @@ export function Atlas({
     link.click();
     URL.revokeObjectURL(url);
   };
-  const copyCommand = async (name: string, command: string) => {
-    setError("");
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopiedCommand(name);
-      window.setTimeout(
-        () =>
-          setCopiedCommand((current) => (current === name ? null : current)),
-        1800,
-      );
-    } catch {
-      setError(t("명령을 복사하지 못했습니다.", "Could not copy command."));
-    }
-  };
   useEffect(() => {
     const dialog = evidenceDialogRef.current;
     if (!dialog) return;
     if (evidenceDialog && !dialog.open) dialog.showModal();
     if (!evidenceDialog && dialog.open) dialog.close();
   }, [evidenceDialog]);
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (deleteDialog && !dialog.open) dialog.showModal();
+    if (!deleteDialog && dialog.open) dialog.close();
+  }, [deleteDialog]);
   return (
     <div className="app">
       <aside>
@@ -841,6 +899,7 @@ export function Atlas({
             ["sessions", "/sessions", t("세션", "Sessions")],
             ["jobs", "/analyses", t("분석 기록", "Analyses")],
             ["settings", "/settings", t("설정", "Settings")],
+            ["docs", "/docs", t("사용 가이드", "Docs")],
           ].map(([id, href, label]) => (
             <Link
               className={`nav-link ${view === id ? "active" : ""}`}
@@ -848,7 +907,7 @@ export function Atlas({
               aria-current={view === id ? "page" : undefined}
               href={href}
             >
-              <NavigationIcon name={id as "sessions" | "jobs" | "settings"} />
+              <NavigationIcon name={id as AtlasView} />
               {label}
             </Link>
           ))}
@@ -859,11 +918,13 @@ export function Atlas({
           <span>
             {t("개인 공간", "Personal workspace")} /{" "}
             <strong>
-              {view === "settings"
-                ? t("설정", "Settings")
-                : view === "jobs"
-                  ? t("분석 기록", "Analyses")
-                  : t("세션", "Sessions")}
+              {view === "docs"
+                ? t("사용 가이드", "Docs")
+                : view === "settings"
+                  ? t("설정", "Settings")
+                  : view === "jobs"
+                    ? t("분석 기록", "Analyses")
+                    : t("세션", "Sessions")}
             </strong>
           </span>
           <button
@@ -883,22 +944,29 @@ export function Atlas({
           <div className="title-row">
             <div>
               <h1>
-                {view === "settings"
-                  ? t("설정", "Settings")
-                  : view === "jobs"
-                    ? t("분석 기록", "Analysis history")
-                    : t("세션 검토", "Session review")}
+                {view === "docs"
+                  ? t("사용 가이드", "Docs")
+                  : view === "settings"
+                    ? t("설정", "Settings")
+                    : view === "jobs"
+                      ? t("분석 기록", "Analysis history")
+                      : t("세션 검토", "Session review")}
               </h1>
               <p className="muted">
-                {view === "settings"
+                {view === "docs"
                   ? t(
-                      "언어부터 분석 모델까지 직접 선택하세요.",
-                      "Choose your language, appearance, and analysis model.",
+                      "Collector 설치부터 세션 분석까지.",
+                      "From Collector setup to session analysis.",
                     )
-                  : t(
-                      "세션을 선택해 발견 사항과 원문 근거를 함께 검토하세요.",
-                      "Select a session to review findings alongside source evidence.",
-                    )}
+                  : view === "settings"
+                    ? t(
+                        "언어부터 분석 모델까지 직접 선택하세요.",
+                        "Choose your language, appearance, and analysis model.",
+                      )
+                    : t(
+                        "세션을 선택해 발견 사항과 원문 근거를 함께 검토하세요.",
+                        "Select a session to review findings alongside source evidence.",
+                      )}
               </p>
             </div>
             {view === "sessions" && (
@@ -973,6 +1041,7 @@ export function Atlas({
                     </p>
                   </div>
                   <button
+                    className="primary"
                     onClick={() =>
                       signIn("github", { redirectTo: location.href })
                     }
@@ -1012,7 +1081,7 @@ export function Atlas({
                   </div>
                 ))}
               </div>
-              <section className="panel">
+              <section className="panel session-list-panel">
                 <div className="section-heading">
                   <h2>
                     {t("세션 목록", "Sessions")}{" "}
@@ -1052,6 +1121,15 @@ export function Atlas({
                     >
                       {t("선택 세션 분석", "Analyze selected")}
                     </button>
+                    <button
+                      className="danger"
+                      disabled={busy}
+                      onClick={(event) =>
+                        requestDeletion(selected, event.currentTarget)
+                      }
+                    >
+                      {t("선택 세션 삭제", "Delete selected")}
+                    </button>
                     <button onClick={() => setSelected([])}>
                       {t("선택 해제", "Clear")}
                     </button>
@@ -1087,6 +1165,7 @@ export function Atlas({
                         <th>{t("도구 호출", "Tool calls")}</th>
                         <th>{t("개선 후보", "Candidates")}</th>
                         <th>{t("분석 상태", "Status")}</th>
+                        <th>{t("관리", "Actions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1143,11 +1222,53 @@ export function Atlas({
                               </small>
                             )}
                           </td>
+                          <td>
+                            <button
+                              className="danger"
+                              disabled={busy}
+                              aria-label={t(
+                                `${s.source_id} 세션 삭제`,
+                                `Delete session ${s.source_id}`,
+                              )}
+                              onClick={(event) =>
+                                requestDeletion([s.id], event.currentTarget)
+                              }
+                            >
+                              {t("삭제", "Delete")}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                {!visible.length && (
+                  <div className="empty">
+                    <span>◈</span>
+                    <h3>
+                      {ready
+                        ? listing.q
+                          ? t("검색 결과가 없습니다", "No matching sessions")
+                          : t(
+                              "첫 세션을 가져오세요",
+                              "Import your first session",
+                            )
+                        : t("불러오는 중", "Loading")}
+                    </h3>
+                    <p>
+                      {t(
+                        "Codex JSONL 파일을 올리거나, Collector를 연결해 기존 기록을 가져오세요.",
+                        "Upload Codex JSONL files or connect the Collector to import your history.",
+                      )}
+                    </p>
+                    <p className="muted">
+                      {t(
+                        "업로드한 파일은 기본 마스킹 후 저장됩니다.",
+                        "Sensitive information is masked by default.",
+                      )}
+                    </p>
+                  </div>
+                )}
                 <div
                   className="pagination"
                   aria-label={t("세션 페이지", "Session pages")}
@@ -1193,33 +1314,6 @@ export function Atlas({
                     </button>
                   </div>
                 </div>
-                {!visible.length && (
-                  <div className="empty">
-                    <span>◈</span>
-                    <h3>
-                      {ready
-                        ? listing.q
-                          ? t("검색 결과가 없습니다", "No matching sessions")
-                          : t(
-                              "첫 세션을 가져오세요",
-                              "Import your first session",
-                            )
-                        : t("불러오는 중", "Loading")}
-                    </h3>
-                    <p>
-                      {t(
-                        "Codex JSONL 파일을 올리거나, Collector를 연결해 기존 기록을 가져오세요.",
-                        "Upload Codex JSONL files or connect the Collector to import your history.",
-                      )}
-                    </p>
-                    <p className="muted">
-                      {t(
-                        "업로드한 파일은 기본 마스킹 후 저장됩니다.",
-                        "Sensitive information is masked by default.",
-                      )}
-                    </p>
-                  </div>
-                )}
               </section>
               <section className="panel aggregate-panel">
                 <div className="section-heading">
@@ -1302,24 +1396,30 @@ export function Atlas({
                     {detail.session.revision}
                   </p>
                   <p className="muted session-receipts">
-                    {t("접수 시작", "Ingestion started")}: {date(detail.session.first_received)}
+                    {t("접수 시작", "Ingestion started")}:{" "}
+                    {date(detail.session.first_received)}
                     {detail.session.last_received && (
                       <>
                         {" · "}
-                        {t("마지막 접수", "Last received")}: {date(detail.session.last_received)}
+                        {t("마지막 접수", "Last received")}:{" "}
+                        {date(detail.session.last_received)}
                       </>
                     )}
                     {detail.session.ingestion_complete_at && (
                       <>
                         {" · "}
-                        {t("접수 완료", "Ingestion complete")}: {date(detail.session.ingestion_complete_at)}
+                        {t("접수 완료", "Ingestion complete")}:{" "}
+                        {date(detail.session.ingestion_complete_at)}
                       </>
                     )}
                   </p>
                   {detail.aggregate && (
                     <details className="session-metrics-disclosure">
                       <summary>
-                        {t("세션 메트릭 · 용량·이벤트·토큰", "Session metrics · size, events, tokens")}
+                        {t(
+                          "세션 메트릭 · 용량·이벤트·토큰",
+                          "Session metrics · size, events, tokens",
+                        )}
                       </summary>
                       <dl className="session-metrics">
                       {[
@@ -1393,294 +1493,355 @@ export function Atlas({
                         selectedFindings.includes(`${r.id}:${finding.id}`),
                       );
                       return (
-                      <article key={r.id}>
-                        <span className={"badge " + r.status}>
-                          {analysisStatus(r.status, r.attempts)}
-                        </span>
-                        {r.error && r.status !== "running" && (
-                          <p className="muted">{r.error}</p>
-                        )}
-                        {!!r.result?.aiAttempts?.length &&
-                          r.status !== "completed" && (
-                            <details className="attempt-history">
-                              <summary>
-                                {t("요청 이력", "Request history")} ·{" "}
-                                {r.attempts ?? r.result.aiAttempts.length}
-                                {t("회", " attempts")}
-                              </summary>
-                              <ul>
-                                {r.result.aiAttempts.map(
-                                  (attempt: any, index: number) => (
-                                    <li key={index}>
-                                      <time>{date(attempt.at)}</time>
-                                      <span>
-                                        {providerName(attempt.provider)} ·{" "}
-                                        {attempt.model}
-                                      </span>
-                                      <small>
-                                        {attemptOutcome(attempt.outcome)}
-                                        {attempt.status
-                                          ? ` · HTTP ${attempt.status}`
-                                          : ""}
-                                      </small>
-                                    </li>
-                                  ),
-                                )}
-                              </ul>
-                            </details>
+                        <article key={r.id}>
+                          <span className={"badge " + r.status}>
+                            {analysisStatus(r.status, r.attempts)}
+                          </span>
+                          {r.error && r.status !== "running" && (
+                            <p className="muted">{r.error}</p>
                           )}
-                        {r.result && (
-                          <>
-                            <p>
-                              <strong>
-                                {r.result.ai
-                                  ? formatAiProvenance(
-                                      r.result,
-                                      settings.language,
-                                    )
-                                  : r.status === "failed"
-                                    ? t(
-                                        "AI 설명 생성 실패",
-                                        "AI explanation failed",
+                          {!!r.result?.aiAttempts?.length &&
+                            r.status !== "completed" && (
+                              <details className="attempt-history">
+                                <summary>
+                                  {t("요청 이력", "Request history")} ·{" "}
+                                  {r.attempts ?? r.result.aiAttempts.length}
+                                  {t("회", " attempts")}
+                                </summary>
+                                <ul>
+                                  {r.result.aiAttempts.map(
+                                    (attempt: any, index: number) => (
+                                      <li key={index}>
+                                        <time>{date(attempt.at)}</time>
+                                        <span>
+                                          {providerName(attempt.provider)} ·{" "}
+                                          {attempt.model}
+                                        </span>
+                                        <small>
+                                          {attemptOutcome(attempt.outcome)}
+                                          {attempt.status
+                                            ? ` · HTTP ${attempt.status}`
+                                            : ""}
+                                        </small>
+                                      </li>
+                                    ),
+                                  )}
+                                </ul>
+                              </details>
+                            )}
+                          {r.result && (
+                            <>
+                              <p>
+                                <strong>
+                                  {r.result.ai
+                                    ? formatAiProvenance(
+                                        r.result,
+                                        settings.language,
                                       )
-                                    : aiPendingLabel(settings.language)}
-                              </strong>
-                              {r.result.cost != null && (
-                                <span className="muted">
-                                  {" "}
-                                  · {t("비용", "Cost")}: {r.result.cost}
-                                </span>
-                              )}
-                            </p>
-                            {!!r.result.ruleErrors?.length && (
-                              <p className="muted">
-                                {t(
-                                  "일부 규칙을 평가하지 못했습니다. 저장된 지표와 나머지 근거를 확인하세요.",
-                                  "Some rules could not be evaluated. Review the saved metrics and remaining evidence.",
+                                    : r.status === "failed"
+                                      ? t(
+                                          "AI 설명 생성 실패",
+                                          "AI explanation failed",
+                                        )
+                                      : aiPendingLabel(settings.language)}
+                                </strong>
+                                {r.result.cost != null && (
+                                  <span className="muted">
+                                    {" "}
+                                    · {t("비용", "Cost")}: {r.result.cost}
+                                  </span>
                                 )}
                               </p>
-                            )}
-                            <div className="result-summary">
-                              <h3>{t("발견 사항", "Finding")}</h3>
-                              <p>
-                                {r.result.ai?.summary ||
-                                  (r.status === "failed"
-                                    ? t(
-                                        "지표는 저장되었습니다. AI 설명은 다시 분석할 수 있습니다.",
-                                        "Metrics are saved. You can retry the AI explanation.",
-                                      )
-                                    : t(
-                                        "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
-                                        "Metrics are ready. Waiting for AI explanation.",
-                                      ))}
-                              </p>
-                            </div>
-                            {r.result.metrics &&
-                              "toolOutcomesObserved" in r.result.metrics && (
-                                <p className="muted">
-                                  {r.result.metrics.toolErrors == null
-                                    ? t(
-                                        "구조화된 도구 결과가 없어 실패 여부를 알 수 없습니다.",
-                                        "No structured tool outcome was observed, so failures are unknown.",
-                                      )
-                                    : t(
-                                        `구조화된 도구 결과에서 확인한 실패 ${r.result.metrics.toolErrors}건입니다. 결과 ${r.result.metrics.toolOutcomesObserved}건을 관찰했습니다.`,
-                                        `${r.result.metrics.toolErrors} confirmed failure(s) from ${r.result.metrics.toolOutcomesObserved} observed structured tool outcome(s).`,
-                                      )}
-                                </p>
-                              )}
-                            {r.result.metrics &&
-                              !("toolOutcomesObserved" in r.result.metrics) &&
-                              !!r.result.metrics.toolErrors && (
+                              {!!r.result.ruleErrors?.length && (
                                 <p className="muted">
                                   {t(
-                                    "이전 결과의 오류 지표는 출력에서 감지한 키워드 신호입니다. 실제 실패 횟수로 해석하지 말고 근거를 확인하세요.",
-                                    "This older result counts keyword signals in outputs, not confirmed failures. Review the evidence.",
+                                    "일부 규칙을 평가하지 못했습니다. 저장된 지표와 나머지 근거를 확인하세요.",
+                                    "Some rules could not be evaluated. Review the saved metrics and remaining evidence.",
                                   )}
                                 </p>
                               )}
-                            {r.result.aiInput && (
-                              <p className="muted">
-                                {t(
-                                  `지표·규칙은 전체 이벤트를 계산했습니다. AI 설명에는 ${r.result.aiInput.events}개 중 선별한 근거 ${r.result.aiInput.samples}개를 사용했습니다. 나머지 이벤트는 AI 설명에서 제외되었습니다.`,
-                                  `Metrics and rules cover all events. The AI explanation uses ${r.result.aiInput.samples} selected evidence items from ${r.result.aiInput.events} events; remaining events were excluded from the AI explanation.`,
+                              <div className="result-summary">
+                                <h3>{t("발견 사항", "Finding")}</h3>
+                                <p>
+                                  {r.result.ai?.summary ||
+                                    (r.status === "failed"
+                                      ? t(
+                                          "지표는 저장되었습니다. AI 설명은 다시 분석할 수 있습니다.",
+                                          "Metrics are saved. You can retry the AI explanation.",
+                                        )
+                                      : t(
+                                          "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
+                                          "Metrics are ready. Waiting for AI explanation.",
+                                        ))}
+                                </p>
+                              </div>
+                              {r.result.metrics &&
+                                "toolOutcomesObserved" in r.result.metrics && (
+                                  <p className="muted">
+                                    {r.result.metrics.toolErrors == null
+                                      ? t(
+                                          "구조화된 도구 결과가 없어 실패 여부를 알 수 없습니다.",
+                                          "No structured tool outcome was observed, so failures are unknown.",
+                                        )
+                                      : t(
+                                          `구조화된 도구 결과에서 확인한 실패 ${r.result.metrics.toolErrors}건입니다. 결과 ${r.result.metrics.toolOutcomesObserved}건을 관찰했습니다.`,
+                                          `${r.result.metrics.toolErrors} confirmed failure(s) from ${r.result.metrics.toolOutcomesObserved} observed structured tool outcome(s).`,
+                                        )}
+                                  </p>
                                 )}
-                              </p>
-                            )}
-                            {!!r.result.imageInput?.occurrences && (
-                              <p className="muted">
-                                {t(
-                                  `이미지 ${r.result.imageInput.occurrences}건은 위치·형식·해상도만 수집했습니다. 이미지 내용은 분석하지 않았습니다.`,
-                                  `${r.result.imageInput.occurrences} image references include metadata only. Image content was not analyzed.`,
-                                )}
-                              </p>
-                            )}
-                            <section className="improvement-review" aria-labelledby={`improvements-${r.id}`}>
-                              <div className="review-heading">
-                                <div>
-                                  <h3 id={`improvements-${r.id}`}>
-                                    {t("다음 개선 작업", "Next improvement work")}
-                                  </h3>
+                              {r.result.metrics &&
+                                !("toolOutcomesObserved" in r.result.metrics) &&
+                                !!r.result.metrics.toolErrors && (
                                   <p className="muted">
                                     {t(
-                                      "문제·조치·검증을 비교하고, 필요한 근거만 여세요.",
-                                      "Compare the problem, action, and verification, then open only the evidence you need.",
+                                      "이전 결과의 오류 지표는 출력에서 감지한 키워드 신호입니다. 실제 실패 횟수로 해석하지 말고 근거를 확인하세요.",
+                                      "This older result counts keyword signals in outputs, not confirmed failures. Review the evidence.",
                                     )}
                                   </p>
-                                </div>
-                                {!!findings.length && (
-                                  <div className="review-actions">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        copyImprovementPlan(
-                                          selectedResultFindings.length
-                                            ? selectedResultFindings
-                                            : findings,
-                                          r,
-                                        )
-                                      }
-                                    >
-                                      {copiedTask === "plan"
-                                        ? t("복사됨", "Copied")
-                                        : selectedResultFindings.length
-                                          ? t("선택 계획 복사", "Copy selected plan")
-                                          : t("전체 계획 복사", "Copy all plan")}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        downloadImprovementPlan(
-                                          selectedResultFindings.length
-                                            ? selectedResultFindings
-                                            : findings,
-                                          r,
-                                        )
-                                      }
-                                    >
-                                      {t("계획 다운로드", "Download plan")}
-                                    </button>
-                                  </div>
                                 )}
-                              </div>
-                              {findings.length ? (
-                                <div className="review-findings">
-                                  {findings.map((finding) => {
-                                    const findingKey = `${r.id}:${finding.id}`;
-                                    return (
-                                      <article className={`review-finding ${finding.source}`} key={finding.id}>
-                                        <div className="finding-heading">
-                                          <label>
-                                            <input
-                                              type="checkbox"
-                                              checked={selectedFindings.includes(findingKey)}
-                                              onChange={(event) =>
-                                                toggleFinding(findingKey, event.target.checked)
-                                              }
-                                              aria-label={t(
-                                                `${finding.title} 개선 작업 선택`,
-                                                `Select ${finding.title} improvement task`,
-                                              )}
-                                            />
-                                            <span>
-                                              {finding.source === "ai"
-                                                ? t("AI 제안", "AI suggestion")
-                                                : t("규칙 관찰", "Rule observation")}
-                                            </span>
-                                          </label>
-                                          <div>
-                                            {finding.ruleId && (
-                                              <small>
-                                                {finding.ruleId} v{finding.version}
-                                              </small>
-                                            )}
-                                            <button
-                                              type="button"
-                                              onClick={() => copyImprovementTask(finding, r)}
-                                            >
-                                              {copiedTask === finding.id
-                                                ? t("복사됨", "Copied")
-                                                : t("에이전트 작업 복사", "Copy agent task")}
-                                            </button>
-                                          </div>
-                                        </div>
-                                        <h4>{finding.title}</h4>
-                                        <dl className="finding-grid">
-                                          {finding.problem && (
-                                            <div>
-                                              <dt>{t("문제", "Problem")}</dt>
-                                              <dd>{finding.problem}</dd>
-                                            </div>
-                                          )}
-                                          {finding.action && (
-                                            <div>
-                                              <dt>{t("조치", "Action")}</dt>
-                                              <dd>{finding.action}</dd>
-                                            </div>
-                                          )}
-                                          {finding.verification && (
-                                            <div>
-                                              <dt>{t("검증", "Verification")}</dt>
-                                              <dd>{finding.verification}</dd>
-                                            </div>
-                                          )}
-                                          {finding.observation && (
-                                            <div>
-                                              <dt>{t("관찰", "Observation")}</dt>
-                                              <dd>{finding.observation}</dd>
-                                            </div>
-                                          )}
-                                        </dl>
-                                        {finding.limitation && (
-                                          <p className="finding-limitation">{finding.limitation}</p>
-                                        )}
-                                        <div className="finding-evidence">
-                                          <strong>{t("근거", "Evidence")}</strong>
-                                          {finding.evidenceIds.length ? (
-                                            <ul>
-                                              {finding.evidenceIds.map((id) => {
-                                                const evidence = evidenceFor(r.result, id);
-                                                return (
-                                                  <li key={id}>
-                                                    <button
-                                                      type="button"
-                                                      onClick={(event) =>
-                                                        openEvidence(
-                                                          evidence,
-                                                          finding.title,
-                                                          event.currentTarget,
-                                                          id,
-                                                        )
-                                                      }
-                                                    >
-                                                      {id.slice(0, 10)}
-                                                    </button>
-                                                    <span>{hashLabel(evidence)}</span>
-                                                    {!evidence && (
-                                                      <em>{t("저장된 근거 누락", "Missing saved evidence")}</em>
-                                                    )}
-                                                  </li>
-                                                );
-                                              })}
-                                            </ul>
-                                          ) : (
-                                            <span>{t("연결된 근거 없음", "No linked evidence")}</span>
-                                          )}
-                                        </div>
-                                      </article>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
+                              {r.result.aiInput && (
                                 <p className="muted">
-                                  {t("이 분석에는 개선 작업이 없습니다.", "This analysis has no improvement work yet.")}
+                                  {t(
+                                    `지표·규칙은 전체 이벤트를 계산했습니다. AI 설명에는 ${r.result.aiInput.events}개 중 선별한 근거 ${r.result.aiInput.samples}개를 사용했습니다. 나머지 이벤트는 AI 설명에서 제외되었습니다.`,
+                                    `Metrics and rules cover all events. The AI explanation uses ${r.result.aiInput.samples} selected evidence items from ${r.result.aiInput.events} events; remaining events were excluded from the AI explanation.`,
+                                  )}
                                 </p>
                               )}
-                            </section>
-                          </>
-                        )}
-                      </article>
-                    );
+                              {!!r.result.imageInput?.occurrences && (
+                                <p className="muted">
+                                  {t(
+                                    `이미지 ${r.result.imageInput.occurrences}건은 위치·형식·해상도만 수집했습니다. 이미지 내용은 분석하지 않았습니다.`,
+                                    `${r.result.imageInput.occurrences} image references include metadata only. Image content was not analyzed.`,
+                                  )}
+                                </p>
+                              )}
+                              <section
+                                className="improvement-review"
+                                aria-labelledby={`improvements-${r.id}`}
+                              >
+                                <div className="review-heading">
+                                  <div>
+                                    <h3 id={`improvements-${r.id}`}>
+                                      {t(
+                                        "다음 개선 작업",
+                                        "Next improvement work",
+                                      )}
+                                    </h3>
+                                    <p className="muted">
+                                      {t(
+                                        "문제·조치·검증을 비교하고, 필요한 근거만 여세요.",
+                                        "Compare the problem, action, and verification, then open only the evidence you need.",
+                                      )}
+                                    </p>
+                                  </div>
+                                  {!!findings.length && (
+                                    <div className="review-actions">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          copyImprovementPlan(
+                                            selectedResultFindings.length
+                                              ? selectedResultFindings
+                                              : findings,
+                                            r,
+                                          )
+                                        }
+                                      >
+                                        {copiedTask === "plan"
+                                          ? t("복사됨", "Copied")
+                                          : selectedResultFindings.length
+                                            ? t(
+                                                "선택 계획 복사",
+                                                "Copy selected plan",
+                                              )
+                                            : t(
+                                                "전체 계획 복사",
+                                                "Copy all plan",
+                                              )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          downloadImprovementPlan(
+                                            selectedResultFindings.length
+                                              ? selectedResultFindings
+                                              : findings,
+                                            r,
+                                          )
+                                        }
+                                      >
+                                        {t("계획 다운로드", "Download plan")}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                {findings.length ? (
+                                  <div className="review-findings">
+                                    {findings.map((finding) => {
+                                      const findingKey = `${r.id}:${finding.id}`;
+                                      return (
+                                        <article
+                                          className={`review-finding ${finding.source}`}
+                                          key={finding.id}
+                                        >
+                                          <div className="finding-heading">
+                                            <label>
+                                              <input
+                                                type="checkbox"
+                                                checked={selectedFindings.includes(
+                                                  findingKey,
+                                                )}
+                                                onChange={(event) =>
+                                                  toggleFinding(
+                                                    findingKey,
+                                                    event.target.checked,
+                                                  )
+                                                }
+                                                aria-label={t(
+                                                  `${finding.title} 개선 작업 선택`,
+                                                  `Select ${finding.title} improvement task`,
+                                                )}
+                                              />
+                                              <span>
+                                                {finding.source === "ai"
+                                                  ? t(
+                                                      "AI 제안",
+                                                      "AI suggestion",
+                                                    )
+                                                  : t(
+                                                      "규칙 관찰",
+                                                      "Rule observation",
+                                                    )}
+                                              </span>
+                                            </label>
+                                            <div>
+                                              {finding.ruleId && (
+                                                <small>
+                                                  {finding.ruleId} v
+                                                  {finding.version}
+                                                </small>
+                                              )}
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  copyImprovementTask(
+                                                    finding,
+                                                    r,
+                                                  )
+                                                }
+                                              >
+                                                {copiedTask === finding.id
+                                                  ? t("복사됨", "Copied")
+                                                  : t(
+                                                      "에이전트 작업 복사",
+                                                      "Copy agent task",
+                                                    )}
+                                              </button>
+                                            </div>
+                                          </div>
+                                          <h4>{finding.title}</h4>
+                                          <dl className="finding-grid">
+                                            {finding.problem && (
+                                              <div>
+                                                <dt>{t("문제", "Problem")}</dt>
+                                                <dd>{finding.problem}</dd>
+                                              </div>
+                                            )}
+                                            {finding.action && (
+                                              <div>
+                                                <dt>{t("조치", "Action")}</dt>
+                                                <dd>{finding.action}</dd>
+                                              </div>
+                                            )}
+                                            {finding.verification && (
+                                              <div>
+                                                <dt>
+                                                  {t("검증", "Verification")}
+                                                </dt>
+                                                <dd>{finding.verification}</dd>
+                                              </div>
+                                            )}
+                                            {finding.observation && (
+                                              <div>
+                                                <dt>
+                                                  {t("관찰", "Observation")}
+                                                </dt>
+                                                <dd>{finding.observation}</dd>
+                                              </div>
+                                            )}
+                                          </dl>
+                                          {finding.limitation && (
+                                            <p className="finding-limitation">
+                                              {finding.limitation}
+                                            </p>
+                                          )}
+                                          <div className="finding-evidence">
+                                            <strong>
+                                              {t("근거", "Evidence")}
+                                            </strong>
+                                            {finding.evidenceIds.length ? (
+                                              <ul>
+                                                {finding.evidenceIds.map(
+                                                  (id) => {
+                                                    const evidence =
+                                                      evidenceFor(r.result, id);
+                                                    return (
+                                                      <li key={id}>
+                                                        <button
+                                                          type="button"
+                                                          onClick={(event) =>
+                                                            openEvidence(
+                                                              evidence,
+                                                              finding.title,
+                                                              event.currentTarget,
+                                                              id,
+                                                            )
+                                                          }
+                                                        >
+                                                          {id.slice(0, 10)}
+                                                        </button>
+                                                        <span>
+                                                          {hashLabel(evidence)}
+                                                        </span>
+                                                        {!evidence && (
+                                                          <em>
+                                                            {t(
+                                                              "저장된 근거 누락",
+                                                              "Missing saved evidence",
+                                                            )}
+                                                          </em>
+                                                        )}
+                                                      </li>
+                                                    );
+                                                  },
+                                                )}
+                                              </ul>
+                                            ) : (
+                                              <span>
+                                                {t(
+                                                  "연결된 근거 없음",
+                                                  "No linked evidence",
+                                                )}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </article>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="muted">
+                                    {t(
+                                      "이 분석에는 개선 작업이 없습니다.",
+                                      "This analysis has no improvement work yet.",
+                                    )}
+                                  </p>
+                                )}
+                              </section>
+                            </>
+                          )}
+                        </article>
+                      );
                     })
                   ) : (
                     <p>
@@ -1693,26 +1854,12 @@ export function Atlas({
                   <button
                     className="danger"
                     disabled={busy}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          t(
-                            "이 세션과 분석 결과를 삭제할까요?",
-                            "Delete this session and its analyses?",
-                          ),
-                        )
+                    onClick={(event) =>
+                      requestDeletion(
+                        [detail.session.id],
+                        event.currentTarget,
                       )
-                        run(async () => {
-                          await api(
-                            "/api/sessions/" + detail.session.id,
-                            undefined,
-                            "DELETE",
-                          );
-                          setDetail(null);
-                          setSessionUrl();
-                          await load();
-                        });
-                    }}
+                    }
                   >
                     {t("세션 삭제", "Delete session")}
                   </button>
@@ -1733,7 +1880,7 @@ export function Atlas({
                     )}
                   </p>
                 </div>
-                <button onClick={() => router.push("/settings")}>
+                <button onClick={() => router.push("/docs")}>
                   {t("Collector 연결 안내", "Collector setup")} →
                 </button>
               </section>
@@ -1839,14 +1986,14 @@ export function Atlas({
                   />
                 </label>
                 <label>
-                  {t("화면 모드", "Appearance")}
+                  Appearance
                   <Select
-                    label={t("화면 모드", "Appearance")}
+                    label="Appearance"
                     value={settings.theme}
                     options={[
-                      { value: "dark", label: t("다크", "Dark") },
-                      { value: "light", label: t("라이트", "Light") },
-                      { value: "system", label: t("시스템", "System") },
+                      { value: "dark", label: "Dark" },
+                      { value: "light", label: "Light" },
+                      { value: "system", label: "System" },
                     ]}
                     onChange={(value) =>
                       apply({ ...settings, theme: value as Settings["theme"] })
@@ -1862,7 +2009,7 @@ export function Atlas({
                     options={[
                       {
                         value: "system",
-                        label: t("기기 설정 사용", "Use device time zone"),
+                        label: `${t("기기 설정 사용", "Use device time zone")}${deviceTimezone ? ` · ${deviceTimezone}` : ""}`,
                       },
                       { value: "UTC", label: "UTC" },
                       ...Array.from(
@@ -1912,12 +2059,6 @@ export function Atlas({
                         "마스킹을 끄면 원문이 원격 저장소와 AI 제공자에게 전달됩니다.",
                         "Without masking, original text is sent to remote storage and the AI provider.",
                       )}
-                </p>
-                <p className="muted">
-                  {t(
-                    "상세 데이터 7일 · 집계 요약 30일 보관",
-                    "Details retained for 7 days · aggregate summaries for 30 days",
-                  )}
                 </p>
               </section>
               <section className="panel settings">
@@ -2105,13 +2246,12 @@ export function Atlas({
                 )}
               </section>
               <section className="panel settings collector-settings">
-                <h2>{t("Collector 연결", "Connect Collector")}</h2>
-                <p>
-                  {t(
-                    "설치된 Collector에서 다음 명령을 실행하고 표시되는 주소에서 GitHub로 로그인하세요.",
-                    "Run the installed Collector and sign in with GitHub at the displayed URL.",
-                  )}
-                </p>
+                <div className="section-heading">
+                  <h2>{t("연결된 기기", "Connected devices")}</h2>
+                  <Link href="/docs">
+                    {t("Collector 설치·사용 안내", "Collector setup guide")} →
+                  </Link>
+                </div>
                 {accountKnown && user && !user.guest && (
                   <div className="collector-activity">
                     <div className="section-heading">
@@ -2157,59 +2297,18 @@ export function Atlas({
                       </ul>
                     ) : (
                       <p className="muted">
-                        {t("연결된 Collector가 없습니다.", "No connected Collector yet.")}
+                        {t(
+                          "연결된 Collector가 없습니다.",
+                          "No connected Collector yet.",
+                        )}
                       </p>
                     )}
                   </div>
                 )}
-                <div className="command-row">
-                  <pre>{collectorCommands.connect}</pre>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyCommand("connect", collectorCommands.connect)
-                    }
-                  >
-                    {copiedCommand === "connect"
-                      ? t("복사됨", "Copied")
-                      : t("복사", "Copy")}
-                  </button>
-                </div>
-                <p>{t("로컬 기록 규모 확인", "Inspect local inventory")}</p>
-                <div className="command-row">
-                  <pre>{collectorCommands.inventory}</pre>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyCommand("inventory", collectorCommands.inventory)
-                    }
-                  >
-                    {copiedCommand === "inventory"
-                      ? t("복사됨", "Copied")
-                      : t("복사", "Copy")}
-                  </button>
-                </div>
-                <p>{t("기존 기록 즉시 가져오기", "Import existing records")}</p>
-                <div className="command-row">
-                  <pre>{collectorCommands.sync}</pre>
-                  <button
-                    type="button"
-                    onClick={() => copyCommand("sync", collectorCommands.sync)}
-                  >
-                    {copiedCommand === "sync"
-                      ? t("복사됨", "Copied")
-                      : t("복사", "Copy")}
-                  </button>
-                </div>
-                <p className="muted">
-                  {t(
-                    "config.json의 include/exclude로 프로젝트를 선택합니다. 로그인·연결 전에는 자동 전송하지 않습니다.",
-                    "Use include/exclude in config.json to select projects. No automatic transmission occurs before account linking.",
-                  )}
-                </p>
               </section>
             </>
           )}
+          {view === "docs" && <CollectorGuide language={settings.language} />}
           <footer className="page-footer">AgentSession Atlas</footer>
         </div>
       </main>
@@ -2288,6 +2387,68 @@ export function Atlas({
               <summary>{t("원본 JSON", "Raw JSON")}</summary>
               <pre>{JSON.stringify(evidenceDialog.evidence, null, 2)}</pre>
             </details>
+          </div>
+        )}
+      </dialog>
+      <dialog
+        ref={deleteDialogRef}
+        className="evidence-dialog"
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+        onCancel={(event) => {
+          if (busy) event.preventDefault();
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !busy)
+            event.currentTarget.close();
+        }}
+        onClose={() => {
+          setDeleteDialog(null);
+          deleteTriggerRef.current?.focus();
+          deleteTriggerRef.current = null;
+        }}
+      >
+        {deleteDialog && (
+          <div className="evidence-dialog-content">
+            <div className="dialog-heading">
+              <div>
+                <p>{t("세션 삭제", "Delete sessions")}</p>
+                <h2 id="delete-dialog-title">
+                  {t(
+                    `${deleteDialog.ids.length}개 세션을 삭제할까요?`,
+                    `Delete ${deleteDialog.ids.length} sessions?`,
+                  )}
+                </h2>
+              </div>
+            </div>
+            <p id="delete-dialog-description">
+              {t(
+                "세션과 분석 결과는 즉시 목록에서 사라집니다. 저장한 파일은 예약된 정리 작업에서 삭제됩니다.",
+                "Sessions and analyses disappear from the list immediately. Stored files are removed by scheduled cleanup.",
+              )}
+            </p>
+            <div className="actions">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => deleteDialogRef.current?.close()}
+              >
+                {t("취소", "Cancel")}
+              </button>
+              <button
+                type="button"
+                className="danger"
+                disabled={busy}
+                onClick={() => run(() => deleteSessions(deleteDialog.ids))}
+              >
+                {busy
+                  ? t("삭제 중", "Deleting")
+                  : t(
+                      `${deleteDialog.ids.length}개 세션 삭제`,
+                      `Delete ${deleteDialog.ids.length} sessions`,
+                    )}
+              </button>
+            </div>
           </div>
         )}
       </dialog>

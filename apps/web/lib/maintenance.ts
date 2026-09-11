@@ -26,7 +26,9 @@ export async function maintenance() {
   await db().begin(async (sql) => {
     await sql`DELETE FROM atlas.job_items WHERE expires_at<=now()`;
     await sql`DELETE FROM atlas.batches WHERE purged=true AND session_id IN (SELECT id FROM atlas.sessions WHERE expires_at<=now() OR deleted)`;
-    await sql`DELETE FROM atlas.sessions s WHERE (expires_at<=now() OR deleted) AND NOT EXISTS(SELECT 1 FROM atlas.batches b WHERE b.session_id=s.id) AND NOT EXISTS(SELECT 1 FROM atlas.job_items i WHERE i.session_id=s.id)`;
+    // Deleted session rows remain until the original detailed-data expiry,
+    // blocking re-ingestion without extending the 7-day window.
+    await sql`DELETE FROM atlas.sessions s WHERE expires_at<=now() AND NOT EXISTS(SELECT 1 FROM atlas.batches b WHERE b.session_id=s.id) AND NOT EXISTS(SELECT 1 FROM atlas.job_items i WHERE i.session_id=s.id)`;
     await sql`DELETE FROM atlas.summaries WHERE expires_at<=now()`;
     await sql`DELETE FROM atlas.jobs j WHERE created_at<now()-interval '7 days' OR NOT EXISTS(SELECT 1 FROM atlas.job_items i WHERE i.job_id=j.id)`;
     await sql`DELETE FROM atlas.pairings WHERE expires_at<=now()`;

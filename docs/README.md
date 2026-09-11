@@ -1,6 +1,6 @@
 # 전체 흐름
 
-![GitHub Actions가 원격 일정을 관리하고 Vercel 서울에서 웹·API·Workflow를 실행한다. Supabase 서울의 DB와 비공개 Storage에 세션·분석 결과를 저장하며 서버가 설정한 무료 AI 제공자 풀 또는 OpenAI 호환 BYOK로 AI 설명을 생성하는 아키텍처](assets/architecture-overview.svg)
+![GitHub Actions가 원격 일정을 관리하고 Vercel 서울에서 웹·API·Workflow를 실행한다. Supabase 서울의 DB와 비공개 Storage에 세션·분석 결과를 저장하며 서버가 설정한 무료 AI 제공자 풀 또는 OpenAI 호환 BYOK로 AI 설명을 생성한다. 에이전트는 로컬 CLI를 통해 Collector를 다루고, 점선은 아직 구현되지 않은 원격 MCP 도구 경계를 나타낸다](assets/architecture-overview.svg)
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
@@ -11,6 +11,7 @@
 | 이 문서                             | 전체 구조·공통 계약·현재 상태·구현 순서     |
 | [Atlas](atlas.md)                   | 대시보드·로그인·AI 분석·BYOK·배포·운영      |
 | [Collector](collector.md)           | 설치·30분 실행·증분 수집·전송·복구          |
+| [Collector의 에이전트 조작](collector.md#에이전트가-collector를-다루는-방법) | CLI 계약·안전한 sync 순서·Skill/MCP 제안 |
 | [평가 기준](evaluation.md)          | 실행 모델·스킬 효과·근거 요구·규칙 수명주기 |
 | [디자인 기준](DESIGN.md)            | 색상·타이포·간격·컴포넌트·화면 검증         |
 | [실제 작업 기록](implementation.md) | 소요 시간·검증 결과·남은 연결 작업          |
@@ -25,6 +26,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | Vercel·Supabase·예약 작업     | [배포와 운영 명령](atlas.md#배포와-운영-명령), [리소스 식별자](../ops/production.json)                    |
 | 평가 기준·규칙 운영           | [모델 적합성·스킬 효과와 규칙 수명주기](evaluation.md)                                                    |
 | Collector 구현·큰 이벤트 경계 | `apps/collector/src/core.ts`, [수집 정책](collector.md#근거를-보존하는-수집)                              |
+| 에이전트의 Collector 조작 | [CLI 계약과 안전한 순서](collector.md#에이전트가-collector를-다루는-방법), 웹의 `/docs/collector.md`·`/llms.txt` |
 | 공통 이벤트·마스킹·기본 규칙  | `packages/contracts/src/index.ts`                                                                         |
 | 수신·저장                     | `apps/web/lib/ingest.ts`, `apps/web/lib/storage.ts`                                                       |
 | 무료 후보·직렬 실행·분석      | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts`                                            |
@@ -47,6 +49,47 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
 | GitHub Actions  | [CI run 34576287779](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34576287779) 성공: 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권 경계 검증 9개 통과 |
 | Atlas·Collector | Collector 0.3.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0)은 132,274 bytes로 공개됐으며 npm은 아직 미게시             |
+
+## 에이전트 인터페이스 경계
+
+Collector를 자동화하는 에이전트의 정식 실행면은 **로컬 CLI**다. 웹의 `/docs/collector.md`와 `/llms.txt`는 같은 공유 문서에서 설치·명령·데이터 경계를 제공하는 읽기면이다. 이 문서 경로가 공개로 도달하는지 여부는 웹 배포 검증과 별도로 확인한다.
+
+| 표면 | 현재 구현 | 경계 |
+| --- | --- | --- |
+| 로컬 CLI | `setup`, `connect`, `inventory`, `configure`, `sync`, `status`, `doctor`, `pause`, `resume`, `update`, `uninstall` | 로컬 source·Outbox·Keychain을 다루는 유일한 지원 경로 |
+| 구조화 출력 | `inventory`, `status`, `doctor` JSON | session count·bytes·project count와 상태만 출력. 범위·pending을 구분한 계획 출력은 후속 |
+| 웹 문서 | `/docs/collector.md`, `/llms.txt` | 사람과 에이전트가 같은 canonical 내용을 찾는 읽기 경로 |
+| Skill | 제안 | CLI와 문서를 참조해 inventory → 범위 확인 → sync 순서를 안내하는 얇은 절차 |
+| MCP | 제안 | 원격 Atlas의 device·세션·분석 상태가 필요할 때만. 현재 MCP 서버나 tool은 없음 |
+
+에이전트가 범위를 좁혀도 이미 만들어진 pending Outbox나 접수된 원격 세션은 자동 철회되지 않는다. 이 차이와 쓰기 권한은 [Collector 안전 절차](collector.md#에이전트가-collector를-다루는-방법)를 따른다.
+
+## 설계 결정: 사람과 에이전트가 같은 제품을 사용한다
+
+Atlas는 대시보드 사용자를 위한 별도 제품과 에이전트용 자동화 제품을 만들지 않는다. 사람은 웹에서, 에이전트는 문서와 로컬 CLI 또는 향후 MCP를 통해 **같은 Workspace·소유권·보관·평가 규칙**을 사용한다. 이 결정은 UI를 자동화하기 위한 것이 아니라, 세션 근거와 분석 결과의 의미가 호출 주체에 따라 달라지지 않게 하기 위한 것이다.
+
+| 계층 | 책임 | 재구현하지 않는 것 |
+| --- | --- | --- |
+| 웹·원격 API | 로그인, Workspace·소유권, 수신·보관, 분석 요청, 평가·근거 규칙 | CLI·Skill·MCP에 별도 도메인 규칙을 복제하지 않음 |
+| 로컬 CLI | PC의 세션 파일 발견, Outbox, Keychain token, `pause`·범위 설정·`sync` | 원격 세션 삭제·분석 권한을 로컬에서 추정하지 않음 |
+| 문서 | 기능 발견, 명령 계약, 데이터·권한 경계, 안전한 절차 | 실행이나 권한 부여를 하지 않음 |
+| 얇은 Skill | canonical 문서를 찾아 읽고 inspect → plan → execute → verify 순서를 안내 | 별도 상태·정책·비밀값을 보관하지 않음 |
+| 원격 MCP adapter | 인증된 Atlas API를 tool 형식으로 노출해 세션·분석 상태를 읽고 원격 분석·삭제를 요청 | PC 파일, Keychain, 로컬 Collector 제어를 원격에서 직접 수행하지 않음 |
+| plugin | Skill·MCP·문서 같은 배포 단위를 설치·발견하게 묶음 | 새 비즈니스 기능이나 새로운 권한 모델을 만들지 않음 |
+
+에이전트 자동화의 목표 흐름은 다음과 같다. **inspect**는 상태·인벤토리·세션을 읽고, **plan**은 대상·범위·크기·기존 pending을 요약한다. **execute**는 확인된 쓰기만 수행하며, **verify**는 idempotency key, 서버 접수증, 분석 상태와 근거 ID로 결과를 확인한다. 자동화가 새 해석이나 더 넓은 범위를 만들지 않도록, 각 단계의 입력과 결과를 같은 API 계약에 남기는 것을 목표로 한다. 현재는 inventory/status와 수집 ACK를 제공하며, 별도의 plan 기록과 원격 MCP는 후속이다.
+
+| 채택 순서 | 이유 | 상태 |
+| --- | --- | --- |
+| 1. local CLI + `/docs/collector.md` + `/llms.txt` | 로컬 디스크·Keychain 경계를 보존하면서 사람과 에이전트가 같은 명령 계약을 읽는다 | 현재 |
+| 2. 모든 CLI의 안정된 JSON·plan 출력 | 에이전트가 텍스트 파싱 없이 범위·pending·결과를 판단한다 | 후속 |
+| 3. 얇은 Skill | 문서와 CLI를 다시 쓰지 않고 안전한 작업 순서만 전달한다 | 제안 |
+| 4. 원격 MCP adapter | 여러 도구가 원격 세션·분석 상태를 읽고 같은 API로 요청할 필요가 생길 때 도입한다 | 제안 |
+| 5. plugin packaging | 배포·발견 경로를 하나로 제공해야 할 때만 묶는다 | 제안 |
+
+이 구조는 개인 세션이나 키를 예시로 쓰지 않아도 설명할 수 있다. 블로그에서는 “로컬 권한은 CLI에 남기고, 원격 도메인 규칙은 한 API에 모으며, 문서·Skill·MCP는 그 경계를 다른 방식으로 발견·호출한다”는 결정과 위의 채택 순서를 사례의 중심으로 삼는다.
+
+규격 참고: [Agent Skills](https://agentskills.io/specification) · [MCP 아키텍처](https://modelcontextprotocol.io/docs/learn/architecture). Skill은 지침·참고 자료를 묶고 MCP는 클라이언트와 서버 사이의 도구·문맥 교환을 정의한다.
 
 ## 제품의 핵심: 근거를 보존하는 수집과 증류
 
@@ -152,6 +195,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 | 계층           | 맡는 일                                        | 구현 제안                                                                                                                                 |
 | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | 로컬 전송기    | 30분마다 새 기록 발견·선택·보관·전송           | TypeScript CLI + JSON Outbox + SQLite                                                                                                     |
+| 에이전트 조작 | 문서로 계약을 읽고 로컬 Collector를 안전하게 제어 | `/docs/collector.md`·`/llms.txt` + CLI. 향후 얇은 Skill, 원격 상태가 필요할 때만 MCP                                                       |
 | Source Adapter | 에이전트별 기록을 공통 이벤트로 변환           | Codex·Claude Code 구현, Hermes 후속                                                                                                       |
 | API            | 인증·JSON 수신·마스킹·멱등 접수·조회·수동 분석 | Next.js Route Handlers → Vercel Functions                                                                                                 |
 | 분석           | 지표·규칙 분석, AI 요청·결과 검증              | Vercel Workflow가 Functions의 짧은 단계를 실행. [개선 후보 규칙](atlas.md#개선-후보-규칙의-확장)은 개별 모듈·등록 목록·설정으로 추가·제거 |

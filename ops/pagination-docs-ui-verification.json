@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-09-11T08:15:11.786Z",
+  "url": "http://localhost:3100",
+  "syntheticOnly": true,
+  "status": "passed",
+  "checks": [
+    "empty list footer follows empty state with bottom/right padding",
+    "20-row and last 3-row pages keep footer below table",
+    "page size selection works",
+    "dark/light/mobile layout and highlighted sign-in callout",
+    "settings has device management without installation commands or retention notice",
+    "system timezone displays Asia/Seoul; Appearance uses English options",
+    "public docs route preserves URL on reload and does not load sessions",
+    "docs command copy and Data residency & retention section",
+    "row deletion cancel/Escape restores focus without mutation; bulk partial failure preserves failed selection; retry succeeds"
+  ]
+}

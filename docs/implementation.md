@@ -181,4 +181,5 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 
 - README와 공개 사용 가이드 첫머리에 영어 Overview를 추가했다. 코딩 세션 → Collector → Atlas → Review & apply → 다음 세션의 순환만 표현한다. 기존 인프라 아키텍처는 유지한다.
 - 데스크톱과 모바일은 같은 주요 흐름을 각 화면 폭에 맞게 배치한다. SVG의 text·tspan을 유지하고, 기존 Tabler 사용자 아이콘의 라이선스를 보존했다. 생성 스크립트가 문서용·웹용 사본을 함께 만들며 CI에서 일치 여부를 검사한다.
-- SVG XML 검사와 브라우저 렌더링, 웹 빌드·타입 검사를 확인했다. 공개 Markdown에도 같은 Overview 이미지를 연결했다. 원격 확인은 배포 후 기록한다.
+- SVG XML 검사와 브라우저 렌더링, 웹 빌드·타입 검사를 확인했다. 공개 Markdown에도 같은 Overview 이미지를 연결했다. 운영 `/docs`에서 데스크톱·모바일, 다크·라이트 표시와 가로 넘침 없음·브라우저 예외 없음을 확인했다. [화면 검증 기록](../ops/overview-ui-verification.json)을 남겼다.
+- source `f858f93`을 배포한 `dpl_BgwyVtra95qbKZRsuAbiGYAD8gff`는 Production Ready·`icn1`이다. [CI 34606401527](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34606401527)도 성공했다.

@@ -4,14 +4,14 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_3HAMUThGfhip5yCh1dwAiBDSH1pr",
+    "latestReadyDeployment": "dpl_BgwyVtra95qbKZRsuAbiGYAD8gff",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "88192e68883dcf9d93dc5ac3306e8a300ce4ccc8",
+    "runtimeChangesRecordedIn": "f858f93bc853e37d7ab11ff032458090c9abc0d7",
     "version": "0.4.0"
   },
   "supabase": {
@@ -135,7 +135,7 @@
     "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
   },
   "verification": {
-    "ciRun": 34580933584,
+    "ciRun": 34606401527,
     "tests": 69,
     "contracts": 22,
     "collector": 18,
@@ -149,6 +149,7 @@
     "deletionBoundaries": "ops/boundary-verification.json",
     "deletionRetention": "ops/retention-verification.json",
     "deviceInspection": "ops/device-inspection-verification.json",
-    "deviceDocsUi": "ops/device-docs-ui-verification.json"
+    "deviceDocsUi": "ops/device-docs-ui-verification.json",
+    "overviewUi": "ops/overview-ui-verification.json"
   }
 }

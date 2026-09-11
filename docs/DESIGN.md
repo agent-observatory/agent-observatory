@@ -109,4 +109,3 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 - [IBM DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/ibm/DESIGN.md) — 평면적 정보 구조와 강한 주 행동
 - [Sentry DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/sentry/DESIGN.md) — 개발 도구의 의미별 상태색
 - [Supabase DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/supabase/DESIGN.md) — 조밀한 제품 UI와 코드 표현
-- [OpenGateway](https://opengateway.ai/) · [Models](https://opengateway.ai/models) · [Docs](https://opengateway.ai/docs) — 2026-09-11 브라우저에서 확인. 낮은 대비의 어두운 표면, 제한된 cobalt 조명, 여유 있는 상단 탐색, 검색·필터 뒤의 조밀한 표, 주 행동/보조 행동의 명확한 위계를 참고했다. 카드의 발광 테두리나 브랜드 표현은 Atlas에 가져오지 않는다.

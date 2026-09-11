@@ -6,16 +6,32 @@
 
 **Codex와 Claude Code 기록을 수집해 Atlas로 보내는 TypeScript 기반 Node.js CLI.** 0.3.0은 Claude Code adapter·기기 heartbeat·수집 snapshot 완료 handshake를 제공한다. Node.js 22.15 이상이 필요하다. 최근 pilot 설치본은 연결됐고 자동 전송은 `paused: true`다.
 
-## 사용자 설치: npx setup
+## 웹에서 현재 설정 조회
+
+설정의 **연결된 기기 → 현재 설정 조회**는 해당 PC에 새 요청을 보낸다. Collector가 요청을 받은 뒤 설정 파일과 세션 헤더를 읽어 포함·제외 경로, 기간, 활성 source, 수집 대상 프로젝트별 세션 수·원본 용량을 응답한다. 목록은 최대 200개이며 초과 여부를 표시한다. 이미 Outbox에 들어간 배치는 새 제외 설정과 별개다. 원본 크기를 증분 전송량으로 표현하지 않는다.
+
+| 명령 | 역할 |
+| --- | --- |
+| `atlas-collector start` | 예약 실행과 웹 조회 프로세스 시작. 기존 pause 유지 |
+| `atlas-collector stop` | 두 프로세스 종료. start 또는 다음 로그인 시 다시 시작 |
+| `atlas-collector pause` | 자동 전송만 중지. 웹 조회 응답은 유지 |
+| `atlas-collector doctor` | 설치·연결·pause·조회 프로세스 등록 상태 확인 |
+
+0.4.0은 전송용 30분 LaunchAgent와 조회용 상주 LaunchAgent를 분리한다. 조회 프로세스는 인증된 HTTPS 요청으로 10초마다 새 조회 요청을 확인한다. 로컬 포트를 열지 않고, 원격 명령 실행이나 설정 변경을 받지 않는다. 네트워크 실패는 최대 60초 백오프로 재시도한다. 조회 요청만 있을 때 프로젝트를 탐색한다.
+
+서버는 계정 소유권과 기기 토큰을 각각 확인한다. 요청은 60초 뒤 만료하며, 응답이 없으면 시작 명령을 안내한다. 응답 결과는 조회 시각을 표시하고 5분 뒤 읽기를 차단한다. 데이터는 만료 뒤 기기 접속 또는 매시간 정리에서 삭제한다. 설정 전체를 직렬화하지 않고 허용한 경로·집계만 반환하므로 토큰·키·세션 본문은 포함하지 않는다. 웹에서 조회한 뒤 로컬 설정이 바뀌면 다시 조회해야 한다.
+
+## 사용자 설치: atlas-collector
 
 **Node.js 22.15 이상과 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
-공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.3.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0)의 132,274-byte tarball을 사용한다. 로컬 설치와 운영 heartbeat를 확인했다.
+공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.4.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0)의 tarball을 사용한다.
 
 ```sh
-npx --yes https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.3.0/agent-observatory-collector-0.3.0.tgz setup
+npm install --global https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.4.0/agent-observatory-collector-0.4.0.tgz
+atlas-collector setup
 ```
 
-`npx`는 GitHub Release tarball을 받아 실행하는 진입점이다. **영구 설치와 자동 실행 등록은 `setup`에 구현되어 있으며 로컬 설치에서 확인했다.** 설치 뒤의 명령은 `node ~/.agent-session-atlas/current/cli.js`로 실행한다.
+`npm install --global`이 `atlas-collector` 명령을 설치하고, `setup`이 예약 실행용 파일과 스케줄러를 등록한다. 이후에는 `atlas-collector pause`, `atlas-collector inventory`, `atlas-collector sync`처럼 실행한다. 업그레이드할 때는 새 release tarball을 전역 설치한 뒤 `atlas-collector update`로 예약 실행본도 맞춘다.
 
 | 단계      | `setup`이 실제로 하는 일                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------- |
@@ -41,11 +57,12 @@ MVP는 설치된 Node 경로를 LaunchAgent에 고정한다. `doctor`는 현재 
 
 ### 현재 CLI 계약
 
-아래는 0.3.0 코드에 있는 명령만 기록한 계약이다. `inventory`, `status`, `doctor`의 표준 출력은 JSON이고, 나머지는 사람용 짧은 메시지다. JSON schema·`--json`·`--dry-run`·source 선택 플래그는 아직 없다.
+아래는 0.4.0 코드에 있는 명령만 기록한 계약이다. `inventory`, `status`, `doctor`의 표준 출력은 JSON이고, 나머지는 사람용 짧은 메시지다. JSON schema·`--json`·`--dry-run`·source 선택 플래그는 아직 없다.
 
 | 명령 | 실제 동작 | 상태 변경 |
 | --- | --- | --- |
 | `setup` | 설치본과 LaunchAgent를 등록하고, 없을 때만 기본 설정을 만든다 | 설치본·설정·LaunchAgent |
+| `start` / `stop` | 전송 스케줄러와 웹 조회 프로세스를 시작하거나 종료. pause 설정 유지 | LaunchAgent |
 | `connect` | 브라우저 기기 연결을 시작하고 성공한 device token을 Keychain에 저장한다 | 기기 연결·Keychain |
 | `inventory` | 현재 범위의 `sessions`, `bytes`, `projects`를 JSON으로 집계한다. 전송하지 않는다 | 없음 |
 | `configure --include a,b --exclude c,d --since ISO --until ISO` | 준 옵션만 설정한다. 날짜는 ISO로 정규화한다 | 수집 범위 |
@@ -132,7 +149,7 @@ Codex 기록 저장소에서 신규·변경 기록을 찾고 작업 경로로 �
 본문·도구 입출력을 확보하기 위해 세션 파일을 읽는 방식을 기본으로 한다.
 내장 OTel은 에이전트별 내용·잘림 범위가 달라 후속 보완 경로로 둔다.
 
-아래 YAML은 **목표 수집 정책 모델**이다. 0.3.0의 실제 설정 파일 형식은 이 YAML이 아니라 `~/.agent-session-atlas/config.json`이며, 현재 CLI는 위의 [현재 CLI 계약](#현재-cli-계약)에 적힌 옵션만 지원한다. 에이전트는 이 예시를 복사해 실제 설정 파일을 쓰지 않는다.
+아래 YAML은 **목표 수집 정책 모델**이다. 0.4.0의 실제 설정 파일 형식은 이 YAML이 아니라 `~/.agent-session-atlas/config.json`이며, 현재 CLI는 위의 [현재 CLI 계약](#현재-cli-계약)에 적힌 옵션만 지원한다. 에이전트는 이 예시를 복사해 실제 설정 파일을 쓰지 않는다.
 
 ```yaml
 # 목표 수집 정책 모델 — 현재 config.json 형식이 아님

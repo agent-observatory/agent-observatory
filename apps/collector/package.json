@@ -1,6 +1,6 @@
 {
   "name": "@agent-observatory/collector",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Codex and Claude Code session collector for AgentSession Atlas",
   "license": "MIT",
   "type": "module",

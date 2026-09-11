@@ -1,5 +1,6 @@
 "use client";
 import { CollectorGuide } from "./collector-guide";
+import { DeviceScope } from "./device-scope";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -864,7 +865,7 @@ export function Atlas({
               <span className="dot" />
               Seoul · icn1
             </span>
-            <span>v0.3.0</span>
+            <span>v0.4.0</span>
           </div>
         </div>
         <div className="workspace">
@@ -2292,6 +2293,12 @@ export function Atlas({
                                   : ""}
                               </small>
                             </div>
+                            <DeviceScope
+                              deviceId={device.id}
+                              revoked={device.revoked}
+                              language={settings.language}
+                              timezone={settings.timezone}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -2423,8 +2430,8 @@ export function Atlas({
             </div>
             <p id="delete-dialog-description">
               {t(
-                "세션과 분석 결과는 즉시 목록에서 사라집니다. 저장한 파일은 예약된 정리 작업에서 삭제됩니다.",
-                "Sessions and analyses disappear from the list immediately. Stored files are removed by scheduled cleanup.",
+                "세션과 분석 결과가 목록에서 삭제됩니다.",
+                "Sessions and analyses will be removed from the list.",
               )}
             </p>
             <div className="actions">

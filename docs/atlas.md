@@ -128,7 +128,7 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 **규칙이 관측 근거를 가진 개선 후보를 찾고, AI가 맥락·반례·개선 방법을 설명한다.** 후보는 낭비나 잘못된 작업이라는 확정 판정이 아니다. AI 설명이 없어도 규칙 결과는 조회할 수 있다.
 
-규칙의 단일 원본은 [`evaluation-catalog.ts`](../packages/contracts/src/evaluation-catalog.ts)다. 서버의 적용 조건·결정적 평가·선택 rubric과 [생성된 규칙 문서](evaluation-rules.md)가 같은 정의를 읽는다. `pnpm check:evaluation-docs`를 CI에서 검사한다. 자세한 의미·검증 한계·변경 절차는 [평가 기준](evaluation.md)을 따른다.
+규칙의 단일 원본은 [`evaluation-catalog.ts`](../packages/contracts/src/evaluation-catalog.ts)다. 서버의 적용 조건·결정적 평가·선택 rubric과 [평가 규칙 카탈로그](evaluation.md#평가-규칙-카탈로그)가 같은 정의를 읽는다. `pnpm check:evaluation-docs`를 CI에서 검사한다. 자세한 의미·검증 한계·변경 절차는 [평가 기준](evaluation.md)을 따른다.
 
 결과에는 규칙별 선택·부족·비적용·보류 사유와 평가 버전을 남긴다. 같은 revision·평가 버전·설정의 결과는 재사용하고, 재분석으로 상세 7일·요약 30일의 만료를 연장하지 않는다.
 

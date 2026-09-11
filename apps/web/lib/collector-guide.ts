@@ -12,9 +12,9 @@ export type GuideSection = {
   items?: GuideItem[];
   facts?: Array<{ label: string; value: string }>;
 };
-const cli = "node ~/.agent-session-atlas/current/cli.js";
+const cli = "atlas-collector";
 const install =
-  "npx --yes https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.3.0/agent-observatory-collector-0.3.0.tgz setup";
+  "npm install --global https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.4.0/agent-observatory-collector-0.4.0.tgz\natlas-collector setup";
 export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
   const t = (ko: string, en: string) => (language === "en" ? en : ko);
   const steps = [
@@ -22,8 +22,8 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
       id: "install",
       title: t("Collector 설치", "Install Collector"),
       text: t(
-        "macOS와 Node.js 22.15 이상이 필요합니다. 로그인 시와 30분마다 실행하는 스케줄러를 함께 등록합니다.",
-        "Requires macOS and Node.js 22.15 or later. Setup registers a scheduler that runs at login and every 30 minutes.",
+        "macOS와 Node.js 22.15 이상이 필요합니다. 로그인 시와 30분마다 실행하는 스케줄러, 웹 조회에 응답하는 백그라운드 프로세스를 등록합니다.",
+        "Requires macOS and Node.js 22.15 or later. Setup registers the login/30-minute scheduler and a background process for web inspection.",
       ),
       command: install,
     },
@@ -64,6 +64,60 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
         "Install once per computer. Start with setup → pause → configure scope and inventory → connect → sync, then resume if automatic uploads are wanted.",
       ),
       items: steps,
+    },
+    {
+      id: "device-inspection",
+      title: t(
+        "웹에서 현재 수집 범위 확인",
+        "Inspect current collection scope",
+      ),
+      text: t(
+        "설정 → 연결된 기기 → 현재 설정 조회를 누르세요. 실행 중인 Collector가 요청을 받은 뒤 로컬 설정과 수집 대상 프로젝트를 읽습니다. 전송할 세션 본문을 읽거나 업로드하지 않습니다.",
+        "Open Settings → Connected devices → Inspect current settings. The running Collector reads its local settings and eligible projects after receiving the request. It does not upload sessions.",
+      ),
+      items: [
+        {
+          id: "start-collector",
+          title: t("Collector 실행", "Start Collector"),
+          text: t(
+            "연결할 수 없다는 안내가 나오면 해당 PC에서 실행하세요. 기존 pause 설정을 유지하며 예약 실행과 웹 조회 응답을 시작합니다. 네트워크가 정상일 때 조회 요청은 보통 10초 이내 확인하며, 파일 수에 따라 결과 계산 시간이 더 걸릴 수 있습니다.",
+            "Run this on the target PC if it cannot be reached. Starts scheduling and web inspection while preserving pause. Requests are usually picked up within 10 seconds; scanning may take longer.",
+          ),
+          command: `${cli} start`,
+        },
+        {
+          id: "stop-collector",
+          title: t("Collector 종료", "Stop Collector"),
+          text: t(
+            "예약 실행과 웹 조회 응답을 종료합니다. 다시 start하거나 다음 로그인 시 시작됩니다. 자동 전송만 멈추려면 pause를 사용하세요.",
+            "Stops scheduling and web inspection until start or the next login. Use pause to stop only automatic uploads.",
+          ),
+          command: `${cli} stop`,
+        },
+      ],
+      facts: [
+        {
+          label: t("조회 결과", "Result"),
+          value: t(
+            "포함·제외 프로젝트, 기간, 활성 에이전트, 프로젝트별 로컬 세션 수·원본 크기와 조회 시각. 200개 초과 목록은 일부만 표시합니다.",
+            "Includes/excludes, period, active agents, per-project local session counts and source sizes, and inspection time. Lists over 200 items are truncated.",
+          ),
+        },
+        {
+          label: t("대기 전송", "Queued uploads"),
+          value: t(
+            "이미 대기 중인 배치는 새 제외 설정과 별개입니다. 표시한 원본 크기는 실제 압축 전송량이나 새로 전송할 양이 아닙니다.",
+            "Queued batches are independent of new exclusions. Source size is neither compressed transfer size nor incremental upload size.",
+          ),
+        },
+        {
+          label: t("연결·보관", "Connection and retention"),
+          value: t(
+            "응답이 없으면 현재 설정을 표시하지 않습니다. 조회 결과는 5분 동안만 서버에서 읽을 수 있고, 만료 뒤 Collector 연결 또는 매시간 정리 작업에서 제거합니다. 키와 세션 본문은 포함하지 않습니다.",
+            "No current settings are shown without a response. Results remain readable for 5 minutes and are removed on a later Collector connection or hourly cleanup. Keys and session content are excluded.",
+          ),
+        },
+      ],
     },
     {
       id: "projects",
@@ -181,7 +235,10 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
         {
           id: "update",
           title: t("Collector 업데이트", "Update Collector"),
-          text: t("설치할 Release 패키지의 update 명령을 실행합니다. 현재 설치본의 update만 실행하면 그 버전을 다시 설치하며 최신 버전을 자동 검색하지 않습니다. 설정·Outbox는 유지됩니다.", "Run update from the release package you want to install. Running update from the installed CLI reinstalls that version; it does not discover the latest release. Settings and Outbox are preserved."),
+          text: t(
+            "설치할 Release 패키지의 update 명령을 실행합니다. 현재 설치본의 update만 실행하면 그 버전을 다시 설치하며 최신 버전을 자동 검색하지 않습니다. 설정·Outbox는 유지됩니다.",
+            "Run update from the release package you want to install. Running update from the installed CLI reinstalls that version; it does not discover the latest release. Settings and Outbox are preserved.",
+          ),
           command: install.replace(/setup$/, "update"),
         },
         {

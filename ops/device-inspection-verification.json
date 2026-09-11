@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-11T08:42:52.649Z",
+  "url": "http://localhost:3102",
+  "status": "passed",
+  "syntheticOnly": true,
+  "checks": [
+    "offline requires Collector start",
+    "foreign owner cannot inspect",
+    "pending request coalesces",
+    "only target Collector receives request",
+    "cross-device reply and unexpected secret fields rejected",
+    "owner receives current response only",
+    "reply replay rejected",
+    "expired response hidden and purged",
+    "late reply rejected",
+    "revoked device cannot inspect",
+    "private request table uses RLS"
+  ]
+}

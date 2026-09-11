@@ -4,6 +4,7 @@ import { dispatchJob } from "./dispatch";
 export async function maintenance() {
   await db()`SELECT 1`;
   const started = Date.now();
+  await db()`DELETE FROM atlas.device_inspections WHERE expires_at<=now()`;
   let deletedObjects = 0;
   while (Date.now() - started < 180000) {
     const expired =

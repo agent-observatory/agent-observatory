@@ -8,7 +8,8 @@
     "./claude": "./src/claude.ts",
     "./images": "./src/images.ts",
     "./transport": "./src/transport.ts",
-    "./evaluation": "./src/evaluation-catalog.ts"
+    "./evaluation": "./src/evaluation-catalog.ts",
+    "./device-inspection": "./src/device-inspection.ts"
   },
   "scripts": {
     "build": "tsc",

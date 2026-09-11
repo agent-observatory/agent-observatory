@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   State,
+  COLLECTOR_VERSION,
   initialize,
   sources,
   collect,
@@ -516,7 +517,7 @@ test("heartbeat is secret-free and completion follows an acknowledged snapshot",
       return Response.json({ ok: true });
     });
     assert.deepEqual(heartbeatBody, {
-      version: "0.3.0",
+      version: COLLECTOR_VERSION,
       sourceTypes: ["codex"],
       paused: false,
       status: "success",

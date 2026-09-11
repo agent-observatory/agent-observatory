@@ -20,11 +20,13 @@ import {
   completeSnapshot,
   completedJsonlEnd,
 } from "./core.js";
-import { launchAgentPlist } from "./scheduling.js";
+import { controlLoop } from "./inspection.js";
+import { controlAgentPlist, launchAgentPlist } from "./scheduling.js";
 const root =
   process.env.ATLAS_HOME || path.join(os.homedir(), ".agent-session-atlas");
 const configFile = path.join(root, "config.json");
 const label = "com.agent-observatory.atlas-collector";
+const controlLabel = label + ".control";
 const args = process.argv.slice(2);
 const cmd = args[0] || "status";
 function option(key: string) {
@@ -137,10 +139,29 @@ async function install() {
   execFileSync("launchctl", ["bootstrap", `gui/${process.getuid!()}`, plist], {
     stdio: "pipe",
   });
+  const controlPlist = plist.replace(label, controlLabel);
+  await fs.writeFile(
+    controlPlist,
+    controlAgentPlist({
+      label: controlLabel,
+      node,
+      script,
+      root,
+      log: path.join(root, "control.log"),
+      errorLog: path.join(root, "control-error.log"),
+    }),
+    { mode: 0o600 },
+  );
+  stopAgent(controlLabel);
+  execFileSync(
+    "launchctl",
+    ["bootstrap", `gui/${process.getuid!()}`, controlPlist],
+    { stdio: "pipe" },
+  );
   console.log(
     `Collector ${COLLECTOR_VERSION} 설치 완료 · 기동 시 및 30분 스케줄러 등록`,
   );
-  console.log("계정 연결: " + node + " " + script + " connect");
+  console.log("계정 연결: atlas-collector connect");
 }
 async function connect() {
   const c = await config();
@@ -266,12 +287,59 @@ async function sync() {
     await unlock();
   }
 }
+function stopAgent(agent: string) {
+  try {
+    execFileSync(
+      "launchctl",
+      ["bootout", `gui/${process.getuid!()}/${agent}`],
+      { stdio: "ignore" },
+    );
+  } catch {}
+}
+function agentRunning(agent: string) {
+  try {
+    execFileSync("launchctl", ["print", `gui/${process.getuid!()}/${agent}`], {
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 async function main() {
   if (cmd === "setup" || cmd === "update") {
     await install();
     return;
   }
   await initialize(root);
+  if (cmd === "serve") {
+    const controller = new AbortController();
+    process.once("SIGTERM", () => controller.abort());
+    process.once("SIGINT", () => controller.abort());
+    await controlLoop(root, config, token, controller.signal);
+    return;
+  }
+  if (cmd === "start" || cmd === "stop") {
+    for (const agent of [label, controlLabel]) {
+      if (cmd === "stop") stopAgent(agent);
+      else if (!agentRunning(agent))
+        execFileSync(
+          "launchctl",
+          [
+            "bootstrap",
+            `gui/${process.getuid!()}`,
+            path.join(os.homedir(), "Library/LaunchAgents", agent + ".plist"),
+          ],
+          { stdio: "pipe" },
+        );
+    }
+    console.log(
+      cmd === "start"
+        ? "Collector 실행. 기존 pause 설정은 유지됩니다."
+        : "Collector 종료. 다시 실행하려면 atlas-collector start",
+    );
+    return;
+  }
   if (cmd === "connect") {
     await connect();
     return;
@@ -339,6 +407,7 @@ async function main() {
             connected: !!token(c),
             paused: c.paused,
             intervalMinutes: 30,
+            controlRunning: agentRunning(controlLabel),
             node: process.version,
             batches: state.db
               .prepare(
@@ -356,6 +425,16 @@ async function main() {
     return;
   }
   if (cmd === "uninstall") {
+    stopAgent(controlLabel);
+    await fs
+      .unlink(
+        path.join(
+          os.homedir(),
+          "Library/LaunchAgents",
+          controlLabel + ".plist",
+        ),
+      )
+      .catch(() => {});
     try {
       execFileSync(
         "launchctl",
@@ -371,7 +450,7 @@ async function main() {
     return;
   }
   throw new Error(
-    "명령: setup · connect · inventory · configure · sync · status · doctor · pause · resume · update · uninstall",
+    "명령: setup · start · stop · connect · inventory · configure · sync · status · doctor · pause · resume · update · uninstall",
   );
 }
 main().catch(() => {

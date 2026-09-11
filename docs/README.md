@@ -48,7 +48,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
 | GitHub Actions  | [CI run 34578479987](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34578479987) 성공: 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
-| Atlas·Collector | Collector 0.3.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0)은 132,274 bytes로 공개됐으며 npm은 아직 미게시             |
+| Atlas·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0)은 132,863 bytes로 공개됐으며 npm은 아직 미게시             |
 
 ## 에이전트 인터페이스 경계
 
@@ -58,6 +58,7 @@ Collector를 자동화하는 에이전트의 정식 실행면은 **로컬 CLI**�
 | --- | --- | --- |
 | 로컬 CLI | `setup`, `connect`, `inventory`, `configure`, `sync`, `status`, `doctor`, `pause`, `resume`, `update`, `uninstall` | 로컬 source·Outbox·Keychain을 다루는 유일한 지원 경로 |
 | 구조화 출력 | `inventory`, `status`, `doctor` JSON | session count·bytes·project count와 상태만 출력. 범위·pending을 구분한 계획 출력은 후속 |
+| 현재 설정 조회 | 연결된 기기에서 요청 → 상주 Collector가 로컬 설정·프로젝트 목록 응답 | 조회 전용. 미응답 시 `atlas-collector start` 안내; 확인 시각 표시 |
 | 웹 문서 | `/docs/collector.md`, `/llms.txt` | 사람과 에이전트가 같은 canonical 내용을 찾는 읽기 경로 |
 | Skill | 제안 | CLI와 문서를 참조해 inventory → 범위 확인 → sync 순서를 안내하는 얇은 절차 |
 | MCP | 제안 | 원격 Atlas의 device·세션·분석 상태가 필요할 때만. 현재 MCP 서버나 tool은 없음 |

@@ -41,7 +41,7 @@ export type Source = {
   subjectModel: SubjectModel;
 };
 export const MAX_OUTBOX_BYTES = 1_073_741_824;
-export const COLLECTOR_VERSION = "0.3.0";
+export const COLLECTOR_VERSION = "0.4.0";
 export type HeartbeatStatus = "starting" | "paused" | "success" | "failed";
 export async function sources(root: string): Promise<Source[]> {
   const result: Source[] = [];

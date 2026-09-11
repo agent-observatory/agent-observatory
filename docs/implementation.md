@@ -207,3 +207,5 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - LOCAL에 코딩 세션·Collector, REMOTE에 Atlas 분석·결과를 그룹으로 구분했다. 결과 검토와 개선 적용은 로컬 세션으로 돌아오는 사용자 행동으로 표시한다.
 - 직접 그린 기능 아이콘을 Tabler Icons v3.34.1 공식 SVG로 교체했다. 아이콘 원본·MIT 라이선스·출처를 저장소에 보존하며 외부 이미지 요청 없이 그림 안에 포함한다.
 - 데스크톱·모바일 SVG 렌더링과 생성기 사본 일치, XML을 검사했다.
+
+- 운영 배포 `dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp` Ready·icn1 확인. `/docs`의 데스크톱·모바일 및 다크·라이트에서 이미지 로드·가로 넘침 없음·브라우저 예외 없음을 확인했다. 기록: `ops/overview-ui-verification.json`.

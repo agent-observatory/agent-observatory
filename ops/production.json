@@ -4,14 +4,14 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_CNHgzYWwnX7qMjiKRNYWnrBZefvs",
+    "latestReadyDeployment": "dpl_gYumT4XpeDVC11CDoyRYJe9V9KKp",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "a84c37805dc6a50781489c14cf3b47170a4badfa",
+    "runtimeChangesRecordedIn": "30dbc8cfe404ac1234f42e4143aa6819567896c1",
     "version": "0.4.0"
   },
   "supabase": {
@@ -137,7 +137,7 @@
     "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
   },
   "verification": {
-    "ciRun": 34607609886,
+    "ciRun": 34640646926,
     "tests": 69,
     "contracts": 22,
     "collector": 18,

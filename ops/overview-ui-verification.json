@@ -1,12 +1,12 @@
 {
-  "at": "2026-09-11T13:49:03.978Z",
+  "at": "2026-09-11T19:47:32.148Z",
   "url": "https://agent-session-atlas.vercel.app/docs",
   "status": "passed",
   "checks": [
     {
       "mode": "desktop-dark",
       "src": "https://agent-session-atlas.vercel.app/overview-cycle.svg",
-      "width": 1208,
+      "width": 1240,
       "visibleWidth": 1058
     },
     {

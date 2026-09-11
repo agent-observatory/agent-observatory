@@ -191,3 +191,9 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - `collector-release.yml`을 GitHub Release 발행 → 태그/버전 검사 → 테스트/패키징 → tarball 첨부 → OIDC npm 게시로 변경했다. Trusted Publisher는 아직 연결 전이다.
 - 실제 첫 npm 게시에서 2FA 요구로 E403을 받았다. 패키지 게시·자동 게시 검증은 완료되지 않았다. 사용자 계정의 2FA 설정 후 검증한 tarball부터 재시도한다. 로컬 Collector 설치와 전송 상태는 변경하지 않았다.
 - 준비·검증·게시 시도는 22:55~22:57 KST, 약 2분이었다.
+
+### npm 게시 완료
+
+- 계정 2FA 활성화·브라우저 인증 후 0.4.1 최초 게시에 성공했다. npm Trusted Publisher를 CLI로 연결했으며 장기 npm 토큰은 만들지 않았다.
+- Collector 0.4.2 GitHub Release에서 [자동 게시 run 34607507564](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34607507564)가 29초 만에 성공했다. 테스트·타입 검사·패키징·Release 첨부·OIDC npm 게시를 모두 실제 실행했다. 배포물·provenance는 `ops/npm-release-verification.json`에 기록한다.
+- README와 웹·Markdown 사용 가이드를 npm 전역 설치 명령으로 통일했다. 로컬 기존 설치본 0.4.0과 pause 상태는 유지한다.

@@ -14,7 +14,7 @@ export type GuideSection = {
 };
 const cli = "atlas-collector";
 const install =
-  "npm install --global https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.4.0/agent-observatory-collector-0.4.0.tgz\natlas-collector setup";
+  "npm install --global @agent-observatory/collector\natlas-collector setup";
 export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
   const t = (ko: string, en: string) => (language === "en" ? en : ko);
   const steps = [

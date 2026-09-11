@@ -24,14 +24,14 @@
 ## 사용자 설치: atlas-collector
 
 **Node.js 22.15 이상과 npm이 설치된 macOS부터 지원한다.** Windows·Linux 스케줄러는 후속으로 둔다.  
-공개 npm 패키지는 아직 게시되지 않았다. 현재는 [Collector 0.4.0 GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0)의 tarball을 사용한다.
+공개 npm 패키지 [@agent-observatory/collector](https://www.npmjs.com/package/@agent-observatory/collector)를 설치한다.
 
 ```sh
-npm install --global https://github.com/agent-observatory/agent-session-atlas/releases/download/collector-v0.4.0/agent-observatory-collector-0.4.0.tgz
+npm install --global @agent-observatory/collector
 atlas-collector setup
 ```
 
-`npm install --global`이 `atlas-collector` 명령을 설치하고, `setup`이 예약 실행용 파일과 스케줄러를 등록한다. 이후에는 `atlas-collector pause`, `atlas-collector inventory`, `atlas-collector sync`처럼 실행한다. 업그레이드할 때는 새 release tarball을 전역 설치한 뒤 `atlas-collector update`로 예약 실행본도 맞춘다.
+`npm install --global`이 `atlas-collector` 명령을 설치하고, `setup`이 예약 실행용 파일과 스케줄러를 등록한다. 이후에는 `atlas-collector pause`, `atlas-collector inventory`, `atlas-collector sync`처럼 실행한다. 업그레이드할 때는 `npm install --global @agent-observatory/collector@latest`로 전역 설치본을 갱신한 뒤 `atlas-collector update`로 예약 실행본도 맞춘다.
 
 | 단계      | `setup`이 실제로 하는 일                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------- |

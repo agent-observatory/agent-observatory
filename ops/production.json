@@ -92,14 +92,16 @@
       "paused": true,
       "projectMode": "all"
     },
-    "npmPublished": false,
+    "npmPublished": true,
     "compression": "zstd-3",
     "preferredCompressionCandidate": "zstd-3",
     "compressionReport": "ops/compression-local.json",
-    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0",
+    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.2",
     "verificationReport": "ops/collector-install-verification.json",
     "inspectionReport": "ops/collector-live-inspection-verification.json",
-    "controlPollSeconds": 10
+    "controlPollSeconds": 10,
+    "publishedVersion": "0.4.2",
+    "npmVerificationReport": "ops/npm-release-verification.json"
   },
   "ui": {
     "routes": [

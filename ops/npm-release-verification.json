@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-09-11T14:00:40.975Z",
+  "package": "@agent-observatory/collector",
+  "version": "0.4.2",
+  "status": 200,
+  "dist": {
+    "shasum": "ba49bfaa1fe068077f02eedb89f247628c5c303d",
+    "tarball": "https://registry.npmjs.org/@agent-observatory/collector/-/collector-0.4.2.tgz",
+    "fileCount": 5,
+    "integrity": "sha512-NZXHEhb/PQnPOCW2zQKHVodbp75MPJjKn5iHtIvMJgQfocsG+vDZlDOIGkHDG4Vwr+/LfWm9ycA6JS/JbmgFLA==",
+    "signatures": [
+      {
+        "sig": "MEUCIAU/Gk0jTsyCrEm+tTsOHUrkg1s1Cv9no+zr5FO9Sb3wAiEAq7vTEx3iGTvPhu1qwIuGrEpTcYecdLoDpmVfrk6+ccA=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@agent-observatory%2fcollector@0.4.2",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 830730
+  },
+  "releaseRun": 34607507564,
+  "source": "cade8f2b522a7f05a79a8a1528d955e9eced2e0f",
+  "trustedPublisher": {
+    "provider": "github",
+    "repository": "agent-observatory/agent-session-atlas",
+    "workflow": "collector-release.yml"
+  }
+}

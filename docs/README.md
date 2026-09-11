@@ -48,7 +48,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
 | GitHub Actions  | [CI run 34606401527](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34606401527) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
-| Atlas·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0)은 132,863 bytes로 공개됐으며 npm은 아직 미게시             |
+| Atlas·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. 배포판 0.4.2는 [npm](https://www.npmjs.com/package/@agent-observatory/collector)·[GitHub Release](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.2)에 게시됐고 OIDC 자동 게시를 확인했다             |
 
 ## 에이전트 인터페이스 경계
 
@@ -183,7 +183,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 | 대상      | 릴리스 식별        | 배포                                                             |
 | --------- | ------------------ | ---------------------------------------------------------------- |
 | Atlas 웹  | `atlas-vX.Y.Z`     | main 변경은 검증 후 Vercel 배포. 정식 릴리스에 웹 버전 태그 부여 |
-| Collector | `collector-vX.Y.Z` | Collector 버전 태그에서만 패키지 검사 후 npm 게시                |
+| Collector | `collector-vX.Y.Z` | Collector GitHub Release 발행 시 패키지 검사 후 npm 게시                |
 | 공통 계약 | `schema_version`   | 앱 버전과 독립적으로 관리. CLI 배포물에 포함                     |
 
 웹만 변경하면 Collector 버전은 유지한다. 현재는 초기 개발 단계이므로 계약 변경 시 서버·Collector·필요한 데이터 구조를 함께 전환한다. 구버전 지원이나 단계적 호환 배포는 요구하지 않는다. 계약 버전은 추적과 불일치 검출에 사용한다. 전환 시 기존 Outbox·체크포인트의 재생성 또는 이관 방법을 정하고 누락·중복을 검증한다.

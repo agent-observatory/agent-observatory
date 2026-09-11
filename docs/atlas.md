@@ -306,7 +306,7 @@ Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았�
 
 `gh workflow run maintenance.yml`은 만료 정리를, `gh workflow run analysis-daily.yml`은 분석 기동을 실제 실행한다. 단순 상태 조회로 사용하지 않는다. Actions는 `SCHEDULER_SECRET`으로 고정 API만 호출하고, DB·AI 키는 Vercel에 둔다. 접수 `202`와 Workflow 분석 완료는 별개다.
 
-웹·Collector는 각각 `atlas-vX.Y.Z`, `collector-vX.Y.Z`로 버전을 관리한다. 기존 0.1.0 GitHub Release tarball은 공개되어 있다. 현재 workflow의 artifact 생성·npm 게시와 GitHub Release 페이지 게시는 같은 동작이 아니다. 새 릴리스에서는 버전·태그·패키징·실제 게시 여부를 각각 확인한다.
+웹·Collector는 각각 `atlas-vX.Y.Z`, `collector-vX.Y.Z`로 버전을 관리한다. Collector GitHub Release를 발행하면 workflow가 tarball을 첨부하고 npm에 게시한다. GitHub Release 생성과 npm 게시 완료는 별도 상태이므로 Actions 결과와 레지스트리를 각각 확인한다.
 
 ### 무료 운영 범위
 

@@ -1,0 +1,160 @@
+{
+  "at": "2026-09-11T04:36:03.324Z",
+  "mode": "local-read-only",
+  "runtime": {
+    "node": "v22.21.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M3 Pro"
+  },
+  "scope": "All recognizable Codex sessions and archived_sessions; isolated fresh cursor, no project filters, one source snapshot. Production collector batch/event limits apply; CLI run-count and server daily quotas are not simulated. No upload, AI call, or installed collector state changes.",
+  "methodology": "Same batches for every codec; native single-thread one-shot gzip/zstd/LZ4 frame APIs. One warm-up + three rounds per batch; time is median of round totals, excludes file IO, pipe transfer and allocations of shared buffers. Every decode byte-compared. Storage is a projection after production maskBatch, not deployed compression. Source prefix means local Outbox commit, not server ACK.",
+  "aggregate": {
+    "source_files": 1088,
+    "source_bytes": 1231612809,
+    "fully_read_sources": 1054,
+    "blocked_sources": 34,
+    "incomplete_tail_sources": 0,
+    "blocked_reasons": {
+      "event_too_large": 34
+    },
+    "committed_source_prefix_bytes": 575181148,
+    "collector_bytes": 205349751,
+    "server_masked_bytes": 204883533,
+    "batches": 1303,
+    "events": 111819,
+    "event_kinds": {
+      "user": 6090,
+      "usage": 37457,
+      "tool_call": 29254,
+      "tool_result": 29250,
+      "assistant": 9768
+    },
+    "masked_image_data_url_bytes": 10440877,
+    "analyzable_sessions": 1061,
+    "over_analysis_limit_sessions": 0,
+    "deterministic_result_json_bytes": 43474860,
+    "max_session_stored_bytes": 13488614
+  },
+  "codecs": {
+    "libraries": {
+      "zlib": "1.2.12",
+      "zstd": "1.5.7",
+      "lz4": "11000"
+    },
+    "rounds": 3,
+    "warmups_per_batch": 1,
+    "roundtrip": true,
+    "results": [
+      {
+        "stage": "collector",
+        "codec": "gzip-1",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 62398236,
+        "encode_seconds": 1.086894,
+        "decode_seconds": 0.169405
+      },
+      {
+        "stage": "collector",
+        "codec": "gzip-6",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 53826674,
+        "encode_seconds": 2.570814,
+        "decode_seconds": 0.154582
+      },
+      {
+        "stage": "collector",
+        "codec": "zstd-1",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 53132196,
+        "encode_seconds": 0.229405,
+        "decode_seconds": 0.105301
+      },
+      {
+        "stage": "collector",
+        "codec": "zstd-3",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 49359746,
+        "encode_seconds": 0.318004,
+        "decode_seconds": 0.112721
+      },
+      {
+        "stage": "collector",
+        "codec": "lz4-fast",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 77201920,
+        "encode_seconds": 0.170104,
+        "decode_seconds": 0.033634
+      },
+      {
+        "stage": "collector",
+        "codec": "lz4-hc-9",
+        "batches": 1303,
+        "input_bytes": 205349751,
+        "output_bytes": 62205365,
+        "encode_seconds": 2.178279,
+        "decode_seconds": 0.037299
+      },
+      {
+        "stage": "server_masked",
+        "codec": "gzip-1",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 62269788,
+        "encode_seconds": 1.104556,
+        "decode_seconds": 0.171561
+      },
+      {
+        "stage": "server_masked",
+        "codec": "gzip-6",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 53706424,
+        "encode_seconds": 2.596442,
+        "decode_seconds": 0.1556
+      },
+      {
+        "stage": "server_masked",
+        "codec": "zstd-1",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 53012207,
+        "encode_seconds": 0.230068,
+        "decode_seconds": 0.106054
+      },
+      {
+        "stage": "server_masked",
+        "codec": "zstd-3",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 49254630,
+        "encode_seconds": 0.317948,
+        "decode_seconds": 0.113657
+      },
+      {
+        "stage": "server_masked",
+        "codec": "lz4-fast",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 77043683,
+        "encode_seconds": 0.171475,
+        "decode_seconds": 0.033983
+      },
+      {
+        "stage": "server_masked",
+        "codec": "lz4-hc-9",
+        "batches": 1303,
+        "input_bytes": 204883533,
+        "output_bytes": 62063397,
+        "encode_seconds": 2.196327,
+        "decode_seconds": 0.037646
+      }
+    ]
+  },
+  "elapsed_seconds": 100.091
+}

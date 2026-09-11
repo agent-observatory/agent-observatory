@@ -1,0 +1,155 @@
+{
+  "at": "2026-09-11T04:34:11.775Z",
+  "mode": "synthetic",
+  "runtime": {
+    "node": "v22.21.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M3 Pro"
+  },
+  "scope": "All recognizable Codex sessions and archived_sessions; isolated fresh cursor, no project filters, one source snapshot. Production collector batch/event limits apply; CLI run-count and server daily quotas are not simulated. No upload, AI call, or installed collector state changes.",
+  "methodology": "Same batches for every codec; native single-thread one-shot gzip/zstd/LZ4 frame APIs. One warm-up + three rounds per batch; time is median of round totals, excludes file IO, pipe transfer and allocations of shared buffers. Every decode byte-compared. Storage is a projection after production maskBatch, not deployed compression. Source prefix means local Outbox commit, not server ACK.",
+  "aggregate": {
+    "source_files": 1,
+    "source_bytes": 652895,
+    "fully_read_sources": 1,
+    "blocked_sources": 0,
+    "incomplete_tail_sources": 0,
+    "blocked_reasons": {},
+    "committed_source_prefix_bytes": 652895,
+    "collector_bytes": 647138,
+    "server_masked_bytes": 641288,
+    "batches": 3,
+    "events": 650,
+    "event_kinds": {
+      "user": 325,
+      "assistant": 325
+    },
+    "masked_image_data_url_bytes": 0,
+    "analyzable_sessions": 1,
+    "over_analysis_limit_sessions": 0,
+    "deterministic_result_json_bytes": 493016,
+    "max_session_stored_bytes": 641288
+  },
+  "codecs": {
+    "libraries": {
+      "zlib": "1.2.12",
+      "zstd": "1.5.7",
+      "lz4": "11000"
+    },
+    "rounds": 3,
+    "warmups_per_batch": 1,
+    "roundtrip": true,
+    "results": [
+      {
+        "stage": "collector",
+        "codec": "gzip-1",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 37806,
+        "encode_seconds": 0.000953,
+        "decode_seconds": 0.000145
+      },
+      {
+        "stage": "collector",
+        "codec": "gzip-6",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 32588,
+        "encode_seconds": 0.002042,
+        "decode_seconds": 0.000136
+      },
+      {
+        "stage": "collector",
+        "codec": "zstd-1",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 25282,
+        "encode_seconds": 0.000187,
+        "decode_seconds": 0.000055
+      },
+      {
+        "stage": "collector",
+        "codec": "zstd-3",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 27042,
+        "encode_seconds": 0.000235,
+        "decode_seconds": 0.00006
+      },
+      {
+        "stage": "collector",
+        "codec": "lz4-fast",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 52395,
+        "encode_seconds": 0.000116,
+        "decode_seconds": 0.000022
+      },
+      {
+        "stage": "collector",
+        "codec": "lz4-hc-9",
+        "batches": 3,
+        "input_bytes": 647138,
+        "output_bytes": 48959,
+        "encode_seconds": 0.000632,
+        "decode_seconds": 0.000024
+      },
+      {
+        "stage": "server_masked",
+        "codec": "gzip-1",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 37725,
+        "encode_seconds": 0.000882,
+        "decode_seconds": 0.000128
+      },
+      {
+        "stage": "server_masked",
+        "codec": "gzip-6",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 32572,
+        "encode_seconds": 0.002045,
+        "decode_seconds": 0.000136
+      },
+      {
+        "stage": "server_masked",
+        "codec": "zstd-1",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 25346,
+        "encode_seconds": 0.000187,
+        "decode_seconds": 0.000049
+      },
+      {
+        "stage": "server_masked",
+        "codec": "zstd-3",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 27064,
+        "encode_seconds": 0.000229,
+        "decode_seconds": 0.000054
+      },
+      {
+        "stage": "server_masked",
+        "codec": "lz4-fast",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 52251,
+        "encode_seconds": 0.000108,
+        "decode_seconds": 0.00002
+      },
+      {
+        "stage": "server_masked",
+        "codec": "lz4-hc-9",
+        "batches": 3,
+        "input_bytes": 641288,
+        "output_bytes": 48907,
+        "encode_seconds": 0.000593,
+        "decode_seconds": 0.000022
+      }
+    ]
+  },
+  "elapsed_seconds": 2.585
+}

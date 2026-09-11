@@ -28,5 +28,36 @@
     "provider": "github",
     "repository": "agent-observatory/agent-session-atlas",
     "workflow": "collector-release.yml"
-  }
+  },
+  "installVerification": {
+    "source": "npm registry by package name and version",
+    "prefix": "temporary isolated prefix",
+    "version": "0.4.2",
+    "doctorExitCode": 0,
+    "syntheticConfig": true,
+    "connected": false,
+    "paused": true,
+    "batches": 0,
+    "existingLocalCollectorChanged": false
+  },
+  "guideChecks": [
+    {
+      "path": "/docs",
+      "status": 200,
+      "npmCommand": true,
+      "oldTarballCommand": false
+    },
+    {
+      "path": "/docs/collector.md",
+      "status": 200,
+      "npmCommand": true,
+      "oldTarballCommand": false
+    },
+    {
+      "path": "/docs/collector.md?lang=en",
+      "status": 200,
+      "npmCommand": true,
+      "oldTarballCommand": false
+    }
+  ]
 }

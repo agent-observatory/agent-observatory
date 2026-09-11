@@ -197,3 +197,7 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 계정 2FA 활성화·브라우저 인증 후 0.4.1 최초 게시에 성공했다. npm Trusted Publisher를 CLI로 연결했으며 장기 npm 토큰은 만들지 않았다.
 - Collector 0.4.2 GitHub Release에서 [자동 게시 run 34607507564](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34607507564)가 29초 만에 성공했다. 테스트·타입 검사·패키징·Release 첨부·OIDC npm 게시를 모두 실제 실행했다. 배포물·provenance는 `ops/npm-release-verification.json`에 기록한다.
 - README와 웹·Markdown 사용 가이드를 npm 전역 설치 명령으로 통일했다. 로컬 기존 설치본 0.4.0과 pause 상태는 유지한다.
+
+- npm에서 패키지명·버전으로 별도 임시 prefix에 설치하고 합성 설정의 `doctor`가 0.4.2·미연결·paused·대기 배치 0을 반환하는 것을 확인했다. 기존 설치본과 개인 세션은 건드리지 않았다.
+- 사용 가이드 배포 `dpl_CNHgzYWwnX7qMjiKRNYWnrBZefvs`는 Production Ready·`icn1`, source `a84c378`이다. 공개 웹 가이드와 한국어·영어 Markdown에서 npm 설치 명령과 이전 tarball 명령 제거를 확인했다. CI 34607609886도 성공했다.
+- 전체 npm 연결은 22:55~23:02 KST 약 7분으로, 사용자 2FA·브라우저 인증 대기와 자동 게시·웹 배포 검증을 포함한다.

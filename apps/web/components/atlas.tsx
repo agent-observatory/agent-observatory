@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Select } from "./select";
+import { NavigationIcon } from "./navigation-icon";
 import { signIn, signOut } from "next-auth/react";
 import { type AtlasBatch } from "@agent-observatory/contracts";
 import { codexEventWithImages } from "@agent-observatory/contracts/images";
@@ -466,12 +467,20 @@ export function Atlas({ view }: { view: AtlasView }) {
   return (
     <div className="app">
       <aside>
-        <a className="brand" href="/">
-          ◫{" "}
-          <span>
-            Atlas<small>AGENT OBSERVATORY</small>
-          </span>
-        </a>
+        <div className="product-identity">
+          <Link className="brand" href="/sessions">
+            <span>
+              Atlas<small>Agent Observatory</small>
+            </span>
+          </Link>
+          <div className="product-meta">
+            <span>
+              <span className="dot" />
+              Seoul · icn1
+            </span>
+            <span>v0.2.0</span>
+          </div>
+        </div>
         <div className="workspace">
           <span className="avatar">
             {user?.name?.[0]?.toUpperCase() || "A"}
@@ -483,10 +492,6 @@ export function Atlas({ view }: { view: AtlasView }) {
           </span>
         </div>
         <div className="aside-account">
-          <span>
-            <span className="dot" /> {t("서울 리전", "Seoul region")}
-          </span>
-          <span>Atlas v0.2.0</span>
           {user && !user.guest ? (
             <button onClick={() => signOut()}>
               {t("로그아웃", "Sign out")}
@@ -501,17 +506,17 @@ export function Atlas({ view }: { view: AtlasView }) {
         </div>
         <nav>
           {[
-            ["sessions", "/sessions", "▤", t("세션", "Sessions")],
-            ["jobs", "/analyses", "◷", t("분석 기록", "Analyses")],
-            ["settings", "/settings", "·", t("설정", "Settings")],
-          ].map(([id, href, icon, label]) => (
+            ["sessions", "/sessions", t("세션", "Sessions")],
+            ["jobs", "/analyses", t("분석 기록", "Analyses")],
+            ["settings", "/settings", t("설정", "Settings")],
+          ].map(([id, href, label]) => (
             <Link
               className={`nav-link ${view === id ? "active" : ""}`}
               key={id}
               aria-current={view === id ? "page" : undefined}
               href={href}
             >
-              <span>{icon}</span>
+              <NavigationIcon name={id as "sessions" | "jobs" | "settings"} />
               {label}
             </Link>
           ))}
@@ -929,6 +934,12 @@ export function Atlas({ view }: { view: AtlasView }) {
                                       )
                                     : aiPendingLabel(settings.language)}
                               </strong>
+                              {r.result.cost != null && (
+                                <span className="muted">
+                                  {" "}
+                                  · {t("비용", "Cost")}: {r.result.cost}
+                                </span>
+                              )}
                             </p>
                             {!!r.result.ruleErrors?.length && (
                               <p className="muted">
@@ -1069,25 +1080,6 @@ export function Atlas({ view }: { view: AtlasView }) {
                                 )}
                               </div>
                             </div>
-                            <footer>
-                              {r.result.ai
-                                ? formatAiProvenance(
-                                    r.result,
-                                    settings.language,
-                                  )
-                                : r.status === "failed"
-                                  ? t(
-                                      "AI 설명 생성 실패",
-                                      "AI explanation failed",
-                                    )
-                                  : aiPendingLabel(settings.language)}
-                              {r.result.cost != null && (
-                                <>
-                                  {" · "}
-                                  {t("비용", "Cost")}: {r.result.cost}
-                                </>
-                              )}
-                            </footer>
                           </>
                         )}
                       </article>

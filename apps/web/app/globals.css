@@ -134,27 +134,36 @@ aside {
   display: flex;
   flex-direction: column;
 }
-.brand {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: var(--teal);
-  font-size: 16px;
-  text-decoration: none;
-  padding: 2px 8px 15px;
+.product-identity {
+  padding: 2px 8px 14px;
   border-bottom: 1px solid var(--border);
 }
+.brand {
+  display: flex;
+  color: var(--teal);
+  text-decoration: none;
+}
 .brand > span {
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 18px;
+  line-height: 1.35;
   font-weight: 700;
 }
 .brand small {
   font-size: 12px;
-  letter-spacing: 1.15px;
-  margin-top: 3px;
-  color: var(--faint);
+  letter-spacing: 0;
+  white-space: nowrap;
+  margin-top: 2px;
+  color: var(--muted);
   font-weight: 500;
+}
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
 }
 small {
   display: block;
@@ -212,10 +221,10 @@ nav .nav-link {
   padding: 7px 9px;
   font-size: 13px;
 }
-nav .nav-link span {
-  width: 15px;
-  text-align: center;
-  font-size: 13px;
+nav .navigation-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   color: var(--faint);
 }
 nav .active {
@@ -223,7 +232,7 @@ nav .active {
   background: var(--teal-soft);
   font-weight: 600;
 }
-nav .active span {
+nav .active .navigation-icon {
   color: var(--teal);
 }
 .aside-account {
@@ -998,9 +1007,15 @@ article footer,
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
-  .brand {
+  .product-identity {
     border: 0;
-    padding: 0 10px 0 0;
+    padding: 0;
+    grid-column: 1 / -1;
+  }
+  .product-meta {
+    justify-content: flex-start;
+    margin-top: 5px;
+    gap: 12px;
   }
   .brand small {
     display: block;
@@ -1030,7 +1045,10 @@ article footer,
   }
   nav {
     display: flex;
-    justify-content: flex-end;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: flex-start;
+    gap: 8px;
     min-width: 0;
   }
   nav .nav-link {
@@ -1038,8 +1056,9 @@ article footer,
     min-height: 30px;
     padding: 5px 7px;
   }
-  nav .nav-link span {
-    display: none;
+  nav .navigation-icon {
+    width: 16px;
+    height: 16px;
   }
   main {
     margin-left: 0;

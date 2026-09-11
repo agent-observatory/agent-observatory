@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-11T08:49:00.484Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "syntheticApiFixtures": true,
+  "status": "passed",
+  "checks": [
+    "current scope result",
+    "offline start instruction",
+    "old snapshot removed on retry/error",
+    "device dark/light mobile no overflow",
+    "docs desktop and dark/light mobile",
+    "docs command copy",
+    "no browser exceptions"
+  ]
+}

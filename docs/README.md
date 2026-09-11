@@ -32,7 +32,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 무료 후보·직렬 실행·분석      | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts`                                            |
 | 실제 완료·검증 범위           | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json`                             |
 
-운영 배포의 정확한 버전·커밋·검증 시각은 [운영 상태](../ops/production.json)를 따른다. 0.3.0에는 Claude Code 수집, 접수 시작·완료, 기기 활동, 공통 평가 카탈로그, 문제·해결 중심 화면을 추가했다. 최근 개인 pilot은 선택한 4개 세션의 업로드와 로컬 cursor 완료까지 확인했으며, 분석은 4개 중 3개 완료된 진행 상태다.
+운영 배포의 정확한 버전·커밋·검증 시각은 [운영 상태](../ops/production.json)를 따른다. 0.4.0은 현재 Collector 설정 조회와 Docs 가독성을 개선했다. 0.3.0에는 Claude Code 수집, 접수 시작·완료, 기기 활동, 공통 평가 카탈로그, 문제·해결 중심 화면을 추가했다. 최근 개인 pilot은 선택한 4개 세션의 업로드와 로컬 cursor 완료까지 확인했으며, 분석은 4개 중 3개 완료된 진행 상태다.
 
 먼저 `git status --short`로 기존 변경을 확인한다. 이전 모델 연결 조사에서 남은 미추적 `ops/openrouter-*.json`·`ops/zai-vision-*.json`은 현재 커밋에 포함되지 않았다. 자동 삭제·일괄 커밋하지 말고 출처와 내용을 확인한다.
 
@@ -42,12 +42,12 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 | 대상            | 확인한 상태                                                                                                                                                                                                                             |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.3.0 배포 `dpl_5fPbfvSjrQTGMoJmU6gtyqvKaMnW`, source `557bedc`, 기본 함수 리전 `icn1`                                                                          |
+| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.4.0 배포 `dpl_3HAMUThGfhip5yCh1dwAiBDSH1pr`, source `88192e6`, 기본 함수 리전 `icn1`                                                                          |
 | Supabase        | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증                                                                                                                         |
 | GitHub OAuth    | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공                                                                                                                                                                      |
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
-| GitHub Actions  | [CI run 34578479987](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34578479987) 성공: 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
+| GitHub Actions  | [CI run 34580933584](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34580933584) 성공: 계약 22·Collector 18·웹 29, 총 69개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
 | Atlas·Collector | Collector 0.4.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0)은 132,863 bytes로 공개됐으며 npm은 아직 미게시             |
 
 ## 에이전트 인터페이스 경계

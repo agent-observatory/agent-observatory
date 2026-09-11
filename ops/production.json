@@ -4,15 +4,15 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_5fPbfvSjrQTGMoJmU6gtyqvKaMnW",
+    "latestReadyDeployment": "dpl_3HAMUThGfhip5yCh1dwAiBDSH1pr",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "557bedc978d3e4e6570e6fff09136f63e5b25aa4",
-    "version": "0.3.0"
+    "runtimeChangesRecordedIn": "88192e68883dcf9d93dc5ac3306e8a300ce4ccc8",
+    "version": "0.4.0"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -35,7 +35,8 @@
       "002_rate_limits.sql",
       "003_job_settings.sql",
       "004_retention.sql",
-      "20260911072537_session_receipts_devices.sql"
+      "20260911072537_session_receipts_devices.sql",
+      "20260911083747_device_inspection.sql"
     ]
   },
   "scheduling": {
@@ -86,7 +87,7 @@
   },
   "checkedAt": "2026-09-11T08:19:31Z",
   "collector": {
-    "installedVersion": "0.3.0",
+    "installedVersion": "0.4.0",
     "localSnapshot": {
       "paused": true,
       "projectMode": "all"
@@ -95,8 +96,10 @@
     "compression": "zstd-3",
     "preferredCompressionCandidate": "zstd-3",
     "compressionReport": "ops/compression-local.json",
-    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0",
-    "verificationReport": "ops/collector-install-verification.json"
+    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.4.0",
+    "verificationReport": "ops/collector-install-verification.json",
+    "inspectionReport": "ops/collector-live-inspection-verification.json",
+    "controlPollSeconds": 10
   },
   "ui": {
     "routes": [
@@ -132,10 +135,10 @@
     "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
   },
   "verification": {
-    "ciRun": 34578479987,
-    "tests": 65,
+    "ciRun": 34580933584,
+    "tests": 69,
     "contracts": 22,
-    "collector": 14,
+    "collector": 18,
     "web": 29,
     "runtimeErrorsSince": "2026-09-11T08:18:30Z",
     "runtimeErrorsFound": 0,
@@ -144,6 +147,8 @@
     "browserApi": "ops/session-browser-api-verification.json",
     "agentDocs": "ops/agent-docs-verification.json",
     "deletionBoundaries": "ops/boundary-verification.json",
-    "deletionRetention": "ops/retention-verification.json"
+    "deletionRetention": "ops/retention-verification.json",
+    "deviceInspection": "ops/device-inspection-verification.json",
+    "deviceDocsUi": "ops/device-docs-ui-verification.json"
   }
 }

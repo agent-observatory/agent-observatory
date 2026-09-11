@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-11T08:46:49.209Z",
+  "status": "passed",
+  "collectorVersion": "0.4.0",
+  "paused": true,
+  "controlConnected": true,
+  "scopeResponseReceived": true,
+  "containsSecrets": false,
+  "sessions": 1278,
+  "projects": 79,
+  "limitations": [
+    "Reads actual local project metadata on explicit inspection; no session bodies uploaded.",
+    "Uses a database-created request to validate the installed responder; browser authentication is verified separately with synthetic accounts."
+  ]
+}

@@ -172,4 +172,7 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 설치 안내를 전역 CLI 설치와 `atlas-collector ...`로 통일했다. Collector 0.4.0 tarball은 132,863 bytes다. npm registry 게시는 하지 않았다.
 - `/docs`에 읽기 폭을 제한한 본문, 데스크톱 목차, 단계·명령·안내문 위계를 적용했다. 디자인 기준을 `DESIGN.md`에 기록했다. 삭제 대화상자에서 내부 파일 정리 설명을 제거했다.
 - 로컬 검증: Collector 18개·웹 29개·공통 계약 22개 검사와 타입 검사, 웹 빌드 통과. 합성 기기로 오프라인·소유권·기기 격리·응답 재사용·만료/삭제·폐기된 토큰 등 API 11개 경계를 확인했다.
-- 배포·로컬 설치 결과와 작업 소요 시간은 원격 검증 후 이 절에 이어 기록한다.
+- 운영 API 11개 검사 통과. 설치한 0.4.0 Collector가 새 요청을 받아 실제 로컬 설정과 범위를 응답하는 것까지 확인했다. 이 확인은 DB에 검사 요청을 넣어 응답 프로세스를 검증했으며, 브라우저 인증은 별도의 합성 계정으로 검사했다. 원본 세션을 추가 업로드하지 않았고 `paused: true`를 유지했다. `stop`/`start`도 실제 등록 해제·재등록을 확인했다.
+- 운영 화면에 합성 API 응답을 연결해 현재 설정·오프라인 안내·재조회 시 이전 결과 제거, 다크·라이트 모바일과 Docs 명령 복사를 검사했다. 사용자 로그인 쿠키나 개인 화면 캡처는 사용하지 않았다. 브라우저 예외는 없었다. 기록: `ops/device-inspection-verification.json`, `ops/device-docs-ui-verification.json`, `ops/collector-live-inspection-verification.json`.
+- 첫 구현 배포 `dpl_H7pGh9bqf3MV4P3EkqPPmY7CiD6D`가 Production Ready이며 런타임은 `icn1`이다. CI 34580654612에서 전체 69개 검사·타입 검사·빌드를 통과했다. 최종 표시 보완 배포 `dpl_3HAMUThGfhip5yCh1dwAiBDSH1pr`도 Ready이며, source `88192e6`의 CI 34580933584도 성공했다. 한국어·영어 공개 Markdown과 공유 문서 원본이 일치하는 것을 확인했다.
+- 소요 시간: 웹 현재 조회·CLI·Docs 작업은 2026-09-11 17:32경부터 17:49경까지 약 17분. 에이전트 병렬 작업과 원격 검증을 포함한 경과 시간이며, 앞선 평가 문서 통합은 제외했다.

@@ -138,7 +138,7 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 | 실행기 | 활성 규칙을 실행하고 결과를 합친다. 규칙별 `completed`·`skipped`·`failed`를 구분. 입력 부족은 건너뛰고, 한 규칙 실패는 다른 규칙·기본 지표를 막지 않음 |
 
 첫 규칙 후보는 동일 검색 반복, 동일 오류 반복, 큰 도구 응답이다. 규칙 isolation과 `appliedRules`의 규칙 ID·버전 기록을 구현했다. 횟수·크기·관측 구간은 규칙별 설정으로 둔다. 합성 데이터로 정상적인 반복 작업과 입력 누락을 확인한 뒤 활성화한다.
-규칙 추가는 모듈·목록 등록·합성 검증 사례 추가로 끝나도록 한다. 제거는 목록에서 빼거나 비활성화하며, Collector·접수 API·화면의 개별 수정 없이 반영한다. 새로운 입력이 필요할 때만 공통 이벤트 계약을 호환 가능하게 확장한다.
+규칙 추가는 모듈·목록 등록·합성 검증 사례 추가로 끝나도록 한다. 제거는 목록에서 빼거나 비활성화하며, Collector·접수 API·화면의 개별 수정 없이 반영한다. 새로운 입력이 필요할 때만 공통 이벤트 계약을 변경하고 서버·Collector를 함께 갱신한다.
 기존 결과에는 당시 규칙·설정 버전을 남기고 새 규칙으로 덮어쓰지 않는다. 재분석은 새 버전으로 실행하되 상세 데이터 7일·간단한 요약 30일의 만료를 연장하지 않는다. 검증 사례에는 탐지 성공, 임계값 경계, 정상 작업의 오탐 방지, 입력 부족, 규칙 비활성화·실패 격리를 포함한다.
 
 ## AI 실행 선택
@@ -301,7 +301,7 @@ pnpm install --frozen-lockfile
 
 `pnpm infra:*`, `pnpm db:migrate`, `pnpm deploy:*`, `pnpm smoke:remote` 별칭과 `scripts/infra.ts`는 구현되어 있지 않다. 위 실제 명령을 사용한다.
 
-DB 인증서 검증은 앱 `apps/web/lib/certs/supabase.crt`, 운영 스크립트 `ops/certs/supabase-prod-ca-2021.crt`를 사용한다. `rejectUnauthorized: true`를 유지하고 인증 오류를 우회하기 위해 TLS 검증을 끄지 않는다. 현재 연결 코드는 `POSTGRES_URL`과 `prepare: false`를 사용한다. SQL 변경은 설치된 구버전 Collector·기존 앱과의 호환성을 확인하고 적용한다.
+DB 인증서 검증은 앱 `apps/web/lib/certs/supabase.crt`, 운영 스크립트 `ops/certs/supabase-prod-ca-2021.crt`를 사용한다. `rejectUnauthorized: true`를 유지하고 인증 오류를 우회하기 위해 TLS 검증을 끄지 않는다. 현재 연결 코드는 `POSTGRES_URL`과 `prepare: false`를 사용한다. SQL 변경은 새 계약·앱·Collector와 함께 적용하고 검증한다. 초기 개발 단계에서는 이전 버전과의 호환성을 유지하지 않는다.
 
 Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았다. 운영 자격증명을 그대로 복사해 Preview 검증을 구성하지 않는다. [환경변수 변경](https://vercel.com/docs/environment-variables)은 새 배포에 반영되므로 env 수정 성공과 운영 반영 성공을 구분한다.
 
@@ -353,7 +353,7 @@ Supabase의 500 MB 제한은 DB 용량이며, 세션 본문 파일은 별도 비
 | 운영 배포 | org public 연결 → Supabase DB·Supabase Storage 생성 → 환경변수 설정 → 마이그레이션 → Vercel 운영 배포. DB와 함수는 같은 리전 우선 |
 | 배포 검증 | 30분 전송·수동/일일 분석·조회·삭제 확인. 서버 장애와 ACK 유실 후 재전송해도 중복 없는지 검증 |
 | 재배포 | PR Preview는 합성 데이터·별도 DB/Storage. 운영 자격증명을 전달하지 않고 CI 통과 후 main 병합 |
-| 복구 | 이전 앱과 호환되는 마이그레이션을 우선. 필요한 임시 DB export도 비밀값·7일/30일 보관 정책을 지키며 앱 rollback과 DB 복원을 별도로 검증 |
+| 복구 | 앱·Collector·DB를 같은 계약 기준으로 복구. 필요한 임시 DB export도 비밀값·7일/30일 보관 정책을 지키며 앱 rollback과 DB 복원을 별도로 검증 |
 
 Functions의 **4.5 MB 본문 제한** 안에서 동작하도록, MVP는 JSON 요청 전체를 **1 MiB** 이하로 제한한다.
 큰 입력은 이벤트 경계로 배치를 나누며, 단일 이벤트도 초과하면 조용히 자르지 않고 격리·표시한다.  

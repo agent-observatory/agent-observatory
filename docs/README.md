@@ -27,7 +27,7 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 | 무료 후보·직렬 실행·분석 | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts` |
 | 실제 완료·검증 범위 | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json` |
 
-현재 이어갈 순서는 **큰 이벤트 때문에 중단되는 수집 보완 → 정제·이미지 분리와 호환 계약 → Zstd 전송/저장 → 서버 구간별 증류·품질 검증**이다. 압축은 로컬 비교만 끝났으며, 운영은 비압축 JSON이다. 로컬 Collector는 `paused: true`다. 개인 기록 분석이 완료됐다고 가정하지 않는다.
+현재 이어갈 순서는 **큰 이벤트 때문에 중단되는 수집 보완 → 정제·이미지 분리와 새 계약 → Zstd 전송/저장 → 서버 구간별 증류·품질 검증**이다. 압축은 로컬 비교만 끝났으며, 운영은 비압축 JSON이다. 로컬 Collector는 `paused: true`다. 개인 기록 분석이 완료됐다고 가정하지 않는다.
 
 먼저 `git status --short`로 기존 변경을 확인한다. 이전 모델 연결 조사에서 남은 미추적 `ops/openrouter-*.json`·`ops/zai-vision-*.json`은 현재 커밋에 포함되지 않았다. 자동 삭제·일괄 커밋하지 말고 출처와 내용을 확인한다.
 
@@ -140,7 +140,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 | Collector | `collector-vX.Y.Z` | Collector 버전 태그에서만 패키지 검사 후 npm 게시 |
 | 공통 계약 | `schema_version` | 앱 버전과 독립적으로 관리. CLI 배포물에 포함 |
 
-웹만 변경하면 Collector 버전은 유지한다. 공통 계약 변경 시 양쪽 영향을 확인하되 일괄 버전 상승은 하지 않는다. 설치된 구버전 수집기를 위해 서버부터 하위 호환으로 배포하며, 지원하지 않는 스키마는 명시적으로 거절하고 전송 대기 파일을 보존한다.
+웹만 변경하면 Collector 버전은 유지한다. 현재는 초기 개발 단계이므로 계약 변경 시 서버·Collector·필요한 데이터 구조를 함께 전환한다. 구버전 지원이나 단계적 호환 배포는 요구하지 않는다. 계약 버전은 추적과 불일치 검출에 사용한다. 전환 시 기존 Outbox·체크포인트의 재생성 또는 이관 방법을 정하고 누락·중복을 검증한다.
 
 레포 분리는 담당 팀·접근 권한·릴리스 운영이 달라질 때 검토한다. 공통 패키지는 별도 애플리케이션으로 세지 않는다.  
 분리 시 웹은 이 저장소에 유지하고 수집기는 `agent-observatory/agent-session-collector`로 옮긴다.

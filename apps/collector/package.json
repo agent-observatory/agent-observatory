@@ -1,7 +1,7 @@
 {
   "name": "@agent-observatory/collector",
-  "version": "0.4.2",
-  "description": "Codex and Claude Code session collector for AgentSession Atlas",
+  "version": "0.4.3",
+  "description": "Codex and Claude Code session collector for Agent Observatory",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -27,12 +27,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agent-observatory/agent-session-atlas.git",
+    "url": "git+https://github.com/agent-observatory/agent-observatory.git",
     "directory": "apps/collector"
   },
   "homepage": "https://agent-session-atlas.vercel.app/docs",
   "bugs": {
-    "url": "https://github.com/agent-observatory/agent-session-atlas/issues"
+    "url": "https://github.com/agent-observatory/agent-observatory/issues"
   },
   "publishConfig": {
     "access": "public",

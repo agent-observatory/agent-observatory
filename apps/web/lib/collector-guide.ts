@@ -28,13 +28,13 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
       command: install,
     },
     {
-      id: "connect",
-      title: t("GitHub 계정에 연결", "Connect your GitHub account"),
+      id: "pause-first",
+      title: t("자동 전송을 멈추고 범위 선택", "Pause and choose a scope"),
       text: t(
-        "명령에 표시된 주소를 열어 로그인하고, PC에 표시된 코드와 같은지 확인한 뒤 연결을 승인하세요. 연결 후에는 기본적으로 모든 프로젝트를 자동 동기화합니다.",
-        "Open the displayed URL, sign in, verify the code matches your computer, and approve the connection. Once connected, all projects sync automatically by default.",
+        "먼저 자동 전송을 멈추세요. 모든 프로젝트가 기본 대상이므로, 일부만 올리려면 아래 프로젝트·기간 설정의 configure 명령으로 범위를 지정한 뒤 진행하세요.",
+        "Pause automatic uploads first. All projects are included by default. To upload only some projects, use configure in Projects and time range below before continuing.",
       ),
-      command: `${cli} connect`,
+      command: `${cli} pause`,
     },
     {
       id: "inventory",
@@ -44,6 +44,15 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
         "Check the number and size of local Codex and Claude Code records. This command does not upload files.",
       ),
       command: `${cli} inventory`,
+    },
+    {
+      id: "connect",
+      title: t("GitHub 계정에 연결", "Connect your GitHub account"),
+      text: t(
+        "명령에 표시된 주소를 열어 로그인하고, PC에 표시된 코드와 같은지 확인한 뒤 연결을 승인하세요. 연결해도 pause 설정은 유지됩니다. 확인한 범위만 수동 sync하고, 자동 전송이 필요하면 resume 하세요.",
+        "Open the displayed URL, sign in, verify the code matches your computer, and approve the connection. Connecting preserves pause. Run sync for your reviewed scope, then resume if automatic uploads are wanted.",
+      ),
+      command: `${cli} connect`,
     },
     {
       id: "sync",

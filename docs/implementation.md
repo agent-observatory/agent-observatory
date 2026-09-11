@@ -153,3 +153,13 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 세션 목록에 행별·선택 삭제와 확인창을 추가했다. 일부 실패는 실패한 세션의 선택을 유지한다. 삭제된 세션과 분석은 즉시 숨기고 파일은 예약 정리한다. 동일 세션의 재접수를 막는 행은 원래 상세 만료 시각까지만 유지한다. 프로젝트 제외는 새 수집에만 적용되며, 기존 Outbox와 업로드를 취소하지 않는다는 제한을 가이드에 명시했다.
 
 에이전트 사용을 제품 아키텍처의 일부로 기록했다. 현재 CLI·문서, 제안 단계의 Skill·원격 MCP·플러그인 역할과 도입 이유를 [설계 결정](README.md#설계-결정-사람과-에이전트가-같은-제품을-사용한다)에 정리했다. 원격 MCP가 PC의 pause/configure/sync를 수행하는 것으로 표현하지 않는다. 실제 원격 검증·배포 정보는 작업 완료 시 운영 상태와 보고서에 갱신한다.
+
+17:19 KST에 운영 확인을 완료했다. 최종 커밋·배포·원격 검증은 17:15~17:19 KST 약 4분이며, 앞선 구현·화면 조정 시간은 제외했다. Astra가 통합·웹 가이드·배포를, Terra 에이전트가 삭제 기능과 아키텍처 문서를 나눠 맡았다.
+
+- 배포: `557bedc` → `dpl_5fPbfvSjrQTGMoJmU6gtyqvKaMnW`, Ready·Production·`icn1`. `.vercelignore`를 루트 문서에만 적용해 앱 `/docs`가 제외되는 문제를 수정했다.
+- [CI 34578479987](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34578479987): 테스트 65개·타입 검사·빌드 통과.
+- [운영 화면](../ops/pagination-docs-ui-verification.json): 빈 상태·20행·마지막 페이지·모바일 페이지네이션, 안내 강조, 기기 타임존, Appearance, 문서 경로·복사, 삭제 취소·부분 실패·재시도 통과. 합성 API fixture를 사용했다.
+- [문서 엔드포인트](../ops/agent-docs-verification.json): 공개 한국어·영어 Markdown이 웹 공유 원본과 일치하고 `/docs`·`/llms.txt` HTTP 200 확인.
+- [삭제·소유권](../ops/boundary-verification.json): 실제 운영 API에서 11개 경계 검증 통과. 개인 세션 대신 합성 세션만 사용했다.
+- [보관 검증](../ops/retention-verification.json): 실제 DELETE와 조회 API, 합성 소유자에 한정한 SQL·Storage 정리 시뮬레이션 통과. 운영 유지관리 함수 전체를 재실행한 검증은 아니다.
+- 아키텍처 SVG XML·실제 렌더링 확인. 기존 프로젝트 설정·개인 세션의 삭제는 실행하지 않았다.

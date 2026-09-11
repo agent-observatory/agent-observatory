@@ -38,21 +38,21 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 ## 현재 상태
 
-2026-09-11 확인 기준이다. 운영 리소스·키 이름·DB migration·비공개 버킷은 13:43 KST에 다시 조회했다. 이후 16:53 KST에 0.3.0 운영 배포·원격 경계·화면을 확인했다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
+2026-09-11 확인 기준이다. 운영 리소스·키 이름·DB migration·비공개 버킷은 13:43 KST에 다시 조회했다. 이후 17:19 KST에 최신 운영 배포·원격 경계·화면을 확인했다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
 
 | 대상            | 확인한 상태                                                                                                                                                                                                                             |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.3.0 배포 `dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c`, source `460f5ae`, 기본 함수 리전 `icn1`                                                                          |
+| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.3.0 배포 `dpl_5fPbfvSjrQTGMoJmU6gtyqvKaMnW`, source `557bedc`, 기본 함수 리전 `icn1`                                                                          |
 | Supabase        | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증                                                                                                                         |
 | GitHub OAuth    | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공                                                                                                                                                                      |
 | 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
 | 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
-| GitHub Actions  | [CI run 34576287779](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34576287779) 성공: 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권 경계 검증 9개 통과 |
+| GitHub Actions  | [CI run 34578479987](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34578479987) 성공: 계약 22·Collector 14·웹 29, 총 65개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과 |
 | Atlas·Collector | Collector 0.3.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.3.0)은 132,274 bytes로 공개됐으며 npm은 아직 미게시             |
 
 ## 에이전트 인터페이스 경계
 
-Collector를 자동화하는 에이전트의 정식 실행면은 **로컬 CLI**다. 웹의 `/docs/collector.md`와 `/llms.txt`는 같은 공유 문서에서 설치·명령·데이터 경계를 제공하는 읽기면이다. 이 문서 경로가 공개로 도달하는지 여부는 웹 배포 검증과 별도로 확인한다.
+Collector를 자동화하는 에이전트의 정식 실행면은 **로컬 CLI**다. 웹의 `/docs/collector.md`와 `/llms.txt`는 같은 공유 문서에서 설치·명령·데이터 경계를 제공하는 읽기면이다. 한국어·영어 Markdown과 공개 경로는 [운영 검증](../ops/agent-docs-verification.json)을 통과했다.
 
 | 표면 | 현재 구현 | 경계 |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Atlas는 대시보드 사용자를 위한 별도 제품과 에이전트용 자�
 
 **다음 개발은 수집 계약과 Collector 정제 → 서버 구간별 증류 → 정제 전후 품질 검증 순으로 우선한다.** 모델 후보 확대나 화면 확장보다 앞선 과제다. 상세 구현·검증 기준은 위 문서에서 관리한다.
 
-전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. 압축 수신 원격 검증 9개와 인증·소유권 경계 검증 9개 통과이다.
+전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. 압축 수신 원격 검증 9개와 인증·소유권·삭제 경계 검증 11개 통과이다.
 
 ## 핵심 결정
 

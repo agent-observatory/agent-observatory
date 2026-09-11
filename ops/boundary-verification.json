@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-11T07:52:09.605Z",
+  "at": "2026-09-11T08:16:48.940Z",
   "url": "https://agent-session-atlas.vercel.app",
   "checks": [
     {
@@ -36,6 +36,14 @@
     },
     {
       "name": "unauthorized scheduler requests return 401",
+      "status": "passed"
+    },
+    {
+      "name": "a guest cannot delete another guest's session",
+      "status": "passed"
+    },
+    {
+      "name": "deletion hides data and blocks the retained source identity",
       "status": "passed"
     }
   ],

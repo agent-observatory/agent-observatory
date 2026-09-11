@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-09-11T08:15:11.786Z",
-  "url": "http://localhost:3100",
+  "checkedAt": "2026-09-11T08:18:49.682Z",
+  "url": "https://agent-session-atlas.vercel.app",
   "syntheticOnly": true,
   "status": "passed",
   "checks": [

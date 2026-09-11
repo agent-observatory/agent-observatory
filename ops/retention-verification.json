@@ -1,11 +1,19 @@
 {
-  "at": "2026-09-10T22:12:55.778Z",
+  "at": "2026-09-11T08:17:14.240Z",
+  "url": "https://agent-session-atlas.vercel.app",
   "checks": [
     "Expired detail hidden before cleanup",
     "7-day detailed metadata and results deleted",
     "8-day aggregate summary retained",
     "31-day aggregate summary deleted",
-    "Expired private Storage objects removed"
+    "Expired private Storage objects removed",
+    "Repeated delete preserves the original expiry and invalidates analysis results and summaries",
+    "Deleted session hides immediately; synthetic-scoped cleanup removes its files",
+    "Deleted source identity blocks checkpoint re-ingestion until its original 7-day expiry",
+    "Deleted tombstone is removed at detailed-data expiry"
+  ],
+  "limitations": [
+    "Real DELETE and read APIs are exercised. Cleanup is simulated with SQL and Storage operations scoped to this synthetic owner; the global maintenance function is not invoked."
   ],
   "status": "passed"
 }

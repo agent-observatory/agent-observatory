@@ -4,14 +4,14 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_DKrtwL2qD8cDJvGnYjftPLd8oN7c",
+    "latestReadyDeployment": "dpl_5fPbfvSjrQTGMoJmU6gtyqvKaMnW",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
     "deploymentSource": "verified-source-commit",
-    "runtimeChangesRecordedIn": "460f5aeac1873998c29c65e239348bf5b0c3a1e6",
+    "runtimeChangesRecordedIn": "557bedc978d3e4e6570e6fff09136f63e5b25aa4",
     "version": "0.3.0"
   },
   "supabase": {
@@ -84,7 +84,7 @@
       "maxAttempts": 5
     }
   },
-  "checkedAt": "2026-09-11T07:53:16Z",
+  "checkedAt": "2026-09-11T08:19:31Z",
   "collector": {
     "installedVersion": "0.3.0",
     "localSnapshot": {
@@ -102,7 +102,8 @@
     "routes": [
       "/sessions",
       "/analyses",
-      "/settings"
+      "/settings",
+      "/docs"
     ],
     "sessionPagination": [
       10,
@@ -112,7 +113,7 @@
     ],
     "defaultPageSize": 20,
     "timezone": "device default or IANA account preference",
-    "verification": "ops/actionable-review-ui-verification.json",
+    "verification": "ops/pagination-docs-ui-verification.json",
     "receipts": [
       "first_received",
       "last_received",
@@ -131,15 +132,18 @@
     "snapshotConfirmedAt": "2026-09-11T07:51:56.329Z"
   },
   "verification": {
-    "ciRun": 34576287779,
+    "ciRun": 34578479987,
     "tests": 65,
     "contracts": 22,
     "collector": 14,
     "web": 29,
-    "runtimeErrorsSince": "2026-09-11T07:51:00Z",
+    "runtimeErrorsSince": "2026-09-11T08:18:30Z",
     "runtimeErrorsFound": 0,
     "collectorLifecycle": "ops/collector-lifecycle-verification.json",
     "compressedIngest": "ops/compressed-ingest-verification.json",
-    "browserApi": "ops/session-browser-api-verification.json"
+    "browserApi": "ops/session-browser-api-verification.json",
+    "agentDocs": "ops/agent-docs-verification.json",
+    "deletionBoundaries": "ops/boundary-verification.json",
+    "deletionRetention": "ops/retention-verification.json"
   }
 }

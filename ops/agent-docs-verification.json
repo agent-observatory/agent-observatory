@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-09-11T08:18:45.058Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "status": "passed",
+  "checks": [
+    "public Korean and English Markdown match the shared web-guide content exactly",
+    "llms.txt links to machine-readable guide",
+    "public /docs returns the guide and residency section"
+  ]
+}

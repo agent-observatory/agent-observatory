@@ -183,3 +183,11 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 데스크톱과 모바일은 같은 주요 흐름을 각 화면 폭에 맞게 배치한다. SVG의 text·tspan을 유지하고, 기존 Tabler 사용자 아이콘의 라이선스를 보존했다. 생성 스크립트가 문서용·웹용 사본을 함께 만들며 CI에서 일치 여부를 검사한다.
 - SVG XML 검사와 브라우저 렌더링, 웹 빌드·타입 검사를 확인했다. 공개 Markdown에도 같은 Overview 이미지를 연결했다. 운영 `/docs`에서 데스크톱·모바일, 다크·라이트 표시와 가로 넘침 없음·브라우저 예외 없음을 확인했다. [화면 검증 기록](../ops/overview-ui-verification.json)을 남겼다.
 - source `f858f93`을 배포한 `dpl_BgwyVtra95qbKZRsuAbiGYAD8gff`는 Production Ready·`icn1`이다. [CI 34606401527](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34606401527)도 성공했다.
+
+## 2026-09-11 · Collector npm 최초 게시 준비
+
+- npm `choi8608` 로그인·이메일 인증과 `agent-observatory` 조직 Owner 권한을 확인했다. 계정 2FA는 아직 비활성이다.
+- Collector 0.4.1에 npm 메타데이터·영어 설치 안내·MIT 및 번들 Zod 라이선스를 포함했다. 테스트 18개·타입 검사·빌드·게시 dry-run 통과. tarball은 135.7 kB, 파일 5개다.
+- `collector-release.yml`을 GitHub Release 발행 → 태그/버전 검사 → 테스트/패키징 → tarball 첨부 → OIDC npm 게시로 변경했다. Trusted Publisher는 아직 연결 전이다.
+- 실제 첫 npm 게시에서 2FA 요구로 E403을 받았다. 패키지 게시·자동 게시 검증은 완료되지 않았다. 사용자 계정의 2FA 설정 후 검증한 tarball부터 재시도한다. 로컬 Collector 설치와 전송 상태는 변경하지 않았다.
+- 준비·검증·게시 시도는 22:55~22:57 KST, 약 2분이었다.

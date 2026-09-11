@@ -199,7 +199,7 @@ try {
   assert.ok((await bucket.download(deletedPath)).error);
   report.checks.push(
     "Repeated delete preserves the original expiry and invalidates analysis results and summaries",
-    "Deleted session hides immediately; files are purged by scheduled maintenance",
+    "Deleted session hides immediately; synthetic-scoped cleanup removes its files",
     "Deleted source identity blocks checkpoint re-ingestion until its original 7-day expiry",
   );
   await sql`UPDATE atlas.sessions SET expires_at=now()-interval '1 second' WHERE id=${deletedId}`;

@@ -4,7 +4,7 @@
 **/dist
 .agents
 _local-draft
-docs
-ops
+/docs/
+/ops/
 
 apps/web/app/.well-known/workflow

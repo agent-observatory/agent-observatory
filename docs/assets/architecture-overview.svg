@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1100" viewBox="0 0 1480 1100" role="img" aria-labelledby="title desc">
-<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel이 서버 마스킹 설정을 적용하고 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고, 설정된 서버 무료 제공자 풀을 한 번에 하나씩 사용하거나 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다.</desc>
+<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 raw JSON Outbox와 이미지 메타데이터를 확정하고 Zstd로 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel은 이미지를 다시 제거하고 서버 마스킹 뒤 Zstd로 재압축해 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고, 설정된 서버 무료 제공자 풀을 한 번에 하나씩 사용하거나 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다.</desc>
 <rect width="1480" height="1100" fill="white"/>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#3B5BA5"/></marker></defs>
 <text x="24" y="45" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.35" fill="#16213E">AgentSession Atlas<tspan dx="10" font-size="17" font-weight="700" fill="#64748B">Seoul</tspan></text>
@@ -48,7 +48,7 @@
 <rect x="44" y="702" width="256" height="112" rx="10" fill="#EFF6FF" stroke="#3B5BA5"/>
 <text x="64" y="732" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">Atlas Collector</text>
 <text x="64" y="763" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">변경분 전송 · ACK 확인</text>
-<text x="64" y="794" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">JSON Outbox + SQLite</text>
+<text x="64" y="794" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">raw JSON · 이미지 메타 + SQLite</text>
 <text x="44" y="849" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">프로젝트 기본 all · 제외 우선</text>
 <text x="44" y="879" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#31559F">에이전트 원본은 로컬 유지</text>
 <rect x="350" y="305" width="720" height="605" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
@@ -59,8 +59,8 @@
 <!-- Embedded from icons/nextdotjs.svg; see icons/SOURCES.md -->
 <svg x="400" y="407" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><g clip-path="url(#architecture-overview-nextdotjs-3-a)"><path fill="#000" d="M50 99.999c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50"/><path fill="url(#architecture-overview-nextdotjs-3-b)" d="M83.06 87.51 38.412 30H30v39.983h6.73V38.545L77.777 91.58a50 50 0 0 0 5.283-4.07"/><path fill="url(#architecture-overview-nextdotjs-3-c)" d="M70.556 29.999h-6.667v40h6.667z"/></g><defs><linearGradient id="architecture-overview-nextdotjs-3-b" x1="60.556" x2="80.278" y1="64.721" y2="89.166" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="architecture-overview-nextdotjs-3-c" x1="67.222" x2="67.111" y1="29.999" y2="59.374" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="architecture-overview-nextdotjs-3-a"><path fill="#fff" d="M0 0h100v100H0z"/></clipPath></defs></svg>
 <text x="440" y="430" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8">Next.js · Web + API</text>
-<text x="400" y="466" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">인증 · 수신 검증 · 마스킹 ON/OFF (<tspan font-weight="700" fill="#1D4ED8">기본 ON</tspan>)</text>
-<text x="400" y="496" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">세션 접수·조회 · 예약 작업 인증 · 수동 분석</text>
+<text x="400" y="466" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">인증 · Zstd 해제 · 이미지 제거 · 마스킹 ON/OFF (<tspan font-weight="700" fill="#1D4ED8">기본 ON</tspan>)</text>
+<text x="400" y="496" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">세션 접수·조회 · Zstd 재압축 · 수동 분석</text>
 <rect x="380" y="610" width="660" height="240" rx="14" fill="#FFF7ED" stroke="#C98A2B"/>
 <!-- Embedded from icons/vercel.svg; see icons/SOURCES.md -->
 <svg x="400" y="627" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><path fill="#000" fill-rule="evenodd" d="M100 93.957 50 7 0 93.957z" clip-rule="evenodd"/></svg>
@@ -92,7 +92,7 @@
 <text x="1140" y="498" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#166534">간단한 결과 요약 <tspan font-weight="700" fill="#166534">30일</tspan></text>
 <rect x="1120" y="537" width="316" height="110" rx="14" fill="#F0FDF4" stroke="#3F8E55"/>
 <text x="1140" y="577" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#166534">비공개 Storage</text>
-<text x="1140" y="613" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">설정 적용 JSON · 최대 <tspan font-weight="700" fill="#166534">7일</tspan></text>
+<text x="1140" y="613" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569">마스킹 `.json.zst` · 최대 <tspan font-weight="700" fill="#166534">7일</tspan></text>
 <path d="M1040 440 H1120" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
 <text x="1060" y="423" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F">접수</text>
 <path d="M1040 630 H1090 V595 H1120" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>

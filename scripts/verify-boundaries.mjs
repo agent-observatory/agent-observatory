@@ -93,6 +93,16 @@ const batch = {
 };
 
 try {
+  await record("anonymous visitors can inspect configured free candidates", async () => {
+    const response = await fetch(url + "/api/me");
+    const payload = await response.json();
+    if (!response.ok || payload.user !== null || !payload.freeCandidates?.length)
+      throw new Error("public free candidate list missing");
+    for (const candidate of payload.freeCandidates) {
+      if (!candidate.provider || !candidate.model || "keyEnv" in candidate || "apiKey" in candidate)
+        throw new Error("invalid public candidate metadata");
+    }
+  });
   await record("two guest accounts are isolated", async () => {
     await a.expect("/api/guest", { expected: 200, body: {} });
     await b.expect("/api/guest", { expected: 200, body: {} });

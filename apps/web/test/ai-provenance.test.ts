@@ -10,7 +10,7 @@ test("legacy Z.ai settings normalize to free mode", () => {
   assert.equal(normalizedProvider("zai"), "free");
   assert.equal(
     formatAiProvenance({ provider: "zai", model: "glm-4" }, "ko"),
-    "무료 티어 · Z.ai · glm-4",
+    "Free tier · Z.ai · glm-4",
   );
 });
 
@@ -64,7 +64,7 @@ test("the gateway remains the principal provider when routing has an upstream", 
       },
       "ko",
     ),
-    "무료 티어 · OpenRouter · nex",
+    "Free tier · OpenRouter · nex",
   );
 });
 

@@ -66,13 +66,17 @@ async function main() {
       for (const item of plan.selected) {
         item.expected = [];
         let events: any[] = [];
-        for (const f of await fs.readdir(
-          path.join(item.work, "outbox/ready"),
-        )) {
-          const m = JSON.parse(
-            await fs.readFile(path.join(item.work, "outbox/ready", f), "utf8"),
-          );
-          const b = Batch.parse(m.payload);
+        const ready = path.join(item.work, "outbox/ready");
+        const batches = await Promise.all(
+          (await fs.readdir(ready)).map(async (file) => {
+            const manifest = JSON.parse(
+              await fs.readFile(path.join(ready, file), "utf8"),
+            );
+            return Batch.parse(manifest.payload);
+          }),
+        );
+        batches.sort((a, b) => a.start_offset - b.start_offset);
+        for (const b of batches) {
           const original = canonicalBatch(b).json;
           assert.ok(
             !/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+\/_=-]{32,}/i.test(

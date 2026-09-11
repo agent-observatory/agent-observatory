@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1160" height="1108" viewBox="0 0 1160 1108" role="img" aria-labelledby="title desc">
 <title id="title">30분 전송·로컬 보관·재시도와 원격 분석</title>
-<desc id="desc">로컬 전송기는 30분마다 완성된 새 기록을 일반 JSON으로 작성하고 영속 Outbox에 확정한 후 읽기 위치를 저장한다. Next.js 서버에 JSON을 보내면 서버가 Workspace의 마스킹 설정을 적용하고 비공개 Storage 저장과 Supabase DB 접수를 COMMIT한 뒤 접수증을 반환한다. 접수증을 확인한 로컬 전송기는 접수 상태를 기록하고 대기 파일을 삭제한다. 확인하지 못하면 파일과 재시도 시각을 보관해 다음 실행에서 같은 배치를 보낸다. 원격 분석은 GitHub Actions의 하루 한 번 호출 또는 수동 요청으로 Workflow를 실행한다.</desc>
+<desc id="desc">로컬 전송기는 30분마다 완성된 새 기록에서 raw JSON Outbox와 이미지 메타데이터를 확정하고 읽기 위치를 저장한다. 전송 시 Zstd로 압축한다. Next.js 서버는 Zstd를 해제하고 이미지를 다시 제거한 뒤 Workspace 마스킹을 적용하고 Zstd로 재압축해 비공개 Storage와 Supabase DB 접수를 COMMIT한 뒤 접수증을 반환한다. 접수증을 확인한 로컬 전송기는 접수 상태를 기록하고 대기 파일을 삭제한다. 확인하지 못하면 파일과 재시도 시각을 보관해 다음 실행에서 같은 배치를 보낸다. 원격 분석은 GitHub Actions의 하루 한 번 호출 또는 수동 요청으로 Workflow를 실행한다.</desc>
 <rect width="1160" height="1108" fill="#FFFFFF"/>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#3B5BA5"/></marker></defs>
 <text x="24" y="44" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">30분 전송 · 보관 · 재시도</text>
@@ -35,7 +35,7 @@
 <text x="452" y="400" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#166534" text-anchor="start">JSON Outbox 확정</text>
 <text x="452" y="435" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">임시 파일 → ready로 확정</text>
 <text x="452" y="467" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">파일 보존 후 읽기 위치 저장</text>
-<text x="452" y="493" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">원본 본문 · 압축 없음</text>
+<text x="452" y="493" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#166534" text-anchor="start">raw JSON · 이미지 메타데이터</text>
 <path d="M580 296 V362" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
 <text x="48" y="610" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#31559F" text-anchor="start">기록이 없으면 전송 생략</text>
 <rect x="432" y="588" width="296" height="108" rx="12" fill="#EFF6FF" stroke="#3B5BA5" stroke-width="1"/>
@@ -47,13 +47,13 @@
 <!-- Embedded from icons/nextdotjs.svg; see icons/SOURCES.md -->
 <svg x="828" y="484" width="28" height="28" fill="none" viewBox="0 0 100 100" aria-hidden="true"><g clip-path="url(#collector-delivery-nextdotjs-2-a)"><path fill="#000" d="M50 99.999c27.614 0 50-22.386 50-50s-22.386-50-50-50-50 22.386-50 50 22.386 50 50 50"/><path fill="url(#collector-delivery-nextdotjs-2-b)" d="M83.06 87.51 38.412 30H30v39.983h6.73V38.545L77.777 91.58a50 50 0 0 0 5.283-4.07"/><path fill="url(#collector-delivery-nextdotjs-2-c)" d="M70.556 29.999h-6.667v40h6.667z"/></g><defs><linearGradient id="collector-delivery-nextdotjs-2-b" x1="60.556" x2="80.278" y1="64.721" y2="89.166" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="collector-delivery-nextdotjs-2-c" x1="67.222" x2="67.111" y1="29.999" y2="59.374" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="collector-delivery-nextdotjs-2-a"><path fill="#fff" d="M0 0h100v100H0z"/></clipPath></defs></svg>
 <text x="868" y="508" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#1D4ED8" text-anchor="start">Next.js 접수 API</text>
-<text x="828" y="545" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">인증 · 크기 · 원본 해시 확인</text>
-<text x="828" y="584" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">마스킹 ON/OFF · <tspan font-weight="700" fill="#1D4ED8">기본 ON</tspan></text>
-<text x="828" y="623" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">설정 적용 JSON → 비공개 Storage</text>
+<text x="828" y="545" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">인증 · Zstd 해제 · 원본 해시 확인</text>
+<text x="828" y="584" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#16213E" text-anchor="start">이미지 제거 → 마스킹 · <tspan font-weight="700" fill="#1D4ED8">기본 ON</tspan></text>
+<text x="828" y="623" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">`.json.zst` → 비공개 Storage</text>
 <text x="828" y="662" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="18" font-weight="400" fill="#475569" text-anchor="start">Supabase DB 접수 내역 COMMIT</text>
 <text x="828" y="702" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="start">영속화 완료 후 ACK 반환</text>
 <path d="M728 616 H808" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
-<text x="768" y="602" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">JSON</text>
+<text x="768" y="602" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">Zstd · 1 MiB</text>
 <path d="M808 668 H728" fill="none" stroke="#3B5BA5" stroke-width="1.6" stroke-linejoin="miter" marker-end="url(#arrow)"/>
 <text x="768" y="654" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#31559F" text-anchor="middle">ACK</text>
 <path d="M580 772 L712 826 L580 880 L448 826 Z" fill="#FBF5FF" stroke="#8B3DFF" stroke-width="1.5"/>

@@ -25,7 +25,7 @@ function hostname(endpoint?: string | null) {
   }
 }
 
-function providerName(provider?: string | null, endpoint?: string | null) {
+export function providerName(provider?: string | null, endpoint?: string | null) {
   const value = (provider || "").toLowerCase();
   const host = hostname(endpoint).toLowerCase();
   if (value === "openrouter") return "OpenRouter";
@@ -62,13 +62,7 @@ export function formatAiProvenance(
       ? provenance.tier
       : inferredTier(provenance.provider);
   const tierLabel =
-    tier === "free"
-      ? language === "ko"
-        ? "무료 티어"
-        : "Free tier"
-      : tier === "byok"
-        ? "BYOK"
-        : undefined;
+    tier === "free" ? "Free tier" : tier === "byok" ? "BYOK" : undefined;
   // The configured gateway is the user-visible provider. An upstream host is
   // routing detail and must not replace it in the main provenance label.
   const provider = providerName(provenance.provider, provenance.endpoint);

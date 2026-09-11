@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-09-11T06:26:00Z",
+  "environment": "local production build, synthetic authenticated fixtures",
+  "source": "ac95915c0fc49decdec6f3fb23fecef121ac81a9",
+  "checks": {
+    "deepLink": true,
+    "evidenceNavigation": true,
+    "lightDark": true,
+    "mobileOverflow": false,
+    "settingsEqualWidths": true,
+    "modelCandidates": 6,
+    "clipboardCommands": 3,
+    "customSelectKeyboard": true,
+    "crossTabAuthRefresh": true,
+    "mobileAuthVisible": true,
+    "settingsReload": true,
+    "historyNavigation": true,
+    "singleProvenance": true,
+    "brandNoWrap": true,
+    "productMetadataSeparated": true,
+    "svgNavigationIcons": 3
+  },
+  "limitations": [
+    "Authenticated browser checks use synthetic fixtures; live OAuth was not repeated."
+  ],
+  "production": {
+    "checkedAt": "2026-09-11T06:39:56.930Z",
+    "url": "https://agent-session-atlas.vercel.app/settings",
+    "anonymousModelCandidates": 6,
+    "settingsReload": true,
+    "historyNavigation": true,
+    "clipboardCommands": 3,
+    "customSelect": true,
+    "mobileOverflow": false,
+    "mobileAuthVisible": true,
+    "lightDark": true,
+    "brandNoWrap": true,
+    "svgIcons": 3
+  }
+}

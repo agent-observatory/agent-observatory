@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-11T05:56:19.474Z",
+  "mode": "storage",
+  "sessions": 4,
+  "batches": 15,
+  "storedBytes": 2106796,
+  "decodedBytes": 9257325,
+  "masking": true,
+  "imagePayloads": "absent",
+  "imageOccurrences": 251,
+  "uniqueImages": 237,
+  "completed": 0,
+  "failed": 0,
+  "pending": 0,
+  "results": []
+}

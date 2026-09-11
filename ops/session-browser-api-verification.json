@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-09-11T06:38:42.090Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "status": "passed",
+  "checks": [
+    "27 owned sessions: stable pages, sizes, literal search, empty/overshoot, full overview, isolation",
+    "detail storage metrics use DB manifest without downloading files; unknown analysis metrics are null",
+    "authenticated timezone save/read for three zones; invalid zone rejected without overwriting settings"
+  ],
+  "authentication": "short-lived synthetic Auth.js session; OAuth flow not repeated"
+}

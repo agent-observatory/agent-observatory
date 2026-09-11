@@ -4,14 +4,14 @@
     "teamId": "team_CE9o0BYF1disjcoImxhEp3jf",
     "region": "icn1",
     "url": "https://agent-session-atlas.vercel.app",
-    "latestReadyDeployment": "dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp",
+    "latestReadyDeployment": "dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud",
     "projectName": "agent-session-atlas",
     "scope": "dans-projects-155a19b3",
     "rootDirectory": "apps/web",
     "nodeVersion": "22.x",
     "gitIntegration": "not-linked",
-    "deploymentSource": "local-working-tree-before-commit",
-    "runtimeChangesRecordedIn": "36ba51dcad1004f06fbb1576abda4d900d8956df"
+    "deploymentSource": "verified-source-commit",
+    "runtimeChangesRecordedIn": "3fff3b5cabc864346412c85897a6b68ccea08e9d"
   },
   "supabase": {
     "projectRef": "dgmecutgijgegtmrsygo",
@@ -24,8 +24,8 @@
     "retentionMigration": "004-applied",
     "databaseUrlEnv": "POSTGRES_URL",
     "databaseCaFile": "ops/certs/supabase-prod-ca-2021.crt",
-    "allowedMimeTypes": ["application/json"],
-    "storedEncoding": "identity",
+    "allowedMimeTypes": ["application/json", "application/octet-stream"],
+    "storedEncoding": "zstd-3",
     "appliedMigrations": [
       "001_initial.sql",
       "002_rate_limits.sql",
@@ -69,16 +69,33 @@
       "maxAttempts": 5
     }
   },
-  "checkedAt": "2026-09-11T04:43:30Z",
+  "checkedAt": "2026-09-11T06:40:00Z",
   "collector": {
-    "installedVersion": "0.1.0",
+    "installedVersion": "0.2.0",
     "localSnapshot": {
       "paused": true,
       "projectMode": "all"
     },
     "npmPublished": false,
-    "compression": "not-implemented",
+    "compression": "zstd-3",
     "preferredCompressionCandidate": "zstd-3",
-    "compressionReport": "ops/compression-local.json"
+    "compressionReport": "ops/compression-local.json",
+    "release": "https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0"
+  },
+  "ui": {
+    "routes": ["/sessions", "/analyses", "/settings"],
+    "sessionPagination": [10, 20, 50, 100],
+    "defaultPageSize": 20,
+    "timezone": "device default or IANA account preference",
+    "verification": "ops/session-browser-api-verification.json"
+  },
+  "pilot": {
+    "sessionsUploaded": 4,
+    "analysisCompleted": 3,
+    "analysisPending": 1,
+    "checkedAt": "2026-09-11T06:39:54.852Z",
+    "storedFileBytes": 2106796,
+    "imagePolicy": "metadata-only",
+    "storageReport": "ops/personal-pilot-storage.json"
   }
 }

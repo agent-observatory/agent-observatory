@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-11T06:38:43.634Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "checks": [
+    "large logical event / zstd / canonical hash ACK / duplicate idempotency",
+    "owned pagination / literal search / overview / detail aggregate",
+    "server image stripping / text masking / stored zstd hash verified",
+    "corrupt zstd rejected",
+    "decompression limit enforced",
+    "uncompressed wire limit enforced",
+    "unknown encoding rejected",
+    "hash mismatch rejected"
+  ],
+  "status": "passed",
+  "decodedBytes": 1380503,
+  "wireBytes": 536
+}

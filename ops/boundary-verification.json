@@ -1,7 +1,11 @@
 {
-  "at": "2026-09-10T22:21:21.599Z",
+  "at": "2026-09-11T06:14:34.886Z",
   "url": "https://agent-session-atlas.vercel.app",
   "checks": [
+    {
+      "name": "anonymous visitors can inspect configured free candidates",
+      "status": "passed"
+    },
     {
       "name": "two guest accounts are isolated",
       "status": "passed"

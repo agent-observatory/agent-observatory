@@ -7,21 +7,21 @@
 - 이전 설계·인프라 준비 대화는 제외했다. 모델별 실제 토큰 사용량은 별도 집계하지 않았다.
 - Astra가 통합·보안 경계·배포를 맡고, Luna가 Collector 보강·대시보드 보완·문서 정리를 맡았다.
 
-| 항목 | 상태 | 확인한 내용 |
-|---|---|---|
-| 코드·빌드 | 로컬·CI 통과 | 공통 계약·웹·Collector 독립 0.1.0. 계약 6건·Collector 6건·웹 SSRF 1건, 총 13건 통과. 전체 빌드·타입 검사 통과 |
-| 회원가입·로그인 | 실제 브라우저 검증 | GitHub OAuth로 Hyune-c 계정과 개인 공간 생성. 로그아웃·재로그인 후 기록·설정 유지 |
-| 언어·테마 | 실제 브라우저 검증 | 한국어/English와 다크/라이트 전환·저장·복원 |
-| 접수·마스킹 | 원격 합성 검증 | 업로드·중복 ACK·소유자별 목록·AI 입력 마스킹 확인 |
-| 수동 분석 | 원격 합성 검증 | 단건 AI 분석 완료, 선택·전체 분석 완료와 기존 결과 재사용. 한국어 결과·지표·실제 모델 표시 확인. [검증 기록](../ops/remote-smoke.json) |
-| 일일 분석 | 원격 완료 확인 | Actions 호출 후 2개 항목 완료. 그중 1개는 백오프 후 두 번째 시도에서 완료. 성공 뒤 고정 지연 없이 전역 동시 호출 1개 유지 |
-| 보안·보관 | 원격 합성 검증 | 소유권·Origin·인증·변경 배치 충돌 등 8건, 만료 조회 차단·상세 7일 삭제·요약 30일 보존/삭제 등 5건 통과 |
-| 로컬 Collector | 설치·연결 완료 | 전역 `atlas-collector`와 관리형 실행 파일 설치. LaunchAgent 하나·1,800초 간격. 일회용 코드로 계정 연결, 토큰은 macOS Keychain 저장 |
-| Collector 전송 | 원격 합성 검증 | 합성 세션 2개. 첫 동기화 `sent: 2`, 두 번째 `sent: 0`. 중복 전송 방지 확인 |
-| 개인 기록 | 미전송·자동 수집 중지 | 최초 가져오기 범위를 확인하도록 `paused: true`. 로컬 inventory는 74개 프로젝트·1,083개 세션·약 1.19 GB. 경로와 본문은 저장소에 기록하지 않음 |
-| 운영 배포 | READY 확인 | [Atlas](https://agent-session-atlas.vercel.app), Next.js 16.3.4·Node 22·함수 `icn1`. 배포 `dpl_5gTEvkph4akNnxX1yinKyEJfwkKv`, 소스 `3a455ba` |
-| GitHub Actions | 원격 검증 | [최종 CI](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34537442562), [유지관리](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536852830), [일일 분석 기동](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), [Collector 패키징](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536858875) 성공 |
-| 독립 릴리스 | 공개 확인 | [Atlas 0.1.0](https://github.com/agent-observatory/agent-session-atlas/releases/tag/atlas-v0.1.0), [Collector 0.1.0](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.1.0). Collector tarball 설치 가능 |
+| 항목            | 상태                  | 확인한 내용                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 코드·빌드       | 로컬·CI 통과          | 공통 계약·웹·Collector 독립 0.1.0. 계약 6건·Collector 6건·웹 SSRF 1건, 총 13건 통과. 전체 빌드·타입 검사 통과                                                                                                                                                                                                                                                                                                |
+| 회원가입·로그인 | 실제 브라우저 검증    | GitHub OAuth로 Hyune-c 계정과 개인 공간 생성. 로그아웃·재로그인 후 기록·설정 유지                                                                                                                                                                                                                                                                                                                            |
+| 언어·테마       | 실제 브라우저 검증    | 한국어/English와 다크/라이트 전환·저장·복원                                                                                                                                                                                                                                                                                                                                                                  |
+| 접수·마스킹     | 원격 합성 검증        | 업로드·중복 ACK·소유자별 목록·AI 입력 마스킹 확인                                                                                                                                                                                                                                                                                                                                                            |
+| 수동 분석       | 원격 합성 검증        | 단건 AI 분석 완료, 선택·전체 분석 완료와 기존 결과 재사용. 한국어 결과·지표·실제 모델 표시 확인. [검증 기록](../ops/remote-smoke.json)                                                                                                                                                                                                                                                                       |
+| 일일 분석       | 원격 완료 확인        | Actions 호출 후 2개 항목 완료. 그중 1개는 백오프 후 두 번째 시도에서 완료. 성공 뒤 고정 지연 없이 전역 동시 호출 1개 유지                                                                                                                                                                                                                                                                                    |
+| 보안·보관       | 원격 합성 검증        | 소유권·Origin·인증·변경 배치 충돌 등 8건, 만료 조회 차단·상세 7일 삭제·요약 30일 보존/삭제 등 5건 통과                                                                                                                                                                                                                                                                                                       |
+| 로컬 Collector  | 설치·연결 완료        | 전역 `atlas-collector`와 관리형 실행 파일 설치. LaunchAgent 하나·1,800초 간격. 일회용 코드로 계정 연결, 토큰은 macOS Keychain 저장                                                                                                                                                                                                                                                                           |
+| Collector 전송  | 원격 합성 검증        | 합성 세션 2개. 첫 동기화 `sent: 2`, 두 번째 `sent: 0`. 중복 전송 방지 확인                                                                                                                                                                                                                                                                                                                                   |
+| 개인 기록       | 미전송·자동 수집 중지 | 최초 가져오기 범위를 확인하도록 `paused: true`. 로컬 inventory는 74개 프로젝트·1,083개 세션·약 1.19 GB. 경로와 본문은 저장소에 기록하지 않음                                                                                                                                                                                                                                                                 |
+| 운영 배포       | READY 확인            | [Atlas](https://agent-session-atlas.vercel.app), Next.js 16.3.4·Node 22·함수 `icn1`. 배포 `dpl_5gTEvkph4akNnxX1yinKyEJfwkKv`, 소스 `3a455ba`                                                                                                                                                                                                                                                                 |
+| GitHub Actions  | 원격 검증             | [최종 CI](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34537442562), [유지관리](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536852830), [일일 분석 기동](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), [Collector 패키징](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536858875) 성공 |
+| 독립 릴리스     | 공개 확인             | [Atlas 0.1.0](https://github.com/agent-observatory/agent-session-atlas/releases/tag/atlas-v0.1.0), [Collector 0.1.0](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.1.0). Collector tarball 설치 가능                                                                                                                                                                    |
 
 ## 사용 시작
 
@@ -37,34 +37,33 @@ atlas-collector sync
 
 ## 남은 연결 작업과 검증 범위
 
-| 항목 | 현재 상태 |
-|---|---|
-| npm 공개 게시 | `npm whoami`가 `ENEEDAUTH`. npm 인증이 필요하다. 현재 GitHub Release tarball과 로컬 설치는 사용 가능 |
-| push 후 웹 자동 배포 | Vercel GitHub App에 이 저장소 접근을 허용하는 사용자 승인 대기. 현재 운영 서비스는 CLI로 배포 완료 |
-| 자연 예약 실행 | 유지관리 자연 예약 성공을 추가 확인했다. 일일 분석은 수동 실행 성공, 자연 예약은 아직 미관찰 |
-| BYOK | endpoint·키 암호화 저장·연결 확인 UI와 SSRF 검사 구현. 실제 개인 BYOK 키 호출은 미검증 |
-| 분석 품질 | 합성 데이터의 결과 형식·근거·마스킹·복구를 검증했다. 실제 개인 기록의 장기 분석 품질은 아직 평가하지 않음 |
+| 항목                 | 현재 상태                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| npm 공개 게시        | `npm whoami`가 `ENEEDAUTH`. npm 인증이 필요하다. 현재 GitHub Release tarball과 로컬 설치는 사용 가능      |
+| push 후 웹 자동 배포 | Vercel GitHub App에 이 저장소 접근을 허용하는 사용자 승인 대기. 현재 운영 서비스는 CLI로 배포 완료        |
+| 자연 예약 실행       | 유지관리 자연 예약 성공을 추가 확인했다. 일일 분석은 수동 실행 성공, 자연 예약은 아직 미관찰              |
+| BYOK                 | endpoint·키 암호화 저장·연결 확인 UI와 SSRF 검사 구현. 실제 개인 BYOK 키 호출은 미검증                    |
+| 분석 품질            | 합성 데이터의 결과 형식·근거·마스킹·복구를 검증했다. 실제 개인 기록의 장기 분석 품질은 아직 평가하지 않음 |
 
 실제 세션 본문과 자격증명은 저장소에 넣지 않았다. 검증에는 합성 데이터를 사용했다.
-
 
 ## 2026-09-11 — 무료 모델 풀과 결과 출처
 
 구현 파일 생성부터 최종 원격·화면 검증까지 약 17분 걸렸다(12:51:22~13:08 KST). 앞선 모델 조사와 이후 커밋·CI 대기는 제외했다. Astra가 라우팅·통합·원격 검증을 맡고 Terra 에이전트가 UI와 설계 문서를 보완했다.
 
-| 항목 | 구현·검증 결과 |
-|---|---|
-| 무료 후보 | NVIDIA 3개, OpenRouter 2개, Z.ai 1개. 키가 설정된 후보만 고정 우선순위와 가용 상태로 선택 |
-| 실패 복구 | 모델 오류는 해당 모델만 대기하고 다음 후보 사용. 계정 인증·공유 quota 오류는 제공자 전체를 대기. 같은 제공자 내 전환과 공유 한도 차단은 모의 응답 테스트 통과 |
-| 호출 경계 | 서비스 전체 직렬 호출 1개 유지. 모두 대기하면 Workflow가 백오프 후 재개. BYOK는 지정 endpoint·모델·개인 키만 사용 |
-| 결과 표시 | 무료 티어/BYOK·API 제공자·실제 응답 모델 표시. 요청 모델·upstream provider·자격증명 없는 시도 이력도 저장. 기존 Z.ai 설정과 과거 결과 호환 |
-| 환경변수 | 로컬 NVIDIA·OpenRouter 키를 Vercel Production에 반영. 실제 값은 저장소·검증 보고서에 기록하지 않음 |
-| 로컬 검증 | 계약 6·Collector 6·웹 14, 총 26개 테스트. 전체 타입 검사와 웹 빌드 통과. BYOK 격리·무료 가격 조건·근거 ID·오류 범위·이전 결과 표시 검증 |
-| 실호출 | 로컬 Kimi timeout, Nex Pro·GLM Flash 성공. 초기 원격 Kimi 성공. 최종 원격은 Kimi timeout → Nex Pro HTTP 200으로 전환 후 합성 분석 완료 |
-| 원격 전체 흐름 | 무료 후보 목록·업로드·중복 ACK·소유권·마스킹·분석·실제 모델·선택/전체 결과 재사용 통과. [검증 보고서](../ops/free-routing-remote-smoke.json) |
-| 운영 배포 | `dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp` Ready·Production·`icn1`. [Atlas](https://agent-session-atlas.vercel.app)에 최종 6개 후보 코드 배포 |
-| 화면·그림 | 운영 Edge 설정에서 6개 후보와 다크/라이트 가독성 확인 후 기존 다크로 복원. 아키텍처 SVG XML 검사와 렌더링 확인 |
-| 검증 범위 | DeepSeek·Nemotron·Nex Mini 개별 실호출, 실제 개인 기록의 분석 품질, 사용자 BYOK 실호출은 이번 검증에 포함하지 않음 |
+| 항목           | 구현·검증 결과                                                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 무료 후보      | NVIDIA 3개, OpenRouter 2개, Z.ai 1개. 키가 설정된 후보만 고정 우선순위와 가용 상태로 선택                                                                     |
+| 실패 복구      | 모델 오류는 해당 모델만 대기하고 다음 후보 사용. 계정 인증·공유 quota 오류는 제공자 전체를 대기. 같은 제공자 내 전환과 공유 한도 차단은 모의 응답 테스트 통과 |
+| 호출 경계      | 서비스 전체 직렬 호출 1개 유지. 모두 대기하면 Workflow가 백오프 후 재개. BYOK는 지정 endpoint·모델·개인 키만 사용                                             |
+| 결과 표시      | 무료 티어/BYOK·API 제공자·실제 응답 모델 표시. 요청 모델·upstream provider·자격증명 없는 시도 이력도 저장. 기존 Z.ai 설정과 과거 결과 호환                    |
+| 환경변수       | 로컬 NVIDIA·OpenRouter 키를 Vercel Production에 반영. 실제 값은 저장소·검증 보고서에 기록하지 않음                                                            |
+| 로컬 검증      | 계약 6·Collector 6·웹 14, 총 26개 테스트. 전체 타입 검사와 웹 빌드 통과. BYOK 격리·무료 가격 조건·근거 ID·오류 범위·이전 결과 표시 검증                       |
+| 실호출         | 로컬 Kimi timeout, Nex Pro·GLM Flash 성공. 초기 원격 Kimi 성공. 최종 원격은 Kimi timeout → Nex Pro HTTP 200으로 전환 후 합성 분석 완료                        |
+| 원격 전체 흐름 | 무료 후보 목록·업로드·중복 ACK·소유권·마스킹·분석·실제 모델·선택/전체 결과 재사용 통과. [검증 보고서](../ops/free-routing-remote-smoke.json)                  |
+| 운영 배포      | `dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp` Ready·Production·`icn1`. [Atlas](https://agent-session-atlas.vercel.app)에 최종 6개 후보 코드 배포                         |
+| 화면·그림      | 운영 Edge 설정에서 6개 후보와 다크/라이트 가독성 확인 후 기존 다크로 복원. 아키텍처 SVG XML 검사와 렌더링 확인                                                |
+| 검증 범위      | DeepSeek·Nemotron·Nex Mini 개별 실호출, 실제 개인 기록의 분석 품질, 사용자 BYOK 실호출은 이번 검증에 포함하지 않음                                            |
 
 원격 호출 성공은 장기 가용성이나 무료 quota 보장이 아니다. 후보를 늘려도 같은 제공자의 계정 한도는 공유한다.
 
@@ -76,7 +75,6 @@ atlas-collector sync
 
 Zstd 3을 우선 도입 후보로 정했으며 제품 압축 경로는 아직 미구현이다. [범위·방법·비교표](collector.md#로컬-압축-비교--2026-09-11) · [원문 없는 집계 보고서](../ops/compression-local.json)
 
-
 ## 2026-09-11 — 에이전트 인계와 운영 문서 정리
 
 Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상세 운영 절차는 Atlas 문서로 모으고, 존재하지 않는 pnpm 별칭·인프라 스크립트 대신 실제 명령을 기록했다. 환경변수 점검 스크립트는 파일을 읽기만 하며 이름·존재·일치 여부만 출력한다.
@@ -84,3 +82,36 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 운영 재조회에서 Vercel Ready·Production·`icn1`과 Git 미연결, Production 변수 이름, GitHub의 `SCHEDULER_SECRET`, Supabase DB migration 001~004·서울 pooler·비공개 JSON 버킷을 확인했다. 유지관리 자연 예약 성공도 현재 상태에 반영했다. 로컬 앱 키 사본은 일치했고 Collector는 일시 중지 상태였다. 키 원문 변경·회전, 배포, 실제 세션 업로드는 수행하지 않았다.
 
 `ops/production.json`의 예전 단일 Z.ai·초기 배포 정보를 갱신했다. CLI 작업 디렉터리 배포와 나중에 기록한 커밋을 구분했다. Claude Code의 실제 새 세션 로딩은 아직 실행하지 않았으며, [공식 import 방식](https://code.claude.com/docs/en/memory#agentsmd)과 로컬 파일 경로를 확인했다.
+
+## 2026-09-11 — 압축 수집 실증과 화면 개편
+
+14:20 KST부터 압축 접수·개인 표본 전송·디자인 개편·운영 검증을 진행했다. 15:26 KST 기준 약 66분이며 무료 모델 백오프 대기와 이후 최종 결과 확인은 별도다. Astra가 통합·운영 검증을 맡고 Sol 에이전트가 압축 수집·UI·문서를 나누어 구현했다.
+
+| 항목             | 실제 결과                                                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 압축             | Collector 전송과 서버 저장 모두 Zstd 3. 압축 요청 1 MiB·해제 배치 8 MiB·분석 해제 합계 40 MiB 제한                                                                                                                 |
+| 이미지           | 사용자 선택에 따라 본문은 로컬에 두고 위치·형식·크기·해상도·해시만 전송. 서버에서도 이미지 본문 제거와 텍스트 마스킹 후 저장                                                                                       |
+| 개인 표본 업로드 | 최근 일주일 중 메인 세션 4개·3,717개 이벤트·15개 배치 접수 완료. 이미지 참조 251개·고유 해시 237개. 원본 경로·본문은 보고서에서 제외                                                                               |
+| 실전송·저장      | 정상 요청 합계 2,107,290 B. 재시도 포함 17회·2,428,355 B 전송. 서버 파일 2,106,796 B, 해제 후 마스킹 JSON 9,257,325 B. DB 물리 용량과 별개                                                                         |
+| 복구 수정        | 앞선 배치의 재시도 대기 중 같은 파일의 뒤 배치를 보내던 문제 수정. 다른 파일 진행은 허용하며 선행 ACK 순서 유지. 재개 후 15개 배치 모두 ACK 확인                                                                   |
+| 실제 분석        | 15:21 KST 기준 4개 중 2개 완료·2개 처리 대기. OpenRouter Nex Mini와 NVIDIA Nemotron 사용. 결과 JSON 합계 380,548 B는 완료된 2개만의 값                                                                             |
+| 품질 표본 검토   | 완료된 2개 결과의 제안 8개 모두 제공된 근거 ID 참조. 6개는 근거가 충분하고 2개는 간접·약한 근거. 키워드 오류 지표를 실제 실패 횟수로 과해석한 사례를 발견해 UI에 제한 표시. 계층적 증류·오탐 분류는 남은 개선 과제 |
+| 화면             | 네이비·의미별 색상, 다크·라이트, 통일된 설정 폭·명령 복사·접근성 있는 선택 메뉴. 공개 Free tier 후보 6개와 인증 변경 재조회                                                                                        |
+| 페이지           | `/sessions`, `/analyses`, `/settings` 분리. 새로고침·직접 접근·뒤로 가기와 기존 세션 링크 유지                                                                                                                     |
+| 메뉴·출처        | Agent Observatory 한 줄, 리전·버전은 제품 이름 아래, 계정은 별도 구간. SVG 메뉴 아이콘. 분석 모델·비용은 결과 상단에 한 번만 표시                                                                                  |
+| 로컬·원격 검증   | 계약 13·Collector 9·웹 17 테스트. 웹 빌드·타입 검사 통과. 압축 접수 8개·인증 소유권 경계 9개 원격 검증 통과. 합성 화면으로 복사·키보드·모바일·테마·페이지 이동·출처 중복 확인                                      |
+| Collector 배포   | 0.2.0 로컬 설치·계정 연결 유지, 자동 동기화 일시 중지. GitHub Release tarball 공개. npm 게시 미완료                                                                                                                |
+
+현재 운영 배포는 [운영 상태](../ops/production.json), 접수·저장 검증은 [표본 보고서](../ops/personal-pilot-storage.json), 화면 검증은 [UI 보고서](../ops/ui-verification.json)에 기록한다. 디자인 결정은 [DESIGN.md](DESIGN.md)에 모았다. 실제 표본의 남은 분석은 기존 Workflow가 제공자 백오프를 지켜 이어간다. 완료 전 전체 분석 성공으로 표시하지 않는다.
+
+### 15:40 KST 추가 검증
+
+화면 개편 시작부터 약 80분이 지났다. 운영 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`는 소스 `3fff3b5`·Ready·Production·`icn1`으로 확인했다. [CI 34570714079](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34570714079)는 계약 13·Collector 9·웹 21, 총 43개 테스트와 빌드를 통과했다.
+
+- 서버 페이지네이션, URL에 남는 검색·페이지·개수, 계정 전체 집계 유지, 타임존 선택과 초 단위 timestamp를 추가했다.
+- 합성 계정 27개 세션으로 페이지 크기·동일 시각 정렬·전체 검색·범위 초과·계정 격리를 운영 API에서 확인했다. 합성 Auth.js 세션으로 타임존 저장·복원·잘못된 값 거부를 확인했으며 GitHub OAuth 절차 자체는 재실행하지 않았다. [API 검증](../ops/session-browser-api-verification.json) · [합성 UI 검증](../ops/pagination-ui-verification.json)
+- 상세 용량·배치 수는 DB 파일 집계, 나머지 메트릭은 현재 revision의 완료 결과에서 읽는다. 상세 조회 때 원본 Storage를 다시 다운로드하지 않는다. 미집계는 `—`다.
+- 분석의 순서 대기·재시도 대기·실제 요청 중을 구분하고 요청 이력에 시각·모델·오류를 표시했다.
+- 15:39 KST에는 개인 표본 3/4 분석 완료·1개 대기였고, 완료된 3개 결과 JSON은 합계 733,639 B였다. 539개 이벤트 세션은 7회 시도 후 Nex Mini로 완료되어 백오프 복구를 확인했다. 나머지 결과 확인은 기존 Workflow와 후속 검증이 이어간다.
+- [평가 기준](evaluation.md)에 모델 적합성과 스킬 버전 효과, 관측·추론 구분, 규칙 검토·폐기 기준과 필요한 수집 보강을 기록했다. 이 고급 평가 기준의 구현은 아직 아니다.
+- Collector는 Codex 예약 기능에 의존하지 않는 macOS LaunchAgent임을 문서에 명시했다. 현재 Codex JSONL만 지원하며 Claude Code 어댑터와 웹 기기 상태 조회는 미구현이다.

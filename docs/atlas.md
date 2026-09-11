@@ -8,24 +8,24 @@
 
 ## 대시보드
 
-
-*합성 데이터로 만든 화면 예시. 세션을 선택하면 같은 페이지 아래에 상세 분석을 표시한다.*
+_합성 browser fixture로 만든 화면 예시이며 실제 사용자 콘텐츠는 포함하지 않는다. 세션을 선택하면 같은 페이지 아래에 상세 분석을 표시한다._
 
 **구현 기본값:** 한국어 UI·한국어 AI 설명·다크모드. 설정에서 한국어/English와 라이트/다크/시스템 테마를 선택한다.
 [디자인 기준](DESIGN.md)의 잉크 네이비·역할별 색상·구분선·세션 표를 사용한다. 상세 결과는 발견 사항 → 근거 → 개선 방향 순서이며, 근거 링크를 누르면 해당 이벤트로 이동한다.
+0.2.0은 `/sessions`, `/analyses`, `/settings`로 경로를 나눴다. 세션 표에는 custom select·복사 가능한 코드 조각·좌측 상단 계정과 버전을 둔다.
 
 ## 회원가입·로그인·개인 설정
 
 **비로그인은 단발 업로드, GitHub 로그인 후에는 기록 보관·수집기 연결·개인 설정을 제공한다.** GitHub OAuth와 개인 공간 진입은 Edge에서 확인했다. 전체 UI 경로와 장기 운영은 별도 검증이 필요하다.
 **GitHub로 시작하기** 한 경로에서 신규 사용자는 Atlas 계정·개인 Workspace를 만들고, 기존 사용자는 자신의 계정으로 로그인한다. 별도 비밀번호 가입은 두지 않는다. Auth0 같은 별도 인증 서비스는 필수가 아니다.
 
-| 사용자 상태 | 제공할 기능 |
-|---|---|
-| 비로그인 | 파일 수동 업로드·단발 분석. 임시 cookie 기반 방문자 공간(최대 7일), 크기·횟수 제한 적용 |
-| GitHub 로그인 | 저장된 세션·과거 분석 조회·삭제, 수집기 연결·자동 동기화 |
-| 설정 → 일반 | 언어: 한국어(기본)/English. 테마: 다크(기본)/라이트/시스템. 비로그인 선택은 기기에, 로그인 후 선택은 계정에 저장하며 새 기기에서도 적용 |
-| 로그인 후 설정 → AI | 서버 무료 풀 또는 개인 BYOK 선택. API endpoint·API key·model 설정, 연결 확인·키 교체·삭제 |
-| 로그인 후 설정 → 개인정보 | 민감정보 마스킹 켜기·끄기. 기본값은 **켜짐**. 개인 Workspace의 수동 업로드와 Collector 전송에 공통 적용 |
+| 사용자 상태               | 제공할 기능                                                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 비로그인                  | 파일 수동 업로드·단발 분석. 임시 cookie 기반 방문자 공간(최대 7일), 크기·횟수 제한 적용                                                 |
+| GitHub 로그인             | 저장된 세션·과거 분석 조회·삭제, 수집기 연결·자동 동기화                                                                                |
+| 설정 → 일반               | 언어: 한국어(기본)/English. 테마: 다크(기본)/라이트/시스템. 비로그인 선택은 기기에, 로그인 후 선택은 계정에 저장하며 새 기기에서도 적용 |
+| 로그인 후 설정 → AI       | 서버 무료 풀 또는 개인 BYOK 선택. API endpoint·API key·model 설정, 연결 확인·키 교체·삭제                                               |
+| 로그인 후 설정 → 개인정보 | 민감정보 마스킹 켜기·끄기. 기본값은 **켜짐**. 개인 Workspace의 수동 업로드와 Collector 전송에 공통 적용                                 |
 
 첫 버전의 완료 기준에는 **신규 가입 → Collector 연결 → 기존 Codex 기록 가져오기 → 지금 분석 → 내 결과 조회**를 포함한다. 사용자가 지금까지 작성한 로컬 기록도 가져올 수 있어야 하며 신규 기록만 지원하는 것으로 완료 처리하지 않는다. 최초 가져오기에서 프로젝트·기간·세션 수·전송량·마스킹 상태를 확인하고 실행한다. 업로드·분석 진행률과 실패·재시도를 표시하며 일일 예약을 기다리지 않고 수동 분석을 시작할 수 있다. npm 게시가 막혀도 검증된 로컬 설치 패키지로 이 흐름을 사용할 수 있게 한다.
 
@@ -38,15 +38,15 @@
 
 BYOK는 **OpenAI 호환 API endpoint·API key·model을 직접 입력**한다. OpenRouter는 endpoint를 채워주는 프리셋이며 다른 OpenAI 호환 제공자도 연결할 수 있다. 비용은 사용자가 연결한 계정에 청구한다. BYOK 실패 시 서비스 키나 다른 유료 모델로 자동 전환하지 않는다.
 
-| BYOK 설정 | 계약 |
-|---|---|
-| 제공자 | OpenRouter 프리셋 또는 Custom endpoint. 제공자 이름과 API 형식을 분리 |
-| API endpoint | API 기본 URL을 입력. `/chat/completions`를 붙여 호출하며 경로 중복을 정규화. 저장 전 최종 호출 주소 표시 |
-| API key | 해당 endpoint 전용 개인 키. Bearer 인증, 서버 암호화 보관 |
-| Model | 정확한 모델 ID 직접 입력. 모델 목록 API가 없어도 설정 가능 |
-| 연결 확인 | 합성 입력으로 인증·모델·텍스트 응답·분석 JSON 계약을 검증하는 저장·UI 경로가 구현되어 있다. 실제 사용자 endpoint·키 연결은 원격 미검증이며 endpoint·키·모델 변경 시 연결 상태를 무효화한다 |
-| 호출·비용 | 개인 계정별 동시 호출 기본 1, 실패 시 백오프. 비용을 확인할 수 없으면 `unknown` 표시 |
-| API 어댑터 | 초기에는 OpenAI 호환 Chat Completions. Anthropic 고유 API 등 다른 요청·인증 형식은 별도 어댑터로 확장 |
+| BYOK 설정    | 계약                                                                                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 제공자       | OpenRouter 프리셋 또는 Custom endpoint. 제공자 이름과 API 형식을 분리                                                                                                                      |
+| API endpoint | API 기본 URL을 입력. `/chat/completions`를 붙여 호출하며 경로 중복을 정규화. 저장 전 최종 호출 주소 표시                                                                                   |
+| API key      | 해당 endpoint 전용 개인 키. Bearer 인증, 서버 암호화 보관                                                                                                                                  |
+| Model        | 정확한 모델 ID 직접 입력. 모델 목록 API가 없어도 설정 가능                                                                                                                                 |
+| 연결 확인    | 합성 입력으로 인증·모델·텍스트 응답·분석 JSON 계약을 검증하는 저장·UI 경로가 구현되어 있다. 실제 사용자 endpoint·키 연결은 원격 미검증이며 endpoint·키·모델 변경 시 연결 상태를 무효화한다 |
+| 호출·비용    | 개인 계정별 동시 호출 기본 1, 실패 시 백오프. 비용을 확인할 수 없으면 `unknown` 표시                                                                                                       |
+| API 어댑터   | 초기에는 OpenAI 호환 Chat Completions. Anthropic 고유 API 등 다른 요청·인증 형식은 별도 어댑터로 확장                                                                                      |
 
 사용자가 입력한 endpoint는 서버 요청 전에 검증한다. 공개 HTTPS 주소만 허용하고 URL 내 인증정보·쿼리·fragment, loopback·사설·link-local·메타데이터 주소와 리디렉션을 차단한다. DNS가 반환한 모든 IPv4·IPv6 주소를 검사하고 검증한 주소로 연결해 DNS 재바인딩을 막는다. 키는 지정 endpoint에만 전달하며 응답·로그에는 남기지 않는다. 이 SSRF 방어와 암호화 저장 경로는 구현되어 있으나 실제 사용자 endpoint·키 연결은 원격 미검증이다.
 서버 무료 풀의 OpenRouter 요청에는 입력·출력 `max_price: 0`을 적용한다. BYOK의 Provider·ZDR 선택 옵션은 아직 구현하지 않았다. Custom endpoint에 같은 보관 정책이나 가격을 보장한다고 표시하지 않으며 연결 설정에 외부 제공자의 데이터 정책과 전송 대상을 표시한다.
@@ -59,14 +59,14 @@ BYOK에도 같은 마스킹 설정과 데이터 정책을 적용하고, 조건�
 
 ## 원격 분석: 자동과 수동
 
-| 기동 방식 | 처리 범위 |
-|---|---|
-| 시간당 GitHub Actions | Vercel 유지관리 API 호출. `SELECT 1`로 DB 연결 확인·만료 데이터 정리. 새 세션이 없는 날에도 실행 |
-| 일일 GitHub Actions | Vercel 분석 기동 API 호출. 인증·실행 구간의 중복 확인 후 Workflow 시작, `202`와 작업 ID 반환 |
-| 전체 세션 지금 분석 | 내 Workspace에 접수된 만료 전 전체 세션을 대상으로 즉시 시작. 현재 목록 페이지·하루 범위로 제한하지 않으며 대상 건수를 표시 |
-| 선택 세션 분석 | 목록에서 체크한 세션들을 한 작업으로 접수. 프로젝트·기간 필터와 페이지를 넘는 선택 범위를 명확히 표시 |
-| 단일 세션 분석 | 세션 상세에서 해당 세션만 즉시 분석. 완료된 세션에는 기존 결과 조회와 명시적 다시 분석을 구분 |
-| 공통 Workflow | 일일 실행은 누적 미분석 범위·누락 작업, 수동 실행은 요청한 전체·선택·단일 범위를 사용. **대상 세션·접수된 배치 목록·데이터 revision을 고정**하고 프로젝트별 지표·규칙 결과 → 필요한 AI 설명 순서로 저장 |
+| 기동 방식             | 처리 범위                                                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 시간당 GitHub Actions | Vercel 유지관리 API 호출. `SELECT 1`로 DB 연결 확인·만료 데이터 정리. 새 세션이 없는 날에도 실행                                                                                                        |
+| 일일 GitHub Actions   | Vercel 분석 기동 API 호출. 인증·실행 구간의 중복 확인 후 Workflow 시작, `202`와 작업 ID 반환                                                                                                            |
+| 전체 세션 지금 분석   | 내 Workspace에 접수된 만료 전 전체 세션을 대상으로 즉시 시작. 현재 목록 페이지·하루 범위로 제한하지 않으며 대상 건수를 표시                                                                             |
+| 선택 세션 분석        | 목록에서 체크한 세션들을 한 작업으로 접수. 프로젝트·기간 필터와 페이지를 넘는 선택 범위를 명확히 표시                                                                                                   |
+| 단일 세션 분석        | 세션 상세에서 해당 세션만 즉시 분석. 완료된 세션에는 기존 결과 조회와 명시적 다시 분석을 구분                                                                                                           |
+| 공통 Workflow         | 일일 실행은 누적 미분석 범위·누락 작업, 수동 실행은 요청한 전체·선택·단일 범위를 사용. **대상 세션·접수된 배치 목록·데이터 revision을 고정**하고 프로젝트별 지표·규칙 결과 → 필요한 AI 설명 순서로 저장 |
 
 전체·선택·단일 수동 분석은 첫 버전 필수 기능이다. API에서 모든 대상의 소유권과 원본 만료 여부를 검사한다. 전체 분석은 세션별 결과와 프로젝트별 종합 지표·개선 후보를 제공한다. 기본 실행은 이미 분석한 변경 없는 세션의 결과를 재사용하고 신규·변경·실패 세션을 처리한다. **다시 분석**은 명시적으로 새 실행을 만들되 버튼 중복 클릭·재시도는 같은 요청으로 처리한다.
 
@@ -76,6 +76,7 @@ BYOK에도 같은 마스킹 설정과 데이터 정책을 적용하고, 조건�
 하루치 데이터 전체를 지표·규칙으로 살피되 이미 완료한 동일 revision은 규칙 목록·분석 버전까지 일치할 때 결과를 재사용한다. AI에는 사용자·프로젝트 경계를 지킨 축약 근거만 보내며 하루치 원문 전체를 한 요청에 넣지 않는다. 지표·규칙은 전체 이벤트에서 계산하고, 프롬프트 14개·스킬 호출 6개·실패 도구 결과 4개·연결된 호출/후속 이벤트·시간 분산 10개를 우선해 결정적으로 고른 최대 64개 근거를 각 1,000자와 총 32,000자 안에서 보낸다.
 
 접수 API는 데이터를 저장하고 분석 필요 상태만 표시한다. 업로드할 때마다 Workflow를 실행하지 않는다.
+최근 개인 pilot은 main 세션 4개·이벤트 3,717개를 15개 배치로 업로드하고 선택 범위의 local cursor를 완료했다. 실제 전송은 500 재시도 1회를 포함한 17회 POST였고 이후 gap 409를 수정했다. 마스킹한 Zstd 저장은 2,106,796 bytes, 해제 입력은 9,257,325 bytes였으며 이미지 본문 없이 metadata 251회·고유 binary 237개만 남았다. 상세 데이터는 최대 7일 보관한다. 분석은 현재 4개 중 3개 완료됐으며, 전체 완료로 해석하지 않는다. [저장 측정 기록](../ops/personal-pilot-storage.json)
 DB 연결 확인은 테이블을 읽지 않는 `SELECT 1`로 충분하며 `LIMIT`은 필요하지 않다. GitHub Actions가 Vercel API를 호출하므로 사용자 PC 가동 여부와 무관하다. 연결 실패는 기록하고, 처리할 데이터가 없으면 AI를 호출하지 않는다.
 Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. 단, 무료 플랜의 자동 중지는 최근 DB 활동량에 따라 결정되므로 주기적 쿼리만으로 중지 방지를 보장하지 않는다. 이미 중지된 프로젝트는 일반 쿼리로 재개되지 않는다. [Supabase 중지 정책](https://supabase.com/docs/guides/platform/free-project-pausing)
 같은 세션·revision·분석 버전은 한 번만 등록한다. 분석 버전에는 활성 규칙 목록·각 규칙 버전·임계값 설정의 식별값을 포함하고 실행 시작 시 고정한다. 실행 중 추가·지연 도착한 데이터는 다음 분석 대상이다.
@@ -86,15 +87,17 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 현재 서버는 저장된 `.json.zst` 배치를 해제해 지표·규칙을 계산하고, 위 우선순위로 고른 최대 64개 근거를 AI에 전달한다. 세션에서 해제한 배치 합계 40 MiB를 넘으면 분석이 실패한다. 이는 용량 경계이며, 전체 맥락을 보장하는 계층적 구간 증류는 아직 구현하지 않았다.
 
+`toolErrors`는 키워드 기반 휴리스틱이며 확인된 실패 판정이 아니다. UI에 이 제한을 표시했다. 최근 품질 검토에서는 일부 AI 설명이 근거보다 강하게 해석된 사례를 확인했고, 계층적 증류와 정제 전후 품질 비교는 후속 과제다.
+
 [로컬 압축 비교](collector.md#로컬-압축-비교--2026-09-11)에서는 수집 가능한 범위의 마스킹된 파일 204.9 MB가 Zstd 3으로 49.3 MB가 됐다. 별도 지표·타임라인 JSON은 43.5 MB였다. 미수집 구간과 DB 물리 용량·AI 응답은 포함하지 않은 예상치다. 압축은 저장·전송량을 줄이며, AI 입력 토큰과 근거 선별은 아래 증류 단계에서 별도로 다룬다.
 
-| 단계 | 다음 구현의 책임 |
-|---|---|
+| 단계             | 다음 구현의 책임                                                                                                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 수신 검증·마스킹 | 1 MiB 압축 입력을 해제·검증하고 이미지 data URL을 다시 제거. 소유자 설정에 따른 마스킹 뒤 Zstd 재압축해 저장하며 quota는 compressed bytes로 계산. 수동 업로드도 같은 경로를 사용 |
-| 근거 정규화 | 원본 이벤트·턴·호출·결과를 연결. 같은 실행의 중복 표현만 통합하고 실제 재시도는 보존. 이미지에는 hash·MIME·bytes·크기·`local_only`만 남김 |
-| 근거 선택 | 프롬프트·스킬 호출·실패 도구 결과를 우선하고 paired call·후속 이벤트·시간 분산을 보완해 최대 64개를 선택. 각 1,000자, 총 32,000자 제한과 제외 범위를 결과에 기록 |
-| 세션 평가 | 선택 근거와 전체 지표·규칙을 함께 사용한다. 계층적 요약이나 세션 전체의 의미 보장은 하지 않으며, 누락된 맥락은 판단 불가로 표시 |
-| 증분·복구 | revision·정제/분석 정책·모델을 기록하고 변경 구간과 의존하는 종합 결과만 갱신. 단계별 진행 위치를 저장하고 기존 직렬 호출·백오프 유지 |
+| 근거 정규화      | 원본 이벤트·턴·호출·결과를 연결. 같은 실행의 중복 표현만 통합하고 실제 재시도는 보존. 이미지에는 hash·MIME·bytes·크기·`local_only`만 남김                                        |
+| 근거 선택        | 프롬프트·스킬 호출·실패 도구 결과를 우선하고 paired call·후속 이벤트·시간 분산을 보완해 최대 64개를 선택. 각 1,000자, 총 32,000자 제한과 제외 범위를 결과에 기록                 |
+| 세션 평가        | 선택 근거와 전체 지표·규칙을 함께 사용한다. 계층적 요약이나 세션 전체의 의미 보장은 하지 않으며, 누락된 맥락은 판단 불가로 표시                                                  |
+| 증분·복구        | revision·정제/분석 정책·모델을 기록하고 변경 구간과 의존하는 종합 결과만 갱신. 단계별 진행 위치를 저장하고 기존 직렬 호출·백오프 유지                                            |
 
 분석 결과에는 평가한 구간, 제외·축약·누락된 범위와 판단 불가 항목을 표시한다. 존재하는 근거 ID인지 확인하는 것과 그 근거가 결론을 뒷받침하는지 검증하는 것은 별개다. 관측하지 못한 스킬 사용이나 실행 결과를 실패로 단정하지 않는다.
 
@@ -102,36 +105,36 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 ### 정제 전후 품질 검증
 
-| 검증 대상 | 완료 기준 |
-|---|---|
-| 핵심 근거 보존 | 합성 원본에 심은 지시·제약·스킬 사용·실패 후 수정·검증 결과가 정제 후에도 연결되고 출처를 추적할 수 있음 |
-| 오탐·누락 | 정상 반복, 스킬 이름만 언급, 도구 출력 누락, 긴 세션 중간의 핵심 지시를 포함한 사례에서 기대 판정과 비교 |
-| 지표 무결성 | 중복 이벤트·재시도·구간 중첩·누적 토큰 초기화에서도 정제 전 기준 집계와 일치 |
-| 큰 세션 | 메모리·배치·AI 입력 예산 안에서 구간별 처리·중단 후 복구. 일부 구간 실패를 전체 성공으로 표시하지 않음 |
-| 이미지 | 동일 image binary의 발생 횟수와 metadata만 보존. pixels·OCR·vision을 분석하지 않고, 이미지 내용·스크린샷 텍스트·시각적 정확성을 판단하지 않음 |
-| 효율과 평가 품질 | 전송/저장 바이트·AI 입력 토큰·호출 수와 근거 보존·오탐·누락을 함께 비교. 절감률만으로 배포를 결정하지 않음 |
+| 검증 대상        | 완료 기준                                                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 핵심 근거 보존   | 합성 원본에 심은 지시·제약·스킬 사용·실패 후 수정·검증 결과가 정제 후에도 연결되고 출처를 추적할 수 있음                                      |
+| 오탐·누락        | 정상 반복, 스킬 이름만 언급, 도구 출력 누락, 긴 세션 중간의 핵심 지시를 포함한 사례에서 기대 판정과 비교                                      |
+| 지표 무결성      | 중복 이벤트·재시도·구간 중첩·누적 토큰 초기화에서도 정제 전 기준 집계와 일치                                                                  |
+| 큰 세션          | 메모리·배치·AI 입력 예산 안에서 구간별 처리·중단 후 복구. 일부 구간 실패를 전체 성공으로 표시하지 않음                                        |
+| 이미지           | 동일 image binary의 발생 횟수와 metadata만 보존. pixels·OCR·vision을 분석하지 않고, 이미지 내용·스크린샷 텍스트·시각적 정확성을 판단하지 않음 |
+| 효율과 평가 품질 | 전송/저장 바이트·AI 입력 토큰·호출 수와 근거 보존·오탐·누락을 함께 비교. 절감률만으로 배포를 결정하지 않음                                    |
 
 이 기준에 대한 정제 전후 비교는 아직 미검증이다. [Collector 정책](collector.md#근거를-보존하는-수집)과 같은 합성 사례를 사용하고, 변경한 정책 버전별로 회귀 결과를 남긴다.
 
 ## 분석 지표와 AI 설명
 
-| 코드로 계산 | AI가 해석 |
-|---|---|
+| 코드로 계산                              | AI가 해석                            |
+| ---------------------------------------- | ------------------------------------ |
 | 입력·캐시·출력 토큰, 요청·도구 실행 횟수 | 반복 호출이 불필요했을 가능성과 반례 |
-| 동일 검색·오류·큰 응답 구간 | 사전에 제공하면 좋았을 맥락 |
-| 원본 이벤트 위치와 관측 시간 | 프롬프트·스킬·작업 분할 개선 제안 |
+| 동일 검색·오류·큰 응답 구간              | 사전에 제공하면 좋았을 맥락          |
+| 원본 이벤트 위치와 관측 시간             | 프롬프트·스킬·작업 분할 개선 제안    |
 
 ### 개선 후보 규칙의 확장
 
 **규칙이 관측 근거를 가진 개선 후보를 찾고, AI가 맥락·반례·개선 방법을 설명한다.** 후보는 낭비나 잘못된 작업이라는 확정 판정이 아니다. AI 설명이 없어도 규칙 결과는 조회할 수 있다.
 
-| 구성 | 책임 |
-|---|---|
-| 규칙 모듈 | 현재 구현은 `packages/contracts/src/index.ts`의 규칙 목록. 확장 시 규칙별 파일로 분리한다. 공통 이벤트·계산된 지표·설정을 받아 후보를 반환하는 순수 함수로 작성. DB·네트워크·AI 호출은 하지 않음 |
-| 규칙 계약 | 고유 `id`, `version`, 필요한 입력, 기본 설정, 설정 검증, `evaluate(context, config)`를 정의. 에이전트별 원본 형식 해석은 Source Adapter에 유지 |
-| 규칙 목록·설정 | 명시적 목록에서 규칙 등록·제거, 활성화 여부·임계값을 관리. 초기에는 저장소의 설정으로 변경하고 배포. 별도 플러그인 서비스나 사용자 규칙 편집기는 도입하지 않음 |
-| 공통 후보 | 규칙 ID·버전, 후보 종류, 관측값·임계값, 근거 이벤트 ID를 반환. 대시보드와 AI는 이 공통 형식만 사용 |
-| 실행기 | 활성 규칙을 실행하고 결과를 합친다. 규칙별 `completed`·`skipped`·`failed`를 구분. 입력 부족은 건너뛰고, 한 규칙 실패는 다른 규칙·기본 지표를 막지 않음 |
+| 구성           | 책임                                                                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 규칙 모듈      | 현재 구현은 `packages/contracts/src/index.ts`의 규칙 목록. 확장 시 규칙별 파일로 분리한다. 공통 이벤트·계산된 지표·설정을 받아 후보를 반환하는 순수 함수로 작성. DB·네트워크·AI 호출은 하지 않음 |
+| 규칙 계약      | 고유 `id`, `version`, 필요한 입력, 기본 설정, 설정 검증, `evaluate(context, config)`를 정의. 에이전트별 원본 형식 해석은 Source Adapter에 유지                                                   |
+| 규칙 목록·설정 | 명시적 목록에서 규칙 등록·제거, 활성화 여부·임계값을 관리. 초기에는 저장소의 설정으로 변경하고 배포. 별도 플러그인 서비스나 사용자 규칙 편집기는 도입하지 않음                                   |
+| 공통 후보      | 규칙 ID·버전, 후보 종류, 관측값·임계값, 근거 이벤트 ID를 반환. 대시보드와 AI는 이 공통 형식만 사용                                                                                               |
+| 실행기         | 활성 규칙을 실행하고 결과를 합친다. 규칙별 `completed`·`skipped`·`failed`를 구분. 입력 부족은 건너뛰고, 한 규칙 실패는 다른 규칙·기본 지표를 막지 않음                                           |
 
 첫 규칙 후보는 동일 검색 반복, 동일 오류 반복, 큰 도구 응답이다. 규칙 isolation과 `appliedRules`의 규칙 ID·버전 기록을 구현했다. 횟수·크기·관측 구간은 규칙별 설정으로 둔다. 합성 데이터로 정상적인 반복 작업과 입력 누락을 확인한 뒤 활성화한다.
 규칙 추가는 모듈·목록 등록·합성 검증 사례 추가로 끝나도록 한다. 제거는 목록에서 빼거나 비활성화하며, Collector·접수 API·화면의 개별 수정 없이 반영한다. 새로운 입력이 필요할 때만 공통 이벤트 계약을 변경하고 서버·Collector를 함께 갱신한다.
@@ -139,31 +142,31 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 ## AI 실행 선택
 
-| 방식 | 실행 위치 | 판단 |
-|---|---|---|
-| **서버 무료 제공자 풀** | Workflow의 AI 단계 → 설정된 무료 API | 고정 순서의 6개 후보. 설정된 서버 키가 있는 후보만 사용하며 유료 대체는 하지 않음 |
-| 개인 BYOK | Workflow → 사용자 설정 API endpoint | OpenRouter 프리셋 + Custom OpenAI 호환 API. endpoint·키·모델 직접 설정, 기본 서비스 키로 자동 대체하지 않음 |
-| 개인 Codex Runner | 본인 PC → OpenAI → 결과를 서버에 업로드 | 기존 플랜 활용 대안. PC 가동·플랜 한도 필요. 공유 서비스 기본 자격증명으로 쓰지 않음 |
-| 직접 모델 호스팅 | 원격 CPU·GPU 서버 | 데이터 통제가 필요하거나 처리량이 늘면 검토. 초기 운영 범위에서는 제외 |
+| 방식                    | 실행 위치                               | 판단                                                                                                        |
+| ----------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **서버 무료 제공자 풀** | Workflow의 AI 단계 → 설정된 무료 API    | 고정 순서의 6개 후보. 설정된 서버 키가 있는 후보만 사용하며 유료 대체는 하지 않음                           |
+| 개인 BYOK               | Workflow → 사용자 설정 API endpoint     | OpenRouter 프리셋 + Custom OpenAI 호환 API. endpoint·키·모델 직접 설정, 기본 서비스 키로 자동 대체하지 않음 |
+| 개인 Codex Runner       | 본인 PC → OpenAI → 결과를 서버에 업로드 | 기존 플랜 활용 대안. PC 가동·플랜 한도 필요. 공유 서비스 기본 자격증명으로 쓰지 않음                        |
+| 직접 모델 호스팅        | 원격 CPU·GPU 서버                       | 데이터 통제가 필요하거나 처리량이 늘면 검토. 초기 운영 범위에서는 제외                                      |
 
 `codex exec`는 기존 CLI 인증을 재사용할 수 있다. 로컬 실행이어도 추론 입력은 OpenAI에 전달된다.  
 구독이 불특정 사용자용 API 사용권을 뜻하지는 않는다. [Codex 공식 문서](https://learn.chatgpt.com/docs/non-interactive-mode)
 
-| 무료 AI 운영 규칙 | 제안 |
-|---|---|
-| 무료 후보 | NVIDIA `moonshotai/kimi-k3` (`reasoning_effort: high`) → OpenRouter `nex-agi/nex-n2.5-pro:free` → NVIDIA `deepseek-ai/deepseek-v4-pro-0813` (`chat_template_kwargs.thinking: true`) → NVIDIA `nvidia/nemotron-3-ultra-550b-a55b` (`chat_template_kwargs.enable_thinking: true`) → OpenRouter `nex-agi/nex-n2.5-mini:free` → Z.ai `glm-4.7-flash`. 후보 순서는 고정하되, 환경변수 키가 있는 제공자만 선택 |
-| 품질 평가 | 근거와 결론의 일치, 중요한 문제 발견, 정상 작업을 문제로 오판하지 않는지, 실행 가능한 개선 제안, 한국어 설명·JSON 계약 준수 순으로 평가. 속도는 품질이 비슷할 때만 비교 |
-| 입력 | 전체 지표·규칙과 함께 최대 64개 결정적 근거를 전송. 프롬프트 14개·스킬 호출 6개·실패 도구 결과 4개·연결 이벤트·시간 분산을 우선하며, 근거별 1,000자·합계 32,000자 제한을 둠. 계층적 증류나 세션 전체 의미 포괄을 주장하지 않음. 출력 상한은 8,000 tokens |
-| 호출량 | 무료 요청과 저장된 연결 테스트는 서비스 전체에서 직렬 슬롯 하나를 공유. 무료 작업은 72시간 안에 실제 호출 최대 15회이며, 성공 뒤 고정 대기는 없음 |
-| 모델 cooldown | timeout·5xx·잘못된 JSON·근거 검증 실패는 해당 모델만 `ai-cooldown:<provider>:<model>` lease에 300 → 1,800 → 7,200 → 21,600초 + jitter를 저장. 모델 404도 해당 모델을 24시간 대기시키며, 더 긴 `Retry-After`를 우선 |
-| 제공자 cooldown | 401·403은 해당 제공자 계정을 24시간 대기. 402와 범위를 알 수 없는 429는 제공자 전체 cooldown과 일반 backoff를 적용한다. OpenRouter 429가 `metadata.provider_name`으로 upstream 범위를 명시할 때만 해당 모델 cooldown을 적용 |
-| 모두 대기 | 가능한 무료 후보가 모두 cooldown이면 Workflow가 재개 시각까지 durable wait. 새 유료 후보를 추가하지 않고 지표·타임라인은 조회 가능 |
-| BYOK | 사용자 endpoint 하나만 사용. 일시 오류만 같은 endpoint로 최대 5회 재시도하며, 서비스 키·다른 유료 모델·무료 풀로 자동 전환하지 않음 |
-| 결과 기록 | `tier`(free/byok), API gateway 제공자, 요청 모델과 실제 응답 모델, endpoint 호스트, 응답의 upstream provider를 분리해 저장·표시. 최근 15개의 자격증명 없는 시도 이력(제공자·모델·시각·결과·HTTP 상태)도 보관 |
-| 결과 검증 | JSON 형식·근거 ID 검사. 근거 없는 결론은 게시하지 않음. 모델에 도구 실행 권한 없음 |
+| 무료 AI 운영 규칙 | 제안                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 무료 후보         | NVIDIA `moonshotai/kimi-k3` (`reasoning_effort: high`) → OpenRouter `nex-agi/nex-n2.5-pro:free` → NVIDIA `deepseek-ai/deepseek-v4-pro-0813` (`chat_template_kwargs.thinking: true`) → NVIDIA `nvidia/nemotron-3-ultra-550b-a55b` (`chat_template_kwargs.enable_thinking: true`) → OpenRouter `nex-agi/nex-n2.5-mini:free` → Z.ai `glm-4.7-flash`. 후보 순서는 고정하되, 환경변수 키가 있는 제공자만 선택 |
+| 품질 평가         | 근거와 결론의 일치, 중요한 문제 발견, 정상 작업을 문제로 오판하지 않는지, 실행 가능한 개선 제안, 한국어 설명·JSON 계약 준수 순으로 평가. 속도는 품질이 비슷할 때만 비교                                                                                                                                                                                                                                  |
+| 입력              | 전체 지표·규칙과 함께 최대 64개 결정적 근거를 전송. 프롬프트 14개·스킬 호출 6개·실패 도구 결과 4개·연결 이벤트·시간 분산을 우선하며, 근거별 1,000자·합계 32,000자 제한을 둠. 계층적 증류나 세션 전체 의미 포괄을 주장하지 않음. 출력 상한은 8,000 tokens                                                                                                                                                 |
+| 호출량            | 무료 요청과 저장된 연결 테스트는 서비스 전체에서 직렬 슬롯 하나를 공유. 무료 작업은 72시간 안에 실제 호출 최대 15회이며, 성공 뒤 고정 대기는 없음                                                                                                                                                                                                                                                        |
+| 모델 cooldown     | timeout·5xx·잘못된 JSON·근거 검증 실패는 해당 모델만 `ai-cooldown:<provider>:<model>` lease에 300 → 1,800 → 7,200 → 21,600초 + jitter를 저장. 모델 404도 해당 모델을 24시간 대기시키며, 더 긴 `Retry-After`를 우선                                                                                                                                                                                       |
+| 제공자 cooldown   | 401·403은 해당 제공자 계정을 24시간 대기. 402와 범위를 알 수 없는 429는 제공자 전체 cooldown과 일반 backoff를 적용한다. OpenRouter 429가 `metadata.provider_name`으로 upstream 범위를 명시할 때만 해당 모델 cooldown을 적용                                                                                                                                                                              |
+| 모두 대기         | 가능한 무료 후보가 모두 cooldown이면 Workflow가 재개 시각까지 durable wait. 새 유료 후보를 추가하지 않고 지표·타임라인은 조회 가능                                                                                                                                                                                                                                                                       |
+| BYOK              | 사용자 endpoint 하나만 사용. 일시 오류만 같은 endpoint로 최대 5회 재시도하며, 서비스 키·다른 유료 모델·무료 풀로 자동 전환하지 않음                                                                                                                                                                                                                                                                      |
+| 결과 기록         | `tier`(free/byok), API gateway 제공자, 요청 모델과 실제 응답 모델, endpoint 호스트, 응답의 upstream provider를 분리해 저장·표시. 최근 15개의 자격증명 없는 시도 이력(제공자·모델·시각·결과·HTTP 상태)도 보관                                                                                                                                                                                             |
+| 결과 검증         | JSON 형식·근거 ID 검사. 근거 없는 결론은 게시하지 않음. 모델에 도구 실행 권한 없음                                                                                                                                                                                                                                                                                                                       |
 
 무료 모델과 데이터 정책을 동시에 만족하는 Provider가 없으면 설명 생성은 보류한다.  
-서버 키는 저장소 루트 `.env.local`/`apps/web/.env.local`의 `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY`와 Vercel Production 환경변수에만 둔다. 같은 제공자에 여러 모델이 있어도 제공자 계정 한도가 늘어난다고 가정하지 않는다. 후보 추가 시 모델 가용성과 호출 계약을 확인한다. 0.2.0 배포와 개인 pilot 확인은 아직 대기 중이다.
+서버 키는 저장소 루트 `.env.local`/`apps/web/.env.local`의 `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY`와 Vercel Production 환경변수에만 둔다. 같은 제공자에 여러 모델이 있어도 제공자 계정 한도가 늘어난다고 가정하지 않는다. 후보 추가 시 모델 가용성과 호출 계약을 확인한다. Public Free tier는 비로그인도 이 후보 순서를 사용한다.
 
 NVIDIA API의 무료 trial은 개발·테스트용 endpoint로 취급한다. 모델별 quota는 공개된 일일 1,000회 보장으로 해석하지 않는다.
 분석은 비동기로 진행하며 응답 속도를 이유로 낮은 품질의 모델로 자동 전환하지 않는다.
@@ -187,58 +190,57 @@ Historical — 2026-09-11 무료 풀 검증: 로컬 합성 호출에서 Kimi K3�
 운영 모델은 배포 시 후보 목록을 갱신하고 위 품질 평가로 선정한다. 무료 후보가 품질 기준에 못 미치면 기본 지표만 제공하고 AI 설명은 미제공 상태와 사유를 표시한다. 로그인 사용자는 BYOK 모델을 선택할 수 있다.
 [모델 API](https://openrouter.ai/api/v1/models) · [ZDR endpoint 목록](https://openrouter.ai/api/v1/endpoints/zdr) · [ZDR 정책](https://openrouter.ai/docs/guides/features/zdr)
 
-
 ## 배포: Vercel 중심으로 통합
 
 **GitHub org public 저장소를 본인의 Vercel Hobby에 연결한다.**  
 Supabase 서울 프로젝트의 DB·비공개 Storage를 사용하고, Vercel 함수도 서울 `icn1`로 고정한다. GitHub Actions와 외부 AI API의 실행 위치는 별도다.
 
 GitHub OAuth Homepage URL은 `https://agent-session-atlas.vercel.app`, callback은 `https://agent-session-atlas.vercel.app/api/auth/callback/github`로 등록한다.
-GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 운영 URL 배포와 실제 OAuth 진입을 확인했다. GitHub Actions의 CI·수동 유지관리·일일 분석 기동·Collector packaging이 성공했다. 유지관리 자연 예약 실행도 확인했고 일일 분석의 자연 예약은 미관찰이다. 2026-09-11 재확인 시 Vercel 프로젝트의 Git link는 없었다. 이 상태는 0.2.0 변경의 배포 확인이 아니며, 해당 배포와 개인 pilot은 대기 중이다.
+GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경로는 저장소에 구현되어 있다. 0.2.0은 source `3fff3b5`으로 Vercel Ready 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`를 확인했다. GitHub Actions [CI run 34570714079](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34570714079)는 계약 13·Collector 9·웹 21, 총 43개 테스트와 타입 검사·빌드를 통과했다. 2026-09-11 재확인 시 Vercel 프로젝트의 Git link는 없었다.
 
-| 구성요소 | 어디에 배포하나 | 무료 범위·설계 선택 |
-|---|---|---|
-| Web · API | Vercel 서울 `icn1`의 Next.js 프로젝트 | `*.vercel.app`·HTTPS. 별도 VM·도메인 구매 불필요 |
-| 분석 실행 | Vercel Workflow + Functions | 함수 최대 300초(Fluid Compute). 단계마다 240초 안에 종료·진행 위치 저장 |
-| 원본 파일 | **Supabase 비공개 Storage**, 서울 | 무료 저장 1 GB. 공개 버킷 사용 금지 |
-| PostgreSQL | **Supabase Free**, 서울 | DB 500 MB. 일반 API 요청 횟수 무제한. 7일간 활동 부족 시 프로젝트 일시 중지 가능 |
-| AI | 서버 무료 6개 후보 / OpenAI 호환 BYOK | 설정된 서버 키가 있는 무료 후보만 순서대로 사용. 공통 직렬 슬롯과 cooldown을 적용하며, 제공자 계정 한도 증가는 가정하지 않음 |
-| 원격 예약 작업 | GitHub Actions | 시간당 DB 확인·만료 정리, 일일 분석 기동. Vercel은 인증된 API·Workflow 실행을 담당 |
-| 로그인 | 앱 내부 인증 + GitHub OAuth | 첫 로그인에서 계정·개인 Workspace 생성. 수집기는 폐기 가능한 전송 토큰 사용 |
+| 구성요소       | 어디에 배포하나                       | 무료 범위·설계 선택                                                                                                          |
+| -------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Web · API      | Vercel 서울 `icn1`의 Next.js 프로젝트 | `*.vercel.app`·HTTPS. 별도 VM·도메인 구매 불필요                                                                             |
+| 분석 실행      | Vercel Workflow + Functions           | 함수 최대 300초(Fluid Compute). 단계마다 240초 안에 종료·진행 위치 저장                                                      |
+| 원본 파일      | **Supabase 비공개 Storage**, 서울     | 무료 저장 1 GB. 공개 버킷 사용 금지                                                                                          |
+| PostgreSQL     | **Supabase Free**, 서울               | DB 500 MB. 일반 API 요청 횟수 무제한. 7일간 활동 부족 시 프로젝트 일시 중지 가능                                             |
+| AI             | 서버 무료 6개 후보 / OpenAI 호환 BYOK | 설정된 서버 키가 있는 무료 후보만 순서대로 사용. 공통 직렬 슬롯과 cooldown을 적용하며, 제공자 계정 한도 증가는 가정하지 않음 |
+| 원격 예약 작업 | GitHub Actions                        | 시간당 DB 확인·만료 정리, 일일 분석 기동. Vercel은 인증된 API·Workflow 실행을 담당                                           |
+| 로그인         | 앱 내부 인증 + GitHub OAuth           | 첫 로그인에서 계정·개인 Workspace 생성. 수집기는 폐기 가능한 전송 토큰 사용                                                  |
 
 2026-09-11 공식 문서 확인 기준이다. **Hobby는 개인 비상업 용도**이며 회사 업무·팀 서비스는 플랜을 재검토한다.  
 무료 할당은 무기한 가동 보장이 아니다. 한도를 넘으면 기능이 중단될 수 있고 유료 전환은 별도 결정한다.
 
 ### 운영 리소스와 연결 상태
 
-**운영 URL은 이전 버전에서 배포되어 있었다.** 식별자·확인 시각은 [ops/production.json](../ops/production.json)에서 관리한다. 이 표는 0.2.0 변경의 배포 확인이 아니며, 값이 다른 환경을 다룬다면 먼저 대상을 확인한다.
+**운영 URL에는 0.2.0이 배포됐다.** 식별자·확인 시각은 [ops/production.json](../ops/production.json)에서 관리한다. 다른 환경을 다룬다면 먼저 대상을 확인한다.
 
-| 대상 | 현재 구성 |
-|---|---|
-| GitHub | `agent-observatory/agent-session-atlas`, 기본 브랜치 `main` |
-| Vercel | 프로젝트 `agent-session-atlas`, scope `dans-projects-155a19b3`, Root Directory `apps/web`, Node `22.x`, 함수 `icn1` |
-| 웹 주소 | [운영 앱](https://agent-session-atlas.vercel.app) · [Vercel 설정](https://vercel.com/dans-projects-155a19b3/agent-session-atlas/settings) |
-| Supabase | 프로젝트 `dgmecutgijgegtmrsygo`, 서울 `ap-northeast-2`, Free. [관리 화면](https://supabase.com/dashboard/project/dgmecutgijgegtmrsygo) |
-| DB·파일 | PostgreSQL `atlas` 스키마와 비공개 `sessions` 버킷. 로그인은 Supabase Auth가 아닌 Auth.js + GitHub OAuth |
-| 파일 제약 | 0.2.0 로컬 구현은 `application/octet-stream` `.json.zst`를 저장하고 compressed body 1 MiB·decoded batch 8 MiB를 적용. 이 변경의 운영 버킷 정책·배포 확인은 대기 중 |
-| DB 이력 | `db/migrations/001`~`004` 적용 확인. 적용 기록은 `atlas.migrations` |
-| Git 연동 | Vercel Git link 없음. main push는 Actions CI를 실행하지만 웹 배포를 자동으로 만들지 않음 |
-| 최근 앱 변경 | 무료 풀 구현 `36ba51d`. 운영은 해당 변경을 커밋하기 전 작업 디렉터리에서 CLI 배포한 것이므로 배포 Git SHA와 동일하다고 단정하지 않음 |
+| 대상         | 현재 구성                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GitHub       | `agent-observatory/agent-session-atlas`, 기본 브랜치 `main`                                                                                                  |
+| Vercel       | 프로젝트 `agent-session-atlas`, scope `dans-projects-155a19b3`, Root Directory `apps/web`, Node `22.x`, 함수 `icn1`                                          |
+| 웹 주소      | [운영 앱](https://agent-session-atlas.vercel.app) · [Vercel 설정](https://vercel.com/dans-projects-155a19b3/agent-session-atlas/settings)                    |
+| Supabase     | 프로젝트 `dgmecutgijgegtmrsygo`, 서울 `ap-northeast-2`, Free. [관리 화면](https://supabase.com/dashboard/project/dgmecutgijgegtmrsygo)                       |
+| DB·파일      | PostgreSQL `atlas` 스키마와 비공개 `sessions` 버킷. 로그인은 Supabase Auth가 아닌 Auth.js + GitHub OAuth                                                     |
+| 파일 제약    | `application/octet-stream` `.json.zst`를 저장하고 compressed body 1 MiB·decoded batch 8 MiB를 적용. 압축 수신 원격 검증 8개와 인증·소유권 경계 검증 9개 통과 |
+| DB 이력      | `db/migrations/001`~`004` 적용 확인. 적용 기록은 `atlas.migrations`                                                                                          |
+| Git 연동     | Vercel Git link 없음. main push는 Actions CI를 실행하지만 웹 배포를 자동으로 만들지 않음                                                                     |
+| 최근 앱 변경 | source `3fff3b5`의 0.2.0 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`                                                                                             |
 
 ### 키 관리와 로컬 환경
 
 **변수 이름은 [.env.example](../.env.example), 실제 값은 Git에서 제외된 로컬 파일과 서비스 환경변수에 둔다.** 다음 표는 이 컴퓨터에서 확인한 역할이며, 새 컴퓨터에 파일이 자동 복원되는 것은 아니다.
 
-| 위치 | 역할·주의점 |
-|---|---|
-| 루트 `.env.local` | 사용자가 입력한 GitHub OAuth·무료 AI 키와 앱 secret. DB 연결값은 현재 이 파일에 없음 |
-| `apps/web/.env.local` | Next.js가 읽는 앱 환경. DB·Storage·OAuth·AI·앱 secret을 포함. 현재 운영 DB를 가리키므로 격리된 테스트 환경으로 간주하지 않음 |
-| 루트 `.env.remote.local` | 운영 환경 pull에서 확보한 DB·Storage 연결값. 운영 스크립트 입력 |
-| 루트 `.env.supabase.local` | Supabase 연결 당시 확보한 환경 사본. 현재 앱/운영 스크립트가 자동으로 읽는 파일은 아님 |
-| Vercel Production | 배포된 앱의 실제 환경. 로컬 파일 수정만으로 바뀌지 않으며, 환경변수 변경 후 새 배포가 필요 |
-| GitHub Actions Secrets | 현재 `SCHEDULER_SECRET`만 등록. 웹·DB·AI 키를 모두 복제하지 않음. `NPM_TOKEN`은 아직 없음 |
-| Vercel CLI 로그인 | `vercel login`으로 관리. 현재 Mac의 로그인 세션을 재사용하므로 별도 `VERCEL_TOKEN` 입력은 필요 없음. 인증 파일을 문서·출력·커밋에 복사하지 않음 |
-| Collector 기기 토큰 | macOS Keychain. `~/.agent-session-atlas/config.json`은 설정, `state.sqlite`는 읽기 위치·접수 상태. 앱 서비스 키와 별개 |
+| 위치                       | 역할·주의점                                                                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 루트 `.env.local`          | 사용자가 입력한 GitHub OAuth·무료 AI 키와 앱 secret. DB 연결값은 현재 이 파일에 없음                                                            |
+| `apps/web/.env.local`      | Next.js가 읽는 앱 환경. DB·Storage·OAuth·AI·앱 secret을 포함. 현재 운영 DB를 가리키므로 격리된 테스트 환경으로 간주하지 않음                    |
+| 루트 `.env.remote.local`   | 운영 환경 pull에서 확보한 DB·Storage 연결값. 운영 스크립트 입력                                                                                 |
+| 루트 `.env.supabase.local` | Supabase 연결 당시 확보한 환경 사본. 현재 앱/운영 스크립트가 자동으로 읽는 파일은 아님                                                          |
+| Vercel Production          | 배포된 앱의 실제 환경. 로컬 파일 수정만으로 바뀌지 않으며, 환경변수 변경 후 새 배포가 필요                                                      |
+| GitHub Actions Secrets     | 현재 `SCHEDULER_SECRET`만 등록. 웹·DB·AI 키를 모두 복제하지 않음. `NPM_TOKEN`은 아직 없음                                                       |
+| Vercel CLI 로그인          | `vercel login`으로 관리. 현재 Mac의 로그인 세션을 재사용하므로 별도 `VERCEL_TOKEN` 입력은 필요 없음. 인증 파일을 문서·출력·커밋에 복사하지 않음 |
+| Collector 기기 토큰        | macOS Keychain. `~/.agent-session-atlas/config.json`은 설정, `state.sqlite`는 읽기 위치·접수 상태. 앱 서비스 키와 별개                          |
 
 키 원문을 열거하는 대신 저장소 루트에서 다음을 실행한다. 이름·존재·로컬 사본 일치 여부·암호화 키 형식만 출력하며, 키의 유효성이나 원격 값 일치까지 보장하지 않는다.
 
@@ -248,16 +250,16 @@ vercel env ls production
 gh secret list
 ```
 
-| 변수 | 쓰임·변경 시 영향 |
-|---|---|
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | GitHub OAuth 앱 인증. [OAuth Apps](https://github.com/settings/developers)에서 기존 앱 관리. callback은 이 문서 상단 주소 유지 |
-| `AUTH_SECRET` | 로그인·방문자 인증 서명. 교체 시 기존 인증이 무효화될 수 있으므로 단순 설정 복구에서 재생성하지 않음 |
-| `BYOK_ENCRYPTION_KEY` | 32바이트 hex AES-256-GCM 키. 잃거나 임의 교체하면 DB에 저장한 사용자 BYOK를 복호화할 수 없음. 새 키 발급과 기존 암호문 이전을 별도 작업으로 설계 |
-| `POSTGRES_URL` | 서버·마이그레이션 DB 연결. 비밀번호를 포함하므로 URL 전체 출력 금지 |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 비공개 파일 접근. service role 키는 서버 전용이며 `NEXT_PUBLIC_`로 복사하지 않음 |
-| `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY` | 서비스 무료 후보용 키. 설정된 제공자만 사용하며 사용자 BYOK 키와 혼용하지 않음 |
-| `SCHEDULER_SECRET` | Vercel 예약 API와 Actions의 공통 Bearer 값. 변경 시 양쪽을 맞추고 앱을 재배포한 뒤 호출 확인 |
-| `APP_URL` | OAuth·Origin 검증 기준 주소. 운영은 고정 `https://agent-session-atlas.vercel.app` |
+| 변수                                                  | 쓰임·변경 시 영향                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                | GitHub OAuth 앱 인증. [OAuth Apps](https://github.com/settings/developers)에서 기존 앱 관리. callback은 이 문서 상단 주소 유지                   |
+| `AUTH_SECRET`                                         | 로그인·방문자 인증 서명. 교체 시 기존 인증이 무효화될 수 있으므로 단순 설정 복구에서 재생성하지 않음                                             |
+| `BYOK_ENCRYPTION_KEY`                                 | 32바이트 hex AES-256-GCM 키. 잃거나 임의 교체하면 DB에 저장한 사용자 BYOK를 복호화할 수 없음. 새 키 발급과 기존 암호문 이전을 별도 작업으로 설계 |
+| `POSTGRES_URL`                                        | 서버·마이그레이션 DB 연결. 비밀번호를 포함하므로 URL 전체 출력 금지                                                                              |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`           | 비공개 파일 접근. service role 키는 서버 전용이며 `NEXT_PUBLIC_`로 복사하지 않음                                                                 |
+| `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY` | 서비스 무료 후보용 키. 설정된 제공자만 사용하며 사용자 BYOK 키와 혼용하지 않음                                                                   |
+| `SCHEDULER_SECRET`                                    | Vercel 예약 API와 Actions의 공통 Bearer 값. 변경 시 양쪽을 맞추고 앱을 재배포한 뒤 호출 확인                                                     |
+| `APP_URL`                                             | OAuth·Origin 검증 기준 주소. 운영은 고정 `https://agent-session-atlas.vercel.app`                                                                |
 
 현재 `.env.local`에 남은 빈 `VERCEL_TOKEN`과 `ZAI_MAX_CONCURRENCY`는 앱이 사용하지 않는다. 전역 직렬 호출은 코드·DB lease에서 제어하며, `VERCEL_OIDC_TOKEN`은 CLI 배포 인증을 대신하는 장기 키가 아니다. 이들을 채워야 앱이 작동한다고 오해하지 않는다.
 
@@ -280,20 +282,20 @@ node scripts/check-environment.mjs
 pnpm install --frozen-lockfile
 ```
 
-| 작업 | 실제 명령·영향 |
-|---|---|
-| 코드 검증 | `pnpm test`, `pnpm build`, `pnpm typecheck` |
-| 웹 운영 배포 | 검증 후 `vercel --prod --yes --scope dans-projects-155a19b3`. 현재 작업 디렉터리를 업로드하므로 커밋·미커밋 범위를 먼저 확인 |
-| 배포 상태 | `vercel inspect https://agent-session-atlas.vercel.app`. Ready·Production·alias·`icn1`을 확인하고 배포 ID를 기록 |
-| DB migration | SQL 변경 시에만 `node scripts/migrate.mjs`. 실제 원격 DB를 변경하며 `atlas.migrations`에 없는 파일을 트랜잭션으로 적용 |
-| 프로젝트·키 일괄 설정 | `node scripts/configure-production.mjs`. 초기 구성용 변경 스크립트. 기존 로컬 Vercel 인증 파일 경로에 의존하므로 다른 OS에서 그대로 실행하지 않음 |
-| 원격 기능 smoke | `ATLAS_SMOKE_REPORT=ops/free-routing-remote-smoke.json node scripts/smoke-remote.mjs`. 합성 업로드·AI 호출·단건/선택/전체 분석을 실행하며 quota를 사용 |
-| 인증·소유권 경계 | `node scripts/verify-boundaries.mjs`. 합성 원격 변경 포함 |
-| 보관 정책 | `node scripts/verify-retention.mjs`. 합성 데이터 생성·삭제와 실제 유지관리 API 호출 포함. 만료된 운영 데이터 정리도 실행될 수 있음 |
-| 제공자 연결 | `pnpm exec tsx scripts/verify-free-providers.ts`. 로컬 키로 외부 합성 호출, 호출량 사용 |
-| 압축 비교 | `pnpm exec tsx scripts/benchmark-compression.ts --synthetic`. 실제 기록을 읽는 실행은 [Collector 측정 절차](collector.md#로컬-압축-비교--2026-09-11) 참고 |
-| CI 확인 | `gh run list --workflow ci.yml`, `gh run view <run-id>`. CLI 배포와 별도 확인 |
-| 앱 rollback | 검증된 이전 배포를 지정해 `vercel rollback <deployment-url-or-id>`. DB·환경변수 변경을 자동으로 되돌리지는 않음 |
+| 작업                  | 실제 명령·영향                                                                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 코드 검증             | `pnpm test`, `pnpm build`, `pnpm typecheck`                                                                                                               |
+| 웹 운영 배포          | 검증 후 `vercel --prod --yes --scope dans-projects-155a19b3`. 현재 작업 디렉터리를 업로드하므로 커밋·미커밋 범위를 먼저 확인                              |
+| 배포 상태             | `vercel inspect https://agent-session-atlas.vercel.app`. Ready·Production·alias·`icn1`을 확인하고 배포 ID를 기록                                          |
+| DB migration          | SQL 변경 시에만 `node scripts/migrate.mjs`. 실제 원격 DB를 변경하며 `atlas.migrations`에 없는 파일을 트랜잭션으로 적용                                    |
+| 프로젝트·키 일괄 설정 | `node scripts/configure-production.mjs`. 초기 구성용 변경 스크립트. 기존 로컬 Vercel 인증 파일 경로에 의존하므로 다른 OS에서 그대로 실행하지 않음         |
+| 원격 기능 smoke       | `ATLAS_SMOKE_REPORT=ops/free-routing-remote-smoke.json node scripts/smoke-remote.mjs`. 합성 업로드·AI 호출·단건/선택/전체 분석을 실행하며 quota를 사용    |
+| 인증·소유권 경계      | `node scripts/verify-boundaries.mjs`. 합성 원격 변경 포함                                                                                                 |
+| 보관 정책             | `node scripts/verify-retention.mjs`. 합성 데이터 생성·삭제와 실제 유지관리 API 호출 포함. 만료된 운영 데이터 정리도 실행될 수 있음                        |
+| 제공자 연결           | `pnpm exec tsx scripts/verify-free-providers.ts`. 로컬 키로 외부 합성 호출, 호출량 사용                                                                   |
+| 압축 비교             | `pnpm exec tsx scripts/benchmark-compression.ts --synthetic`. 실제 기록을 읽는 실행은 [Collector 측정 절차](collector.md#로컬-압축-비교--2026-09-11) 참고 |
+| CI 확인               | `gh run list --workflow ci.yml`, `gh run view <run-id>`. CLI 배포와 별도 확인                                                                             |
+| 앱 rollback           | 검증된 이전 배포를 지정해 `vercel rollback <deployment-url-or-id>`. DB·환경변수 변경을 자동으로 되돌리지는 않음                                           |
 
 `pnpm infra:*`, `pnpm db:migrate`, `pnpm deploy:*`, `pnpm smoke:remote` 별칭과 `scripts/infra.ts`는 구현되어 있지 않다. 위 실제 명령을 사용한다.
 
@@ -303,12 +305,12 @@ Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았�
 
 ### GitHub Actions와 Collector 릴리스
 
-| 작업 | 파일·일정(UTC) | 재확인한 상태 |
-|---|---|---|
-| CI | `ci.yml`, main push·PR | 테스트·빌드·타입 검사. 웹 배포 단계 없음 |
-| 유지관리 | `maintenance.yml`, `17 * * * *` | [자연 예약 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34549506560) 확인. 정시 실행 보장은 아님 |
-| 일일 분석 | `analysis-daily.yml`, `37 18 * * *` | KST 다음 날 03:37. [수동 실행 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), 자연 예약 미관찰 |
-| Collector 릴리스 | `collector-release.yml`, `collector-v*` 태그·수동 | tarball artifact 생성. 현재 `NPM_TOKEN` 부재로 npm 게시 단계는 건너뜀 |
+| 작업             | 파일·일정(UTC)                                    | 재확인한 상태                                                                                                                            |
+| ---------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| CI               | `ci.yml`, main push·PR                            | 테스트·빌드·타입 검사. 웹 배포 단계 없음                                                                                                 |
+| 유지관리         | `maintenance.yml`, `17 * * * *`                   | [자연 예약 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34549506560) 확인. 정시 실행 보장은 아님          |
+| 일일 분석        | `analysis-daily.yml`, `37 18 * * *`               | KST 다음 날 03:37. [수동 실행 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), 자연 예약 미관찰 |
+| Collector 릴리스 | `collector-release.yml`, `collector-v*` 태그·수동 | tarball artifact 생성. 현재 `NPM_TOKEN` 부재로 npm 게시 단계는 건너뜀                                                                    |
 
 `gh workflow run maintenance.yml`은 만료 정리를, `gh workflow run analysis-daily.yml`은 분석 기동을 실제 실행한다. 단순 상태 조회로 사용하지 않는다. Actions는 `SCHEDULER_SECRET`으로 고정 API만 호출하고, DB·AI 키는 Vercel에 둔다. 접수 `202`와 Workflow 분석 완료는 별개다.
 
@@ -316,17 +318,17 @@ Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았�
 
 ### 무료 운영 범위
 
-| 항목 | MVP에서 적용할 상한 |
-|---|---|
-| 원본 | 마스킹 설정을 적용한 `.json.zst` 세션 파일은 최초 접수부터 **최대 7일** 보관 후 삭제. 마스킹 여부·로그인 여부와 무관하게 같은 최대 기간 적용. 전체 파일 **700 MB**에서 새 전송 중지하고 로컬 대기. 실제 compressed stored bytes로 제한 |
-| 크기 예산 | 하루 신규 기록 총 40 MB 가정 시 7일 약 280 MB. 세션 전체 재전송 없이 추가분만 전송 |
+| 항목      | MVP에서 적용할 상한                                                                                                                                                                                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 원본      | 마스킹 설정을 적용한 `.json.zst` 세션 파일은 최초 접수부터 **최대 7일** 보관 후 삭제. 마스킹 여부·로그인 여부와 무관하게 같은 최대 기간 적용. 전체 파일 **700 MB**에서 새 전송 중지하고 로컬 대기. 실제 compressed stored bytes로 제한                                              |
+| 크기 예산 | 하루 신규 기록 총 40 MB 가정 시 7일 약 280 MB. 세션 전체 재전송 없이 추가분만 전송                                                                                                                                                                                                  |
 | 파일 요청 | 30분마다 목적지별 변경분 전송. Collector compressed wire와 브라우저 JSON wire는 **1 MiB**, decoded batch는 **8 MiB**, JSONL 한 줄은 **64 MiB**, 세션 분석은 decoded 합계 **40 MiB**, 작업당 세션은 **2,000개**, 배치 이벤트는 **1,000개**까지다. 초과 source는 자르지 않고 격리한다 |
-| DB | 지표·메타데이터·근거 위치 위주. 전체 도구 출력은 비공개 Storage에 두고 DB 350 MB에서 신규 입력 제한 |
-| 함수 | Hobby 4 CPU-hours·360 GB-hours/월. 대기에도 메모리 시간이 잡히므로 긴 대기는 Workflow로 넘김 |
-| Workflow | 월 50,000 events·기록 1 GB, 내부 Queues 월 100만 operations 무료 범위까지 함께 확인 |
-| 상세 결과 | 상세 이벤트·세션별 지표·전체 분석 결과·근거는 **최대 7일** 보관·제공 |
-| 결과 요약 | 짧은 결론과 집계 지표만 **최대 30일** 보관·제공. 원문·도구 출력·상세 근거·전체 AI 응답은 포함하지 않음 |
-| 관측 | 분석 Workflow 시작 시 `experimental_retention: 0`을 사용해 실행 기록을 즉시 정리. 제품 결과는 Supabase DB에 저장하되 세션 보관 정책을 적용. 로그에 세션 내용·분석 결과를 복제하지 않음 |
+| DB        | 지표·메타데이터·근거 위치 위주. 전체 도구 출력은 비공개 Storage에 두고 DB 350 MB에서 신규 입력 제한                                                                                                                                                                                 |
+| 함수      | Hobby 4 CPU-hours·360 GB-hours/월. 대기에도 메모리 시간이 잡히므로 긴 대기는 Workflow로 넘김                                                                                                                                                                                        |
+| Workflow  | 월 50,000 events·기록 1 GB, 내부 Queues 월 100만 operations 무료 범위까지 함께 확인                                                                                                                                                                                                 |
+| 상세 결과 | 상세 이벤트·세션별 지표·전체 분석 결과·근거는 **최대 7일** 보관·제공                                                                                                                                                                                                                |
+| 결과 요약 | 짧은 결론과 집계 지표만 **최대 30일** 보관·제공. 원문·도구 출력·상세 근거·전체 AI 응답은 포함하지 않음                                                                                                                                                                              |
+| 관측      | 분석 Workflow 시작 시 `experimental_retention: 0`을 사용해 실행 기록을 즉시 정리. 제품 결과는 Supabase DB에 저장하되 세션 보관 정책을 적용. 로그에 세션 내용·분석 결과를 복제하지 않음                                                                                              |
 
 Supabase의 500 MB 제한은 DB 용량이며, 세션 본문 파일은 별도 비공개 Storage에 저장한다. 무료 비캐시 전송량은 월 5 GB이며 DB·Storage 사용량을 함께 확인한다. [요금](https://supabase.com/pricing)
 원격 데이터의 보관 기준은 최초 접수 시각이다. 상세 데이터·세션 메타데이터·배치 접수증·전체 분석 결과는 이 시각부터 7일, 결과 요약은 30일에 만료한다. 유지관리 작업은 7일이 지난 상세 데이터와 오래된 Storage 객체를 정리하고, 1시간 넘은 orphan Storage 객체를 DB와 대조해 정리한다. DB 사용량이 350 MiB에 도달하면 새 입력을 막는다. 중복 전송·재분석·혼합 배치 재작성으로 만료 시각을 연장하지 않는다. 여러 기록을 묶은 결과는 포함된 기록 중 가장 이른 만료 시각을 따른다.
@@ -340,16 +342,16 @@ Supabase의 500 MB 제한은 DB 용량이며, 세션 본문 파일은 별도 비
 
 ### 비동기 실행과 배포 완료 조건
 
-| 단계 | 구현·확인할 내용 |
-|---|---|
-| 업로드 | Collector는 Zstd body, 브라우저는 JSON body로 Next.js에 전송한다. 서버가 이미지 data URL을 제거하고 Workspace 마스킹을 적용한 뒤 `.json.zst`를 서버 자격증명으로 Supabase Storage에 저장 |
-| 접수 | 설정을 적용한 객체 저장 후 배치·세션 변경 정보를 Supabase DB에 COMMIT하고 ACK. 분석은 Actions·수동 API가 별도 등록 |
-| 규칙 분석 | 확정한 배치 목록의 `.json.zst`를 해제해 전체 지표·규칙을 계산하고, 결정적 근거 선택 결과를 저장. decoded 합계 40 MiB를 제한 |
-| AI 설명 | 근거만 읽어 호출·검증·저장. 120초 요청 timeout, 지연은 Workflow sleep 후 재개. 브라우저 종료와 무관 |
-| 운영 배포 | org public 연결 → Supabase DB·Supabase Storage 생성 → 환경변수 설정 → 마이그레이션 → Vercel 운영 배포. DB와 함수는 같은 리전 우선 |
-| 배포 검증 | 30분 전송·수동/일일 분석·조회·삭제 확인. 서버 장애와 ACK 유실 후 재전송해도 중복 없는지 검증 |
-| 재배포 | PR Preview는 합성 데이터·별도 DB/Storage. 운영 자격증명을 전달하지 않고 CI 통과 후 main 병합 |
-| 복구 | 앱·Collector·DB를 같은 계약 기준으로 복구. 필요한 임시 DB export도 비밀값·7일/30일 보관 정책을 지키며 앱 rollback과 DB 복원을 별도로 검증 |
+| 단계      | 구현·확인할 내용                                                                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 업로드    | Collector는 Zstd body, 브라우저는 JSON body로 Next.js에 전송한다. 서버가 이미지 data URL을 제거하고 Workspace 마스킹을 적용한 뒤 `.json.zst`를 서버 자격증명으로 Supabase Storage에 저장 |
+| 접수      | 설정을 적용한 객체 저장 후 배치·세션 변경 정보를 Supabase DB에 COMMIT하고 ACK. 분석은 Actions·수동 API가 별도 등록                                                                       |
+| 규칙 분석 | 확정한 배치 목록의 `.json.zst`를 해제해 전체 지표·규칙을 계산하고, 결정적 근거 선택 결과를 저장. decoded 합계 40 MiB를 제한                                                              |
+| AI 설명   | 근거만 읽어 호출·검증·저장. 120초 요청 timeout, 지연은 Workflow sleep 후 재개. 브라우저 종료와 무관                                                                                      |
+| 운영 배포 | org public 연결 → Supabase DB·Supabase Storage 생성 → 환경변수 설정 → 마이그레이션 → Vercel 운영 배포. DB와 함수는 같은 리전 우선                                                        |
+| 배포 검증 | 30분 전송·수동/일일 분석·조회·삭제 확인. 서버 장애와 ACK 유실 후 재전송해도 중복 없는지 검증                                                                                             |
+| 재배포    | PR Preview는 합성 데이터·별도 DB/Storage. 운영 자격증명을 전달하지 않고 CI 통과 후 main 병합                                                                                             |
+| 복구      | 앱·Collector·DB를 같은 계약 기준으로 복구. 필요한 임시 DB export도 비밀값·7일/30일 보관 정책을 지키며 앱 rollback과 DB 복원을 별도로 검증                                                |
 
 Functions의 **4.5 MB 본문 제한** 안에서 동작하도록, Collector compressed body와 브라우저 JSON body를 각각 **1 MiB** 이하로 제한한다.
 큰 입력은 이벤트 경계로 배치를 나누며, 단일 이벤트도 초과하면 조용히 자르지 않고 격리·표시한다.  
@@ -358,3 +360,12 @@ Workflow에는 ID·진행 위치만 넘기고, 파일 내용이나 전체 모델
 [데이터 경계](README.md#데이터-경계) · [참고 자료](README.md#참고-자료)
 
 DB CA 출처: [Supabase 공식 인증서](https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt). [Workflow 리전·버전 제약](https://vercel.com/docs/workflows#version-and-migration).
+
+## 세션 탐색과 상태 확인
+
+- 목록은 서버 페이지네이션으로 20개씩 표시한다. 10·20·50·100개를 선택하고 전체 기록에서 프로젝트·세션을 검색한다. 페이지·개수·검색어는 URL에 남겨 새로고침과 뒤로 가기에 유지한다. 선택 분석은 현재 페이지의 선택이며 전체 분석은 보관 중인 내 기록 전체다.
+- 전체 세션 지표와 프로젝트 집계는 현재 페이지나 검색 결과로 축소하지 않는다.
+- 접수·분석·만료·근거 시각은 설정의 타임존으로 `YYYY-MM-DD HH:mm:ss` 형식으로 표시한다. 기기 설정이 기본이며 IANA 시간대를 검색해 선택할 수 있다. 로그인 사용자는 계정 설정 저장, 비로그인은 기기에 저장한다. 서버 보관 기간과 예약 작업의 시간 기준은 변경하지 않는다.
+- 상세 저장 용량·배치 수는 DB에 기록된 실제 저장 파일 크기다. 현재 revision의 완료 결과가 있으면 메시지·이벤트·도구·이미지·토큰 지표를 표시한다. 미집계는 0 대신 `—`다. 사용자 메시지 수를 의미적 턴 수로 간주하지 않는다. 상세 조회 때 원본 파일을 다시 내려받지 않는다.
+- `순서 대기`, `재시도 대기`, `요청 중`, `실패`를 구분한다. 재시도 중에는 횟수와 요청 이력의 시각·제공자·모델·오류 종류를 확인할 수 있다. job 전체의 running은 개별 요청이 계속 실행 중이라는 뜻이 아니다.
+- [세션 평가 기준](evaluation.md)은 실행 모델 적합성·스킬 버전 효과와 규칙 수명주기를 정의한다. 해당 고급 평가는 아직 구현하지 않았으며 현재 수집 공백과 최소 보강 순서도 같은 문서에 기록한다.

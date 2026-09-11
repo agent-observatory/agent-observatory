@@ -6,29 +6,31 @@
 
 **AgentSession Atlas**는 세션을 보관·분석하는 웹 서비스다. **Atlas Collector**는 로컬 기록을 수집해 Atlas로 보내는 CLI다.
 
-| 문서 | 범위 |
-|---|---|
-| 이 문서 | 전체 구조·공통 계약·현재 상태·구현 순서 |
-| [Atlas](atlas.md) | 대시보드·로그인·AI 분석·BYOK·배포·운영 |
-| [Collector](collector.md) | 설치·30분 실행·증분 수집·전송·복구 |
-| [디자인 기준](DESIGN.md) | 색상·타이포·간격·컴포넌트·화면 검증 |
-| [실제 작업 기록](implementation.md) | 소요 시간·검증 결과·남은 연결 작업 |
+| 문서                                | 범위                                        |
+| ----------------------------------- | ------------------------------------------- |
+| 이 문서                             | 전체 구조·공통 계약·현재 상태·구현 순서     |
+| [Atlas](atlas.md)                   | 대시보드·로그인·AI 분석·BYOK·배포·운영      |
+| [Collector](collector.md)           | 설치·30분 실행·증분 수집·전송·복구          |
+| [평가 기준](evaluation.md)          | 실행 모델·스킬 효과·근거 요구·규칙 수명주기 |
+| [디자인 기준](DESIGN.md)            | 색상·타이포·간격·컴포넌트·화면 검증         |
+| [실제 작업 기록](implementation.md) | 소요 시간·검증 결과·남은 연결 작업          |
 
 ## 이어서 작업하기
 
 Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에서 같은 공통 지침을 읽는다. 이 문서의 현재 상태를 확인한 뒤 작업에 해당하는 상세 문서로 이동한다.
 
-| 필요한 정보 | 기준 문서·코드 |
-|---|---|
-| 키 위치·사본·교체 영향 | [키 관리와 로컬 환경](atlas.md#키-관리와-로컬-환경), `.env.example`, `node scripts/check-environment.mjs` |
-| Vercel·Supabase·예약 작업 | [배포와 운영 명령](atlas.md#배포와-운영-명령), [리소스 식별자](../ops/production.json) |
-| Collector 구현·큰 이벤트 경계 | `apps/collector/src/core.ts`, [수집 정책](collector.md#근거를-보존하는-수집) |
-| 공통 이벤트·마스킹·기본 규칙 | `packages/contracts/src/index.ts` |
-| 수신·저장 | `apps/web/lib/ingest.ts`, `apps/web/lib/storage.ts` |
-| 무료 후보·직렬 실행·분석 | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts` |
-| 실제 완료·검증 범위 | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json` |
+| 필요한 정보                   | 기준 문서·코드                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 키 위치·사본·교체 영향        | [키 관리와 로컬 환경](atlas.md#키-관리와-로컬-환경), `.env.example`, `node scripts/check-environment.mjs` |
+| Vercel·Supabase·예약 작업     | [배포와 운영 명령](atlas.md#배포와-운영-명령), [리소스 식별자](../ops/production.json)                    |
+| 평가 기준·규칙 운영           | [모델 적합성·스킬 효과와 규칙 수명주기](evaluation.md)                                                    |
+| Collector 구현·큰 이벤트 경계 | `apps/collector/src/core.ts`, [수집 정책](collector.md#근거를-보존하는-수집)                              |
+| 공통 이벤트·마스킹·기본 규칙  | `packages/contracts/src/index.ts`                                                                         |
+| 수신·저장                     | `apps/web/lib/ingest.ts`, `apps/web/lib/storage.ts`                                                       |
+| 무료 후보·직렬 실행·분석      | `apps/web/lib/ai-routing.ts`, `apps/web/workflows/analysis.ts`                                            |
+| 실제 완료·검증 범위           | [작업 기록](implementation.md), `ops/*verification*.json`, `ops/*smoke*.json`                             |
 
-현재 0.2.0 로컬 구현에는 Zstd 전송·저장, 이미지 메타데이터 분리, 결정적 근거 선택이 포함된다. 이 변경의 원격 배포·개인 기록 pilot 검증은 아직 대기 중이며, 개인 기록 분석이 완료됐다고 가정하지 않는다.
+0.2.0은 Zstd 전송·저장, 이미지 metadata-only 처리, 결정적 근거 선택을 포함해 운영 배포됐다. 최근 개인 pilot은 선택한 4개 세션의 업로드와 로컬 cursor 완료까지 확인했으며, 분석은 4개 중 3개 완료된 진행 상태다.
 
 먼저 `git status --short`로 기존 변경을 확인한다. 이전 모델 연결 조사에서 남은 미추적 `ops/openrouter-*.json`·`ops/zai-vision-*.json`은 현재 커밋에 포함되지 않았다. 자동 삭제·일괄 커밋하지 말고 출처와 내용을 확인한다.
 
@@ -36,16 +38,15 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 2026-09-11 확인 기준이다. 운영 리소스·키 이름·DB migration·비공개 버킷은 13:43 KST에 다시 조회했다. 구현, 원격 검증, 배포 확인을 분리해 기록한다.
 
-| 대상 | 확인한 상태 |
-|---|---|
-| Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp` |
-| Supabase | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증 |
-| GitHub OAuth | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공 |
-| 기본 AI | 서버 설정 키가 있는 6개 무료 모델 후보와 공통 직렬 슬롯·모델/제공자 범위 cooldown 구현. 0.2.0의 원격 배포·개인 pilot 검증은 대기 중 |
-| 개인 BYOK | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증 |
-| GitHub Actions | main push 후 CI 성공. 유지관리 자연 예약 실행 성공, 일일 분석은 수동 기동·완료 확인. 일일 자연 예약 미관찰. 웹 Git 자동 배포는 미연결 |
-| Atlas·Collector | 0.2.0 로컬 구현에 압축 전송·metadata-only 이미지 처리·결정적 근거 선택 포함. 원격 배포·개인 pilot 결과는 대기 중. 기존 0.1.0 GitHub Release tarball은 공개되어 있고 npm은 인증 부재로 미게시 |
-
+| 대상            | 확인한 상태                                                                                                                                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel          | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready. 0.2.0 배포 `dpl_pnGVARhpCfLEh5r5ZKBJHzX4jjud`, source `3fff3b5`, 기본 함수 리전 `icn1`                                                                          |
+| Supabase        | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증                                                                                                                         |
+| GitHub OAuth    | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공                                                                                                                                                                      |
+| 기본 AI         | 비로그인을 포함한 Public Free tier가 설정된 서버 키의 6개 후보를 순서대로 사용. 공통 직렬 슬롯과 모델/제공자 범위 cooldown 적용                                                                                                         |
+| 개인 BYOK       | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증                                                                                                                             |
+| GitHub Actions  | [CI run 34570714079](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34570714079) 성공: 계약 13·Collector 9·웹 21, 총 43개 테스트와 타입 검사·빌드 통과. 압축 수신 원격 검증 8개와 인증·소유권 경계 검증 9개 통과 |
+| Atlas·Collector | Collector 0.2.0이 설치·연결됐고 자동 전송은 `paused: true`. [GitHub Release tarball](https://github.com/agent-observatory/agent-session-atlas/releases/tag/collector-v0.2.0)은 125,477 bytes로 공개됐으며 npm은 아직 미게시             |
 
 ## 제품의 핵심: 근거를 보존하는 수집과 증류
 
@@ -53,42 +54,42 @@ Codex는 [AGENTS.md](../AGENTS.md), Claude Code는 [CLAUDE.md](../CLAUDE.md)에�
 
 여기서 증류는 모델 학습이 아니라 **원본 기록에서 분석 근거를 선별·구조화하고, 필요한 맥락을 유지하며 축약하는 과정**이다.
 
-| 단계 | 핵심 책임 | 현재 상태 |
-|---|---|---|
-| [Collector 정제](collector.md#근거를-보존하는-수집) | 원본 형식 해석·기계적 정규화·중복 구분·근거 연결·압축 전송 | Zstd 전송·이미지 metadata 분리 구현. 원격 배포와 개인 pilot은 대기 중 |
-| [서버 증류](atlas.md#서버-증류와-분석-품질) | 수신 검증·마스킹·결정적 근거 구성·세션 전체 평가 | 마스킹·지표·규칙·근거 선택 구현. 계층적 구간 증류와 전체 맥락 연결은 미구현 |
-| 품질 검증 | 프롬프트·스킬 사용·실패 후 수정·결과의 연결과 근거 누락 평가 | 합성 데이터로 형식·기본 근거 검증. 정제 전후 분석 품질 비교는 미검증 |
+| 단계                                                | 핵심 책임                                                    | 현재 상태                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [Collector 정제](collector.md#근거를-보존하는-수집) | 원본 형식 해석·기계적 정규화·중복 구분·근거 연결·압축 전송   | Zstd 전송·이미지 metadata 분리 배포. 최근 4개 세션의 선택 업로드와 cursor 완료 확인 |
+| [서버 증류](atlas.md#서버-증류와-분석-품질)         | 수신 검증·마스킹·결정적 근거 구성·세션 전체 평가             | 마스킹·지표·규칙·근거 선택 구현. 계층적 구간 증류와 전체 맥락 연결은 미구현         |
+| 품질 검증                                           | 프롬프트·스킬 사용·실패 후 수정·결과의 연결과 근거 누락 평가 | 합성 데이터로 형식·기본 근거 검증. 정제 전후 분석 품질 비교는 미검증                |
 
 **다음 개발은 수집 계약과 Collector 정제 → 서버 구간별 증류 → 정제 전후 품질 검증 순으로 우선한다.** 모델 후보 확대나 화면 확장보다 앞선 과제다. 상세 구현·검증 기준은 위 문서에서 관리한다.
 
-전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. [압축과 분할](collector.md#압축과-분할)의 원격 검증은 아직 남아 있다.
+전송은 이벤트·턴을 묶어 압축하고, 압축 후 전송 한도나 해제 후 처리 한도를 넘을 때만 나눈다. 마스킹과 분석용 근거 선별·축약은 서버에서 맡아 자동 수집·수동 업로드·온디맨드 분석에 같은 정책을 적용한다. 압축 수신 원격 검증 8개와 인증·소유권 경계 검증 9개 통과이다.
 
 ## 핵심 결정
 
 **선택한 프로젝트의 세션을 30분마다 동기화하고, 하루 한 번 또는 수동으로 분석한다.**  
 Codex 어댑터부터 구현하고 Claude Code·Hermes를 연결한다. 통계는 코드로 계산하고 AI는 근거 해석을 맡는다.
 
-| 항목 | 초안의 선택 |
-|---|---|
-| 수집 | 설치한 로컬 전송기가 30분마다 실행. 프로젝트 기본값 `all`, 허용·제외 목록 지원 |
-| 분석 | 원격에서 하루 1회 또는 수동 실행 → 같은 Workflow. 접수된 데이터는 PC를 꺼도 분석 |
-| 배포 | **Vercel 서울 + Supabase 서울 + 서버 무료 제공자 풀 (BYOK: OpenAI 호환 endpoint)**. 웹·API·분석은 Vercel, DB·비공개 파일은 Supabase |
-| 언어·테마 | 한국어·다크 기본. 설정에서 한국어/English, 라이트/다크/시스템 선택 |
-| 첫 사용 | GitHub 회원가입·로그인 → 수집기 연결 → 기존 Codex 기록 가져오기 → 즉시 분석·결과 조회 |
-| 개발·배포 단위 | **모노레포 1개, 애플리케이션 2개**. Next.js는 Vercel 배포, 로컬 수집기는 npm 배포·`npx` 설치 |
-| 비용 | **개인 비상업 MVP 월 $0 목표**. 무료 할당 안에서 보관량·호출량 제한 |
-| 확장 | 개인 → 여러 에이전트 → 팀·다른 사용자의 파일 업로드 분석 |
+| 항목           | 초안의 선택                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 수집           | 설치한 로컬 전송기가 30분마다 실행. 프로젝트 기본값 `all`, 허용·제외 목록 지원                                                      |
+| 분석           | 원격에서 하루 1회 또는 수동 실행 → 같은 Workflow. 접수된 데이터는 PC를 꺼도 분석                                                    |
+| 배포           | **Vercel 서울 + Supabase 서울 + 서버 무료 제공자 풀 (BYOK: OpenAI 호환 endpoint)**. 웹·API·분석은 Vercel, DB·비공개 파일은 Supabase |
+| 언어·테마      | 한국어·다크 기본. 설정에서 한국어/English, 라이트/다크/시스템 선택                                                                  |
+| 첫 사용        | GitHub 회원가입·로그인 → 수집기 연결 → 기존 Codex 기록 가져오기 → 즉시 분석·결과 조회                                               |
+| 개발·배포 단위 | **모노레포 1개, 애플리케이션 2개**. Next.js는 Vercel 배포, 로컬 수집기는 npm 배포·`npx` 설치                                        |
+| 비용           | **개인 비상업 MVP 월 $0 목표**. 무료 할당 안에서 보관량·호출량 제한                                                                 |
+| 확장           | 개인 → 여러 에이전트 → 팀·다른 사용자의 파일 업로드 분석                                                                            |
 
 ## 전체 흐름
 
-| 순서 | 주체 | 처리 |
-|---|---|---|
-| 1 | Collector | 컴퓨터당 스케줄러 하나가 30분마다 Codex 신규·변경 기록을 확인하고 프로젝트 정책 적용 |
-| 2 | Collector | 전송 본문을 Outbox에 확정하고 로컬 읽기 위치 저장 |
-| 3 | Atlas 접수 API | 인증·검증·마스킹 설정 적용 후 Supabase Storage 저장과 Supabase DB 접수 확정 |
-| 4 | Collector | 서버 ACK 확인 후 접수증 저장·대기 파일 정리 |
-| 5 | Atlas | GitHub Actions의 일일 호출 또는 수동 요청으로 확정된 데이터 범위를 분석 |
-| 6 | 대시보드 | 지표·근거·AI 설명·실제 모델 정보를 표시 |
+| 순서 | 주체           | 처리                                                                                 |
+| ---- | -------------- | ------------------------------------------------------------------------------------ |
+| 1    | Collector      | 컴퓨터당 스케줄러 하나가 30분마다 Codex 신규·변경 기록을 확인하고 프로젝트 정책 적용 |
+| 2    | Collector      | 전송 본문을 Outbox에 확정하고 로컬 읽기 위치 저장                                    |
+| 3    | Atlas 접수 API | 인증·검증·마스킹 설정 적용 후 Supabase Storage 저장과 Supabase DB 접수 확정          |
+| 4    | Collector      | 서버 ACK 확인 후 접수증 저장·대기 파일 정리                                          |
+| 5    | Atlas          | GitHub Actions의 일일 호출 또는 수동 요청으로 확정된 데이터 범위를 분석              |
+| 6    | 대시보드       | 지표·근거·AI 설명·실제 모델 정보를 표시                                              |
 
 브라우저는 Collector가 설치된 PC와 다른 기기에서도 접속할 수 있다. 웹 서비스는 Vercel에 배포하고 브라우저는 접속자의 기기에서 실행한다.
 브라우저 수동 업로드는 Collector 설치 없이 Atlas의 수신·마스킹 경로를 사용한다. [전송·복구 상세](collector.md#30분-전송과-장애-복구) · [분석 상세](atlas.md#원격-분석-자동과-수동)
@@ -100,14 +101,14 @@ Storage·Workflow는 Next.js 앱이 사용하는 관리형 기능이며, 원격 
 
 ![하나의 GitHub 모노레포에서 Next.js를 Vercel로 배포하고 로컬 수집기를 npm으로 배포한다. 사용자는 npx setup으로 수집기를 설치하고 OS 스케줄러가 설치된 버전을 30분마다 실행한다](assets/architecture-packaging.svg)
 
-| 대상 | 직접 작성할 코드 | 플랫폼에 맡기는 부분 |
-|---|---|---|
-| Next.js | 대시보드·인증·접수·마스킹·조회 API | 웹 호스팅·Functions 실행·HTTPS |
-| 로컬 수집기 | 설치·인증·어댑터·JSON Outbox·재시도·OS 등록 | npm은 패키지 배포, 사용자 OS는 30분 기동 |
-| Storage | 서버 SDK로 저장·읽기·삭제, 접근 권한·보관 정책 | Private 저장소 생성·파일 보관 |
-| 예약 작업 | GitHub Actions 일정 + 호출받을 API | 시간당 유지관리·일일 분석 API 호출 |
-| Workflow | 분석 순서·각 단계·재시도·결과 저장 코드 | 실행 상태 보존·중단 후 재개·단계 실행 |
-| Supabase | SQL 스키마·마이그레이션·쿼리 | PostgreSQL 서버·연결 관리 |
+| 대상        | 직접 작성할 코드                               | 플랫폼에 맡기는 부분                     |
+| ----------- | ---------------------------------------------- | ---------------------------------------- |
+| Next.js     | 대시보드·인증·접수·마스킹·조회 API             | 웹 호스팅·Functions 실행·HTTPS           |
+| 로컬 수집기 | 설치·인증·어댑터·JSON Outbox·재시도·OS 등록    | npm은 패키지 배포, 사용자 OS는 30분 기동 |
+| Storage     | 서버 SDK로 저장·읽기·삭제, 접근 권한·보관 정책 | Private 저장소 생성·파일 보관            |
+| 예약 작업   | GitHub Actions 일정 + 호출받을 API             | 시간당 유지관리·일일 분석 API 호출       |
+| Workflow    | 분석 순서·각 단계·재시도·결과 저장 코드        | 실행 상태 보존·중단 후 재개·단계 실행    |
+| Supabase    | SQL 스키마·마이그레이션·쿼리                   | PostgreSQL 서버·연결 관리                |
 
 Storage는 **리소스 설정 + 사용 코드**, Actions 예약 작업은 **일정 설정 + API 코드**, Workflow는 **분석 코드**가 필요하다.  
 Vercel이 실행 기반을 제공하며, 이 서비스의 분석 로직까지 만들어주지는 않는다.
@@ -135,11 +136,11 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 
 웹과 Collector는 각 `package.json`에서 독립적인 SemVer를 관리한다. 공통 lockfile을 쓰더라도 버전을 함께 올리지 않는다.
 
-| 대상 | 릴리스 식별 | 배포 |
-|---|---|---|
-| Atlas 웹 | `atlas-vX.Y.Z` | main 변경은 검증 후 Vercel 배포. 정식 릴리스에 웹 버전 태그 부여 |
-| Collector | `collector-vX.Y.Z` | Collector 버전 태그에서만 패키지 검사 후 npm 게시 |
-| 공통 계약 | `schema_version` | 앱 버전과 독립적으로 관리. CLI 배포물에 포함 |
+| 대상      | 릴리스 식별        | 배포                                                             |
+| --------- | ------------------ | ---------------------------------------------------------------- |
+| Atlas 웹  | `atlas-vX.Y.Z`     | main 변경은 검증 후 Vercel 배포. 정식 릴리스에 웹 버전 태그 부여 |
+| Collector | `collector-vX.Y.Z` | Collector 버전 태그에서만 패키지 검사 후 npm 게시                |
+| 공통 계약 | `schema_version`   | 앱 버전과 독립적으로 관리. CLI 배포물에 포함                     |
 
 웹만 변경하면 Collector 버전은 유지한다. 현재는 초기 개발 단계이므로 계약 변경 시 서버·Collector·필요한 데이터 구조를 함께 전환한다. 구버전 지원이나 단계적 호환 배포는 요구하지 않는다. 계약 버전은 추적과 불일치 검출에 사용한다. 전환 시 기존 Outbox·체크포인트의 재생성 또는 이관 방법을 정하고 누락·중복을 검증한다.
 
@@ -148,13 +149,13 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 
 ## 공통 계약과 책임
 
-| 계층 | 맡는 일 | 구현 제안 |
-|---|---|---|
-| 로컬 전송기 | 30분마다 새 기록 발견·선택·보관·전송 | TypeScript CLI + JSON Outbox + SQLite |
-| Source Adapter | 에이전트별 기록을 공통 이벤트로 변환 | Codex 먼저, Claude Code·Hermes 후속 |
-| API | 인증·JSON 수신·마스킹·멱등 접수·조회·수동 분석 | Next.js Route Handlers → Vercel Functions |
-| 분석 | 지표·규칙 분석, AI 요청·결과 검증 | Vercel Workflow가 Functions의 짧은 단계를 실행. [개선 후보 규칙](atlas.md#개선-후보-규칙의-확장)은 개별 모듈·등록 목록·설정으로 추가·제거 |
-| Web | 목록에서 세션 선택, 타임라인·개선안 조회 | Next.js + React. API와 같은 주소·프로젝트 |
+| 계층           | 맡는 일                                        | 구현 제안                                                                                                                                 |
+| -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 로컬 전송기    | 30분마다 새 기록 발견·선택·보관·전송           | TypeScript CLI + JSON Outbox + SQLite                                                                                                     |
+| Source Adapter | 에이전트별 기록을 공통 이벤트로 변환           | Codex 먼저, Claude Code·Hermes 후속                                                                                                       |
+| API            | 인증·JSON 수신·마스킹·멱등 접수·조회·수동 분석 | Next.js Route Handlers → Vercel Functions                                                                                                 |
+| 분석           | 지표·규칙 분석, AI 요청·결과 검증              | Vercel Workflow가 Functions의 짧은 단계를 실행. [개선 후보 규칙](atlas.md#개선-후보-규칙의-확장)은 개별 모듈·등록 목록·설정으로 추가·제거 |
+| Web            | 목록에서 세션 선택, 타임라인·개선안 조회       | Next.js + React. API와 같은 주소·프로젝트                                                                                                 |
 
 공통 이벤트는 세션·턴·모델 요청·도구 실행·사용량이다.  
 각 어댑터가 지원 범위를 알리고, 기록에 없는 값은 `0` 대신 `unknown`으로 표시한다.
@@ -163,52 +164,51 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 
 ## 데이터 경계
 
-| 경계 | 지킬 것 |
-|---|---|
-| 사용자·팀 | 로그인 데이터에 Workspace·소유자 연결. 비로그인 분석은 방문자 접근 토큰·임시 보관 정책 적용. 팀 집계와 원문 열람 권한 분리 |
-| 업로드 | Collector는 Zstd, 브라우저 수동 업로드는 JSON을 사용하며 wire 본문은 각각 1 MiB까지 검사. 원본 파일의 JSONL 형식은 어댑터가 해석 |
-| 저장 | 서버에서 Workspace의 마스킹 설정을 적용한 JSON을 Storage에 저장 후 DB 등록. 기본 켜짐이며 Settings → Privacy에서 변경. 미등록 객체는 유예 후 정리. 공개 저장소에는 합성 fixture만 포함 |
-| 중복·재개 | 현재 배치는 `(owner, batch_id)`로 중복 제거. 로컬은 `configure`의 include/exclude/since/until과 `inventory` 집계를 사용하며, 삭제한 세션은 재접수 차단 |
-| 토큰·시간 | 누적·요청별 토큰, 부모·자식 세션, 병렬 실행 중복 집계 방지. 구독 청구액으로 표현하지 않음 |
-| 작업 복구 | Workflow 재실행을 전제로 작업 키·lease로 중복 분석 방지. AI 예산도 DB에서 원자적 예약. 외부 호출 중 트랜잭션 유지 금지 |
-| 재분석 | 원본과 파서·규칙·프롬프트 버전 보존. 규칙 결과와 AI 설명 상태 분리 |
+| 경계      | 지킬 것                                                                                                                                                                                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 사용자·팀 | 로그인 데이터에 Workspace·소유자 연결. 비로그인 분석은 방문자 접근 토큰·임시 보관 정책 적용. 팀 집계와 원문 열람 권한 분리                                                                                                                                                           |
+| 업로드    | Collector는 Zstd, 브라우저 수동 업로드는 JSON을 사용하며 wire 본문은 각각 1 MiB까지 검사. 원본 파일의 JSONL 형식은 어댑터가 해석                                                                                                                                                     |
+| 저장      | 서버에서 Workspace의 마스킹 설정을 적용한 JSON을 Storage에 저장 후 DB 등록. 기본 켜짐이며 Settings → Privacy에서 변경. 미등록 객체는 유예 후 정리. 공개 저장소에는 합성 fixture만 포함                                                                                               |
+| 중복·재개 | 현재 배치는 `(owner, batch_id)`로 중복 제거. 로컬은 `configure`의 include/exclude/since/until과 `inventory` 집계를 사용하며, 삭제한 세션은 재접수 차단                                                                                                                               |
+| 토큰·시간 | 누적·요청별 토큰, 부모·자식 세션, 병렬 실행 중복 집계 방지. 구독 청구액으로 표현하지 않음                                                                                                                                                                                            |
+| 작업 복구 | Workflow 재실행을 전제로 작업 키·lease로 중복 분석 방지. AI 예산도 DB에서 원자적 예약. 외부 호출 중 트랜잭션 유지 금지                                                                                                                                                               |
+| 재분석    | 원본과 파서·규칙·프롬프트 버전 보존. 규칙 결과와 AI 설명 상태 분리                                                                                                                                                                                                                   |
 | 보관·삭제 | 원격 세션 파일·상세 이벤트·전체 분석 결과는 최초 접수부터 **최대 7일**, 간단한 결과 요약만 **최대 30일**. 요약에 원문·도구 출력·상세 근거를 남기지 않음. 재전송·재분석으로 만료 시각을 연장하지 않음. 혼합 배치에서 세션 삭제 시 나머지만 새 객체로 복사·참조 교체 후 이전 객체 삭제 |
-| 백업 | Supabase Free는 자동 백업·PITR 미포함. 별도 DB export를 장기 보관하지 않음. 복원 후 서비스 재개 전에 삭제 기록·만료 정책 재적용 |
+| 백업      | Supabase Free는 자동 백업·PITR 미포함. 별도 DB export를 장기 보관하지 않음. 복원 후 서비스 재개 전에 삭제 기록·만료 정책 재적용                                                                                                                                                      |
 
 ## 구현 순서
 
 초기 구축 순서는 아래와 같다. 구축 이후의 최우선 과제는 [근거를 보존하는 수집과 증류](#제품의-핵심-근거를-보존하는-수집과-증류)다.
 
-| 단계 | 결과물 |
-|---|---|
-| 1 | 공통 이벤트 계약 + Codex 어댑터 + 토큰·반복·오류 분석 |
-| 2 | 한국어 대시보드·GitHub 회원가입/로그인·개인 Workspace·언어/테마/개인정보/BYOK 설정 + Supabase 연결 + Vercel 원격 배포 |
-| 3 | 전체 세션 지금 분석·선택 세션·단일 세션 분석 + 일일 Workflow + 진행 상태·개별/종합 결과 + 무료 제공자 풀 설명·재시도 검증 |
-| 4 | 기존 Codex 기록 최초 가져오기·npm 수집기 릴리스·npx setup·30분 전송·영속 Outbox. 깨끗한 macOS에서 설치·재부팅·업데이트·제거 확인 |
-| 5 | 인프라·배포 스크립트와 CI. 오프라인·ACK 유실·마스킹 실패 복구를 포함한 원격 검증 |
-| 이후 | Claude Code·Hermes 어댑터 → 팀 → 다른 사용자의 업로드 분석 |
-| 개인정보 설정 | MVP에서 민감정보 마스킹 켜기·끄기 제공. 기본 켜짐이며 수동 업로드·Collector에 같은 설정 적용 |
+| 단계          | 결과물                                                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1             | 공통 이벤트 계약 + Codex 어댑터 + 토큰·반복·오류 분석                                                                            |
+| 2             | 한국어 대시보드·GitHub 회원가입/로그인·개인 Workspace·언어/테마/개인정보/BYOK 설정 + Supabase 연결 + Vercel 원격 배포            |
+| 3             | 전체 세션 지금 분석·선택 세션·단일 세션 분석 + 일일 Workflow + 진행 상태·개별/종합 결과 + 무료 제공자 풀 설명·재시도 검증        |
+| 4             | 기존 Codex 기록 최초 가져오기·npm 수집기 릴리스·npx setup·30분 전송·영속 Outbox. 깨끗한 macOS에서 설치·재부팅·업데이트·제거 확인 |
+| 5             | 인프라·배포 스크립트와 CI. 오프라인·ACK 유실·마스킹 실패 복구를 포함한 원격 검증                                                 |
+| 이후          | Claude Code·Hermes 어댑터 → 팀 → 다른 사용자의 업로드 분석                                                                       |
+| 개인정보 설정 | MVP에서 민감정보 마스킹 켜기·끄기 제공. 기본 켜짐이며 수동 업로드·Collector에 같은 설정 적용                                     |
 
-*구현 예정 순서다. 실제 완료 상태는 [문서 안내](README.md#현재-상태)에서 확인한다.*
-
+_구현 예정 순서다. 실제 완료 상태는 [문서 안내](README.md#현재-상태)에서 확인한다._
 
 ## 참고 자료
 
-| 자료 | 반영 범위 |
-|---|---|
-| [요즘IT](https://yozm.wishket.com/magazine/detail/3938/) · [Uber 원문](https://www.uber.com/gb/en/blog/efficient-software-factory/) | 세션 기록에서 개선 후보를 찾는 방향. 우버의 16개 규칙·절감률·컨텍스트 그래프는 재현하지 않음 |
-| [Codex OTel](https://learn.chatgpt.com/docs/config-file/config-advanced) · [Claude Code Monitoring](https://code.claude.com/docs/en/monitoring-usage) | 내장 OTel의 본문 범위 차이. 원본 기록 전송을 기본으로 두고 OTel은 후속 보완 |
-| [Codex Non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) | 기존 인증을 이용한 개인 Runner 대안. 공유 서비스 이용 허가로 확대 해석하지 않음 |
-| [OpenRouter 모델 목록](https://openrouter.ai/models) · [Free Router](https://openrouter.ai/docs/guides/routing/routers/free-router) · [FAQ](https://openrouter.ai/docs/faq) | 무료 모델 선택·호출 한도. 실제 품질·처리 완료 시간 보장은 제외 |
-| [Provider Routing](https://openrouter.ai/docs/guides/routing/provider-selection) · [Provider Logging](https://openrouter.ai/docs/guides/privacy/provider-logging) | 가격 상한·데이터 정책. 무료 endpoint 적합성은 배포 전 검증 |
-| [Vercel Git](https://vercel.com/docs/git) · [Hobby](https://vercel.com/docs/plans/hobby) | org public 연동·개인 비상업 무료 운영. 회사 팀 운영은 무료 범위로 가정하지 않음 |
-| [Functions](https://vercel.com/docs/functions/limitations) · [Actions 예약 실행](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) | 함수 실행 시간·본문 크기·예약 실행 지연과 비활성화 조건 |
-| [Workflow](https://vercel.com/docs/workflows) · [요금](https://vercel.com/docs/workflows/pricing) · [Queues 요금](https://vercel.com/docs/queues/pricing) | 비동기 단계·재시도·실행 기록 보관. 내부 큐 사용량도 무료 예산에 포함 |
-| [Supabase Storage](https://supabase.com/docs/guides/storage) · [요금](https://supabase.com/pricing) | 비공개 저장·서버 업로드·1 GB 저장 제한에 맞춘 보관 |
-| [Supabase Marketplace](https://vercel.com/marketplace/supabase) · [Supabase 요금](https://supabase.com/pricing) | 관리 통합과 실제 DB 운영사 구분. 생성 화면의 Free 할당을 배포 전에 대조 |
-| [Vercel Monorepos](https://vercel.com/docs/monorepos) · [Storage API](https://supabase.com/docs/reference/javascript/v1/storage-createbucket) | 단일 레포의 웹 배포 경로·공통 패키지, Supabase Storage 생성·관리 자동화 |
-| [Actions 구성](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [Workflow Next.js 공식 예제](https://github.com/vercel/workflow/blob/main/docs/content/docs/v4/getting-started/next.mdx) | 일정 설정과 API 코드 구분, Workflow 코드를 Next.js에 통합·배포 |
-| [npx](https://docs.npmjs.com/cli/v11/commands/npx/) · [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) | 패키지 실행·CI 게시. 영구 설치·기기 인증·OS 등록은 이 서비스가 별도로 구현 |
+| 자료                                                                                                                                                                                                                          | 반영 범위                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [요즘IT](https://yozm.wishket.com/magazine/detail/3938/) · [Uber 원문](https://www.uber.com/gb/en/blog/efficient-software-factory/)                                                                                           | 세션 기록에서 개선 후보를 찾는 방향. 우버의 16개 규칙·절감률·컨텍스트 그래프는 재현하지 않음 |
+| [Codex OTel](https://learn.chatgpt.com/docs/config-file/config-advanced) · [Claude Code Monitoring](https://code.claude.com/docs/en/monitoring-usage)                                                                         | 내장 OTel의 본문 범위 차이. 원본 기록 전송을 기본으로 두고 OTel은 후속 보완                  |
+| [Codex Non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode)                                                                                                                                             | 기존 인증을 이용한 개인 Runner 대안. 공유 서비스 이용 허가로 확대 해석하지 않음              |
+| [OpenRouter 모델 목록](https://openrouter.ai/models) · [Free Router](https://openrouter.ai/docs/guides/routing/routers/free-router) · [FAQ](https://openrouter.ai/docs/faq)                                                   | 무료 모델 선택·호출 한도. 실제 품질·처리 완료 시간 보장은 제외                               |
+| [Provider Routing](https://openrouter.ai/docs/guides/routing/provider-selection) · [Provider Logging](https://openrouter.ai/docs/guides/privacy/provider-logging)                                                             | 가격 상한·데이터 정책. 무료 endpoint 적합성은 배포 전 검증                                   |
+| [Vercel Git](https://vercel.com/docs/git) · [Hobby](https://vercel.com/docs/plans/hobby)                                                                                                                                      | org public 연동·개인 비상업 무료 운영. 회사 팀 운영은 무료 범위로 가정하지 않음              |
+| [Functions](https://vercel.com/docs/functions/limitations) · [Actions 예약 실행](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)                                   | 함수 실행 시간·본문 크기·예약 실행 지연과 비활성화 조건                                      |
+| [Workflow](https://vercel.com/docs/workflows) · [요금](https://vercel.com/docs/workflows/pricing) · [Queues 요금](https://vercel.com/docs/queues/pricing)                                                                     | 비동기 단계·재시도·실행 기록 보관. 내부 큐 사용량도 무료 예산에 포함                         |
+| [Supabase Storage](https://supabase.com/docs/guides/storage) · [요금](https://supabase.com/pricing)                                                                                                                           | 비공개 저장·서버 업로드·1 GB 저장 제한에 맞춘 보관                                           |
+| [Supabase Marketplace](https://vercel.com/marketplace/supabase) · [Supabase 요금](https://supabase.com/pricing)                                                                                                               | 관리 통합과 실제 DB 운영사 구분. 생성 화면의 Free 할당을 배포 전에 대조                      |
+| [Vercel Monorepos](https://vercel.com/docs/monorepos) · [Storage API](https://supabase.com/docs/reference/javascript/v1/storage-createbucket)                                                                                 | 단일 레포의 웹 배포 경로·공통 패키지, Supabase Storage 생성·관리 자동화                      |
+| [Actions 구성](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [Workflow Next.js 공식 예제](https://github.com/vercel/workflow/blob/main/docs/content/docs/v4/getting-started/next.mdx) | 일정 설정과 API 코드 구분, Workflow 코드를 Next.js에 통합·배포                               |
+| [npx](https://docs.npmjs.com/cli/v11/commands/npx/) · [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)                                                                                                    | 패키지 실행·CI 게시. 영구 설치·기기 인증·OS 등록은 이 서비스가 별도로 구현                   |
 
 SVG의 글자와 도형은 편집 가능한 원본이다. 공용 아이콘은 내부 벡터로 포함하고 [출처·라이선스](assets/icons/SOURCES.md)를 보존한다.  
 한글 로컬 폰트를 우선하고 글자 크기·굵기 체계를 통일한다. 외부 웹폰트에는 의존하지 않는다.

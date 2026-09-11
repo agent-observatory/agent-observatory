@@ -139,7 +139,8 @@ async function main() {
       masking = true,
       completed = 0,
       failed = 0,
-      pending = 0;
+      pending = 0,
+      resultJsonBytes = 0;
     const results: any[] = [];
     const sessionIds: string[] = [];
     for (const item of plan.selected) {
@@ -184,6 +185,7 @@ async function main() {
           await sql`SELECT status,result,error FROM atlas.job_items WHERE session_id=${s.id} AND revision=(SELECT revision FROM atlas.sessions WHERE id=${s.id}) ORDER BY (status='completed') DESC LIMIT 1`;
         if (r?.status === "completed") {
           completed++;
+          resultJsonBytes += Buffer.byteLength(JSON.stringify(r.result));
           assert.deepEqual(r.result.metrics, item.metrics);
           const timelineIds = new Set(r.result.timeline.map((e: any) => e.id));
           assert.ok(r.result.ai?.summary);
@@ -226,6 +228,7 @@ async function main() {
       failed,
       pending,
       results,
+      resultJsonBytes,
     };
     console.log(JSON.stringify(report));
     if (mode === "storage" || completed === plan.selected.length)

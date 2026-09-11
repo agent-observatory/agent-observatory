@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-11T06:37:01.702Z",
+  "fixtureSessions": 27,
+  "pagination": true,
+  "searchAcrossPages": true,
+  "overviewIndependent": true,
+  "reloadHistory": true,
+  "detailMetrics": true,
+  "singleProvenance": true,
+  "timezoneSearch": true,
+  "timezoneSaveReload": true,
+  "timezoneDateRollover": true,
+  "mobileOverflow": false,
+  "environment": "local production build with synthetic authenticated API fixtures"
+}

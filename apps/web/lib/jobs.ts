@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "./db";
 import { z } from "zod";
 import { analysisVersion } from "@agent-observatory/contracts";
+import { normalizeSettings, isFree, routingVersion } from "./ai-routing";
 export const JobRequest = z.object({
   scope: z.enum(["all", "selected", "single"]),
   sessionIds: z.array(z.string().uuid()).max(2000).default([]),
@@ -47,13 +48,17 @@ export async function registerJob(owner: string, input: unknown) {
       await sql`SELECT settings,key_cipher FROM atlas.users WHERE id=${owner}`;
     const id = randomUUID();
     const version = analysisVersion();
-    await sql`INSERT INTO atlas.jobs(id,owner,request_key,scope,settings,key_cipher) VALUES(${id},${owner},${b.requestKey},${b.scope},${sql.json(user.settings)},${user.key_cipher})`;
+    const settings = {
+      ...normalizeSettings(user.settings),
+      routingVersion: isFree(user.settings) ? routingVersion : "byok-1",
+    };
+    await sql`INSERT INTO atlas.jobs(id,owner,request_key,scope,settings,key_cipher) VALUES(${id},${owner},${b.requestKey},${b.scope},${sql.json(settings)},${user.key_cipher})`;
     for (const s of sessions) {
       const batches =
         await sql`SELECT id FROM atlas.batches WHERE session_id=${s.id} AND purged=false ORDER BY end_offset`;
       const [reuse] = b.force
         ? []
-        : await sql`SELECT i.result FROM atlas.job_items i JOIN atlas.jobs j ON j.id=i.job_id WHERE i.session_id=${s.id} AND i.revision=${s.revision} AND i.status='completed' AND i.expires_at>now() AND i.result->>'analysisVersion'=${version} AND (j.settings-'theme')=(${sql.json(user.settings)}::jsonb-'theme') ORDER BY j.created_at DESC LIMIT 1`;
+        : await sql`SELECT i.result FROM atlas.job_items i JOIN atlas.jobs j ON j.id=i.job_id WHERE i.session_id=${s.id} AND i.revision=${s.revision} AND i.status='completed' AND i.expires_at>now() AND i.result->>'analysisVersion'=${version} AND (j.settings-'theme')=(${sql.json(settings)}::jsonb-'theme') ORDER BY j.created_at DESC LIMIT 1`;
       await sql`INSERT INTO atlas.job_items(id,job_id,session_id,revision,batch_ids,expires_at,status,result) VALUES(${randomUUID()},${id},${s.id},${s.revision},${sql.json(batches.map((x) => x.id))},${s.expires_at},${reuse ? "completed" : "queued"},${reuse ? sql.json(reuse.result) : null})`;
     }
     return { id, existing: false };

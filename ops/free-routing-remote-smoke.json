@@ -1,0 +1,38 @@
+{
+  "at": "2026-09-11T04:03:24.529Z",
+  "url": "https://agent-session-atlas.vercel.app",
+  "checks": [
+    "GitHub provider configured",
+    "guest isolated session",
+    "multiple free models per NVIDIA and OpenRouter provider",
+    "upload + duplicate ACK",
+    "owned session listed",
+    "single-session workflow accepted",
+    "remote AI completion + metrics + masking",
+    "free-tier provenance matches successful attempt",
+    "selected and all-session workflows completed with result reuse"
+  ],
+  "provenance": {
+    "tier": "free",
+    "provider": "openrouter",
+    "model": "nex-agi/nex-n2.5-pro:free",
+    "requestedModel": "nex-agi/nex-n2.5-pro:free",
+    "endpoint": "openrouter.ai",
+    "attempts": [
+      {
+        "at": "2026-09-11T04:03:32.982Z",
+        "model": "moonshotai/kimi-k3",
+        "outcome": "connection_error",
+        "provider": "nvidia"
+      },
+      {
+        "at": "2026-09-11T04:05:40.427Z",
+        "model": "nex-agi/nex-n2.5-pro:free",
+        "status": 200,
+        "outcome": "success",
+        "provider": "openrouter"
+      }
+    ]
+  },
+  "status": "passed"
+}

@@ -27,7 +27,7 @@ Claude를 연상시키는 따뜻한 베이지·주황 중심 스타일은 피하
 | 비로그인 | 파일 수동 업로드·단발 분석. 임시 cookie 기반 방문자 공간(최대 7일), 크기·횟수 제한 적용 |
 | GitHub 로그인 | 저장된 세션·과거 분석 조회·삭제, 수집기 연결·자동 동기화 |
 | 설정 → 일반 | 언어: 한국어(기본)/English. 테마: 다크(기본)/라이트/시스템. 비로그인 선택은 기기에, 로그인 후 선택은 계정에 저장하며 새 기기에서도 적용 |
-| 로그인 후 설정 → AI | 서비스 기본 모델 또는 개인 BYOK 선택. API endpoint·API key·model·호출 한도 설정, 연결 확인·키 교체·삭제 |
+| 로그인 후 설정 → AI | 서버 무료 풀 또는 개인 BYOK 선택. API endpoint·API key·model 설정, 연결 확인·키 교체·삭제 |
 | 로그인 후 설정 → 개인정보 | 민감정보 마스킹 켜기·끄기. 기본값은 **켜짐**. 개인 Workspace의 수동 업로드와 Collector 전송에 공통 적용 |
 
 첫 버전의 완료 기준에는 **신규 가입 → Collector 연결 → 기존 Codex 기록 가져오기 → 지금 분석 → 내 결과 조회**를 포함한다. 사용자가 지금까지 작성한 로컬 기록도 가져올 수 있어야 하며 신규 기록만 지원하는 것으로 완료 처리하지 않는다. 최초 가져오기에서 프로젝트·기간·세션 수·전송량·마스킹 상태를 확인하고 실행한다. 업로드·분석 진행률과 실패·재시도를 표시하며 일일 예약을 기다리지 않고 수동 분석을 시작할 수 있다. npm 게시가 막혀도 검증된 로컬 설치 패키지로 이 흐름을 사용할 수 있게 한다.
@@ -52,7 +52,7 @@ BYOK는 **OpenAI 호환 API endpoint·API key·model을 직접 입력**한다. O
 | API 어댑터 | 초기에는 OpenAI 호환 Chat Completions. Anthropic 고유 API 등 다른 요청·인증 형식은 별도 어댑터로 확장 |
 
 사용자가 입력한 endpoint는 서버 요청 전에 검증한다. 공개 HTTPS 주소만 허용하고 URL 내 인증정보·쿼리·fragment, loopback·사설·link-local·메타데이터 주소와 리디렉션을 차단한다. DNS가 반환한 모든 IPv4·IPv6 주소를 검사하고 검증한 주소로 연결해 DNS 재바인딩을 막는다. 키는 지정 endpoint에만 전달하며 응답·로그에는 남기지 않는다. 이 SSRF 방어와 암호화 저장 경로는 구현되어 있으나 실제 사용자 endpoint·키 연결은 원격 미검증이다.
-OpenRouter 전용 가격·Provider·ZDR 옵션을 실제로 라우팅하는 별도 어댑터는 아직 구현 범위가 아니다. Custom endpoint에 같은 보관 정책이나 가격을 보장한다고 표시하지 않으며 연결 설정에 외부 제공자의 데이터 정책과 전송 대상을 표시한다.
+서버 무료 풀의 OpenRouter 요청에는 입력·출력 `max_price: 0`을 적용한다. BYOK의 Provider·ZDR 선택 옵션은 아직 구현하지 않았다. Custom endpoint에 같은 보관 정책이나 가격을 보장한다고 표시하지 않으며 연결 설정에 외부 제공자의 데이터 정책과 전송 대상을 표시한다.
 개인 키는 서버에서 암호화해 보관하며 암호화 키는 DB와 분리한다. 저장한 키 원문은 조회 API·로그·브라우저 저장소에 남기지 않는다.
 자동 분석도 사용자 설정을 따르며, 실행 시 설정 버전을 고정한다. 키 삭제는 이후 호출을 차단한다.
 
@@ -111,7 +111,7 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 | 방식 | 실행 위치 | 판단 |
 |---|---|---|
-| **Z.ai `glm-4.7-flash`** | Workflow의 AI 단계 → Z.ai 직접 API | **기본안.** 입출력 무료 모델을 고정하며 키·한도·분석 품질 검증 후 활성화 |
+| **서버 무료 제공자 풀** | Workflow의 AI 단계 → 설정된 무료 API | 고정 순서의 6개 후보. 설정된 서버 키가 있는 후보만 사용하며 유료 대체는 하지 않음 |
 | 개인 BYOK | Workflow → 사용자 설정 API endpoint | OpenRouter 프리셋 + Custom OpenAI 호환 API. endpoint·키·모델 직접 설정, 기본 서비스 키로 자동 대체하지 않음 |
 | 개인 Codex Runner | 본인 PC → OpenAI → 결과를 서버에 업로드 | 기존 플랜 활용 대안. PC 가동·플랜 한도 필요. 공유 서비스 기본 자격증명으로 쓰지 않음 |
 | 직접 모델 호스팅 | 원격 CPU·GPU 서버 | 데이터 통제가 필요하거나 처리량이 늘면 검토. 초기 운영 범위에서는 제외 |
@@ -121,21 +121,21 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 
 | 무료 AI 운영 규칙 | 제안 |
 |---|---|
-| 모델 선택 | 기본 `glm-4.7-flash`를 Z.ai 직접 호출. `glm-4.7`·`glm-4.7-flashx` 등 유료 모델 자동 대체 금지. 합성 세션으로 품질 기준 검증 |
+| 무료 후보 | NVIDIA `moonshotai/kimi-k3` (`reasoning_effort: high`) → OpenRouter `nex-agi/nex-n2.5-pro:free` → NVIDIA `deepseek-ai/deepseek-v4-pro-0813` (`chat_template_kwargs.thinking: true`) → NVIDIA `nvidia/nemotron-3-ultra-550b-a55b` (`chat_template_kwargs.enable_thinking: true`) → OpenRouter `nex-agi/nex-n2.5-mini:free` → Z.ai `glm-4.7-flash`. 후보 순서는 고정하되, 환경변수 키가 있는 제공자만 선택 |
 | 품질 평가 | 근거와 결론의 일치, 중요한 문제 발견, 정상 작업을 문제로 오판하지 않는지, 실행 가능한 개선 제안, 한국어 설명·JSON 계약 준수 순으로 평가. 속도는 품질이 비슷할 때만 비교 |
-| 입력 | 전체 로그 대신 지표 + 최대 5개 근거 구간. 입력 약 8K·출력 1.5K tokens 상한 |
-| 호출량 | 운영 동시 호출은 1개로 고정. 수동·일일 분석이 서비스 계정의 같은 슬롯을 공유하며, 완료되면 바로 다음 요청 실행. 성공 뒤 고정 대기 없음. 일일 자체 예산은 계정 한도·품질 평가 후 정함 |
-| 외부 한도 | Z.ai 동시 호출 3은 사용자 확인값. 실제 3개 병렬 응답과 기타 호출 한도는 별도 검증. 일일 무제한으로 가정하지 않음. OpenRouter의 20회/분·50회/일은 Z.ai에 적용하지 않음 |
-| 무료·데이터 조건 | Z.ai 모델 ID·가격·API 전용 데이터 조건 검증. OpenRouter 전용 `max_price`·`data_collection`·`zdr` 옵션을 Z.ai 요청에 보내지 않음 |
-| 일시 실패 | Z.ai 1302(동시성)·1303(빈도)·1304(일일 한도)·1305(호출 제한)를 구분. 429·503·일시적 5xx·네트워크 실패는 총 최대 5회·최대 72시간 동안 300 → 1,800 → 7,200 → 21,600초 백오프와 jitter로 재시도. `Retry-After`나 한도 갱신 시각이 더 늦으면 그 시각까지 대기. 성공 뒤 고정 대기는 없다 |
-| 한도·조건 대기 | 일일 한도 소진은 알려진 갱신 시각까지 보류하고 재호출하지 않음. 계정 제한이면 계정 전체, Provider 과부하면 해당 Provider에 공통 대기를 적용. 정책에 맞는 Provider가 없어도 대기. 다음 시도 시각·사유 표시, 정책 완화·유료 대체 없음 |
-| 대기 방식 | Workflow의 durable sleep으로 재개 시각을 기록. 함수 안의 긴 sleep·HTTP 연결 유지 금지. 계정 공통 동시 슬롯·최근 60초 요청 수·일일 예산은 DB에서 원자적으로 확보하고 수동 분석도 같은 제한 적용. 대기 중에는 동시 슬롯 해제 |
-| 실패 종료 | 작업당 최대 5회 실제 호출 또는 72시간 경과 시 실패. 원본 만료가 먼저 오면 즉시 중단. 인증·잘못된 요청 등 영구 오류는 즉시 종료. 기본 지표 유지·수동 재분석 제공 |
-| 실행 정책 | 한 번에 1개씩 처리. 성공 후 병렬 수 자동 증가 없음. 실패한 요청은 백오프 후 재시도 |
+| 입력 | 전체 로그가 아니라 지표와 관측 이벤트에서 균일하게 뽑은 최대 24개 표본(각 텍스트 최대 800자)을 전송. 세션 전체의 의미를 포괄한다고 주장하지 않음. 출력 상한은 8,000 tokens |
+| 호출량 | 무료 요청과 저장된 연결 테스트는 서비스 전체에서 직렬 슬롯 하나를 공유. 무료 작업은 72시간 안에 실제 호출 최대 15회이며, 성공 뒤 고정 대기는 없음 |
+| 모델 cooldown | timeout·5xx·잘못된 JSON·근거 검증 실패는 해당 모델만 `ai-cooldown:<provider>:<model>` lease에 300 → 1,800 → 7,200 → 21,600초 + jitter를 저장. 모델 404도 해당 모델을 24시간 대기시키며, 더 긴 `Retry-After`를 우선 |
+| 제공자 cooldown | 401·403은 해당 제공자 계정을 24시간 대기. 402와 범위를 알 수 없는 429는 제공자 전체 cooldown과 일반 backoff를 적용한다. OpenRouter 429가 `metadata.provider_name`으로 upstream 범위를 명시할 때만 해당 모델 cooldown을 적용 |
+| 모두 대기 | 가능한 무료 후보가 모두 cooldown이면 Workflow가 재개 시각까지 durable wait. 새 유료 후보를 추가하지 않고 지표·타임라인은 조회 가능 |
+| BYOK | 사용자 endpoint 하나만 사용. 일시 오류만 같은 endpoint로 최대 5회 재시도하며, 서비스 키·다른 유료 모델·무료 풀로 자동 전환하지 않음 |
+| 결과 기록 | `tier`(free/byok), API gateway 제공자, 요청 모델과 실제 응답 모델, endpoint 호스트, 응답의 upstream provider를 분리해 저장·표시. 최근 15개의 자격증명 없는 시도 이력(제공자·모델·시각·결과·HTTP 상태)도 보관 |
 | 결과 검증 | JSON 형식·근거 ID 검사. 근거 없는 결론은 게시하지 않음. 모델에 도구 실행 권한 없음 |
 
 무료 모델과 데이터 정책을 동시에 만족하는 Provider가 없으면 설명 생성은 보류한다.  
-실제 모델·한도는 배포 시 재확인하고, 20개 합성 세션으로 설명의 유용성을 평가한다. [Z.ai 가격](https://docs.z.ai/guides/overview/pricing) · [계정별 동시성](https://docs.z.ai/guides/overview/concept-param)
+서버 키는 저장소 루트 `.env.local`/`apps/web/.env.local`의 `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ZAI_API_KEY`와 Vercel Production 환경변수에만 둔다. 같은 제공자에 여러 모델이 있어도 제공자 계정 한도가 늘어난다고 가정하지 않는다. 후보 추가 시 모델 가용성과 호출 계약을 확인한다. 최종 6개 후보 배포 후 합성 세션에서 NVIDIA timeout → OpenRouter 성공을 확인했다. 이는 6개 모델 각각의 추론 성공을 뜻하지 않는다.
+
+NVIDIA API의 무료 trial은 개발·테스트용 endpoint로 취급한다. 모델별 quota는 공개된 일일 1,000회 보장으로 해석하지 않는다.
 분석은 비동기로 진행하며 응답 속도를 이유로 낮은 품질의 모델로 자동 전환하지 않는다.
 입력·출력 토큰 상한과 요청 timeout은 초기 운영값이다. 추론·응답 잘림과 근거 누락을 평가해 플랫폼·비용 한도 안에서 조정한다.
 
@@ -144,14 +144,16 @@ Supabase 서울 프로젝트에 시간당 유지관리 작업을 실행한다. �
 2026-09-11 공식 문서에서 OpenRouter Batch API 베타를 확인했다. `POST /api/beta/batches`로 제출하고 상태를 조회하며 완료 구간은 24시간이다. 일반적으로 토큰 요금은 표준 가격의 50%지만 무료 모델 지원을 뜻하지는 않는다.
 입력과 결과를 생성 후 30일 보관하므로 현재 상세 데이터 7일·ZDR 조건에 맞지 않는다. 기본 경로는 일반 API를 Workflow에서 한 번에 1개씩·실패 시 백오프로 호출하는 방식이다. 향후 Batch 지원은 모델·Provider의 지원, 비용, 보관·삭제 조건을 확인한 뒤 별도로 결정한다. [Batch API](https://openrouter.ai/docs/batch-quickstart) · [호출 한도](https://openrouter.ai/docs/api_reference/limits) · [오류와 Retry-After](https://openrouter.ai/docs/api_reference/errors-and-debugging)
 
-Z.ai는 일반 API `https://api.z.ai/api/paas/v4/chat/completions`를 사용한다. 서비스 키는 서버 전용 `ZAI_API_KEY`이며 Coding Plan 전용 엔드포인트는 사용하지 않는다. [HTTP API](https://docs.z.ai/guides/develop/http/introduction)
+Z.ai 후보는 일반 API `https://api.z.ai/api/paas/v4/chat/completions`를 사용하며 Coding Plan 전용 엔드포인트는 사용하지 않는다. [HTTP API](https://docs.z.ai/guides/develop/http/introduction)
 
 ### 모델 검증 상태
 
-2026-09-11 기본 모델을 Z.ai `glm-4.7-flash`로 변경했다. 공식 가격표의 무료 표기와 API 전용 약관의 입력·출력 미보관 조건을 확인했다. 키 입력 후 합성 요청 3개를 동시에 전송했으나 모두 HTTP 429·코드 1305로 거절됐다. Retry-After 헤더는 없었다. 이후 사용자 요청으로 예정된 5분 재시도를 취소하고 단일 요청을 보냈다. HTTP 200·13.1초, 실제 모델 glm-4.7-flash, JSON 형식·근거 ID·한국어 응답 검사를 통과했다. 단일 합성 사례의 연결 성공이며 전체 분석 품질이나 병렬 실패 원인의 확정을 뜻하지 않는다. 결과는 `ops/zai-verification.json`·`ops/zai-verification-single.json`에 기록했다. 추가로 합성 요청 2개를 동시에 보내 모두 HTTP 200(11.5초·13.9초), JSON·근거 ID 기본 검사를 통과했다. 결과는 `ops/zai-verification-pair.json`에 기록했다. 표현의 정확성 등 전체 품질 평가는 별도다. 사용자 확인 동시성 3과 실측 호출 성공을 구분한다. [API 데이터 조건](https://docs.z.ai/legal-agreement/privacy-policy#4-data-return-and-deletion)
+2026-09-11 무료 풀 검증: 로컬 합성 호출에서 Kimi K3는 120초 timeout, OpenRouter Nex Pro와 Z.ai Flash는 각각 HTTP 200·JSON 계약을 통과했다. 초기 풀의 원격 분석에서는 Kimi K3 완료를 확인했다. 최종 6개 후보 배포에서는 Kimi K3 timeout 뒤 Nex Pro로 자동 전환해 분석·마스킹·실제 제공자/모델 기록·선택/전체 분석의 결과 재사용을 검증했다. DeepSeek V4 Pro·Nemotron Ultra·Nex Mini는 후보 등록과 라우팅 테스트까지 확인했고 개별 실호출은 미검증이다. [로컬 기록](../ops/free-provider-verification.json) · [최종 원격 기록](../ops/free-routing-remote-smoke.json)
+
+2026-09-11 당시 기본 모델이던 Z.ai `glm-4.7-flash`를 단일 경로로 검증했다. 공식 가격표의 무료 표기와 API 전용 약관의 입력·출력 미보관 조건을 확인했다. 키 입력 후 합성 요청 3개를 동시에 전송했으나 모두 HTTP 429·코드 1305로 거절됐다. Retry-After 헤더는 없었다. 이후 사용자 요청으로 예정된 5분 재시도를 취소하고 단일 요청을 보냈다. HTTP 200·13.1초, 실제 모델 glm-4.7-flash, JSON 형식·근거 ID·한국어 응답 검사를 통과했다. 단일 합성 사례의 연결 성공이며 전체 분석 품질이나 병렬 실패 원인의 확정을 뜻하지 않는다. 결과는 `ops/zai-verification.json`·`ops/zai-verification-single.json`에 기록했다. 추가로 합성 요청 2개를 동시에 보내 모두 HTTP 200(11.5초·13.9초), JSON·근거 ID 기본 검사를 통과했다. 결과는 `ops/zai-verification-pair.json`에 기록했다. 표현의 정확성 등 전체 품질 평가는 별도다. 사용자 확인 동시성 3과 실측 호출 성공을 구분한다. 이 기록은 현재 무료 풀의 원격 검증이 아니다. [API 데이터 조건](https://docs.z.ai/legal-agreement/privacy-policy#4-data-return-and-deletion)
 
 이전 OpenRouter 연결 시험에서는 공개 모델·ZDR 목록 조회에서 `inclusionai/ling-3.0-flash-vl:free`의 Novita endpoint를 가용성 후보로 확인했다.
-입력·출력 가격 0과 ZDR 목록 등재를 확인한 것이며, 성능 우위나 운영 기본값을 뜻하지 않는다. 이후 합성 입력 연결 시험에서 해당 모델·Provider 응답과 비용 0을 확인했다. OpenRouter 전용 실제 분석의 JSON 계약·근거 정확도·한국어 설명 품질은 아직 미검증이며, 현재 원격 완료 검증은 Z.ai 경로다.
+입력·출력 가격 0과 ZDR 목록 등재를 확인한 것이며, 성능 우위나 운영 기본값을 뜻하지 않는다. 이후 합성 입력 연결 시험에서 해당 모델·Provider 응답과 비용 0을 확인했다. OpenRouter 전용 실제 분석의 JSON 계약·근거 정확도·한국어 설명 품질은 아직 미검증이었다. 당시 원격 완료 검증은 Z.ai 단일 경로였다. 이후 무료 풀의 원격 검증 결과는 아래에 구분한다.
 운영 모델은 배포 시 후보 목록을 갱신하고 위 품질 평가로 선정한다. 무료 후보가 품질 기준에 못 미치면 기본 지표만 제공하고 AI 설명은 미제공 상태와 사유를 표시한다. 로그인 사용자는 BYOK 모델을 선택할 수 있다.
 [모델 API](https://openrouter.ai/api/v1/models) · [ZDR endpoint 목록](https://openrouter.ai/api/v1/endpoints/zdr) · [ZDR 정책](https://openrouter.ai/docs/guides/features/zdr)
 
@@ -170,7 +172,7 @@ GitHub OAuth callback, 세션·기기·설정·분석 API, Workflow 시작 경�
 | 분석 실행 | Vercel Workflow + Functions | 함수 최대 300초(Fluid Compute). 단계마다 240초 안에 종료·진행 위치 저장 |
 | 원본 파일 | **Supabase 비공개 Storage**, 서울 | 무료 저장 1 GB. 공개 버킷 사용 금지 |
 | PostgreSQL | **Supabase Free**, 서울 | DB 500 MB. 일반 API 요청 횟수 무제한. 7일간 활동 부족 시 프로젝트 일시 중지 가능 |
-| AI | Z.ai `glm-4.7-flash` / OpenAI 호환 BYOK | 외부 호출 허용 시에만 실행. 계정 단위 일일 예산 검사 |
+| AI | 서버 무료 6개 후보 / OpenAI 호환 BYOK | 설정된 서버 키가 있는 무료 후보만 순서대로 사용. 공통 직렬 슬롯과 cooldown을 적용하며, 제공자 계정 한도 증가는 가정하지 않음 |
 | 원격 예약 작업 | GitHub Actions | 시간당 DB 확인·만료 정리, 일일 분석 기동. Vercel은 인증된 API·Workflow 실행을 담당 |
 | 로그인 | 앱 내부 인증 + GitHub OAuth | 첫 로그인에서 계정·개인 Workspace 생성. 수집기는 폐기 가능한 전송 토큰 사용 |
 

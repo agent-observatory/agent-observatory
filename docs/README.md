@@ -1,6 +1,6 @@
 # 전체 흐름
 
-![GitHub Actions가 원격 일정을 관리하고 Vercel 서울에서 웹·API·Workflow를 실행한다. Supabase 서울의 DB와 비공개 Storage에 세션·분석 결과를 저장하며 Z.ai 기본 모델 또는 OpenAI 호환 BYOK로 AI 설명을 생성하는 아키텍처](assets/architecture-overview.svg)
+![GitHub Actions가 원격 일정을 관리하고 Vercel 서울에서 웹·API·Workflow를 실행한다. Supabase 서울의 DB와 비공개 Storage에 세션·분석 결과를 저장하며 서버가 설정한 무료 AI 제공자 풀 또는 OpenAI 호환 BYOK로 AI 설명을 생성하는 아키텍처](assets/architecture-overview.svg)
 
 [전체 흐름](README.md) · [Atlas](atlas.md) · [Collector](collector.md)
 
@@ -19,13 +19,13 @@
 
 | 대상 | 확인한 상태 |
 |---|---|
-| Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_5gTEvkph4akNnxX1yinKyEJfwkKv` |
+| Vercel | [운영 URL](https://agent-session-atlas.vercel.app) 공개 HTTP 200·Ready 배포 확인. Next.js 16.3.4, 기본 함수 리전 `icn1`, 최신 확인 배포 `dpl_FxRmjGjonyCtt8TaMft9hWjxBTCp` |
 | Supabase | 서울 Free 운영 연결. DB TLS·`SELECT 1`, 비공개 `sessions` 버킷의 합성 JSON 저장·조회·삭제와 익명 접근 차단 검증 |
 | GitHub OAuth | 실제 Edge 브라우저에서 Hyune-c 회원가입·로그인·개인 공간 진입 성공 |
-| 기본 AI | Z.ai `glm-4.7-flash` 합성 Collector 세션의 첫 시도 완료. `ops/remote-smoke.json`에서 한국어 결과·지표·마스킹 확인 |
+| 기본 AI | 서버 설정 키가 있는 6개 무료 모델 후보와 공통 직렬 슬롯·모델/제공자 범위 cooldown 구현. 최종 6개 후보 배포와 원격 합성 분석 검증 완료. NVIDIA timeout → OpenRouter 성공 및 실제 모델 기록 확인. [검증 기록](../ops/free-routing-remote-smoke.json) |
 | 개인 BYOK | OpenAI 호환 endpoint 설정·암호화 저장·연결 확인 UI와 SSRF 검증 코드 구현. 실제 사용자 키 연결은 원격 미검증 |
 | GitHub Actions | main push 후 CI 성공. 유지관리 수동 실행·일일 분석 완료·Collector packaging 성공. 자연 예약 실행은 아직 관찰하지 않음 |
-| Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 SSRF 1, 총 13개 테스트 통과. 경계 8건·보관 5건 검증 통과. GitHub Release에서 tarball 설치 가능. npm은 인증 부재로 미게시. 개인 자동 수집은 사용자가 범위를 확인하도록 중지 |
+| Atlas·Collector | 웹/API/Workflow와 Collector 0.1.0 구현. rule isolation·`appliedRules` 버전 기록 포함. 계약 6·Collector 6·웹 14, 총 26개 테스트 통과. 경계 8건·보관 5건 검증 통과. GitHub Release에서 tarball 설치 가능. npm은 인증 부재로 미게시. 개인 자동 수집은 사용자가 범위를 확인하도록 중지 |
 
 
 ## 핵심 결정
@@ -37,7 +37,7 @@ Codex 어댑터부터 구현하고 Claude Code·Hermes를 연결한다. 통계�
 |---|---|
 | 수집 | 설치한 로컬 전송기가 30분마다 실행. 프로젝트 기본값 `all`, 허용·제외 목록 지원 |
 | 분석 | 원격에서 하루 1회 또는 수동 실행 → 같은 Workflow. 접수된 데이터는 PC를 꺼도 분석 |
-| 배포 | **Vercel 서울 + Supabase 서울 + Z.ai (BYOK: OpenAI 호환 endpoint)**. 웹·API·분석은 Vercel, DB·비공개 파일은 Supabase |
+| 배포 | **Vercel 서울 + Supabase 서울 + 서버 무료 제공자 풀 (BYOK: OpenAI 호환 endpoint)**. 웹·API·분석은 Vercel, DB·비공개 파일은 Supabase |
 | 언어·테마 | 한국어·다크 기본. 설정에서 한국어/English, 라이트/다크/시스템 선택 |
 | 첫 사용 | GitHub 회원가입·로그인 → 수집기 연결 → 기존 Codex 기록 가져오기 → 즉시 분석·결과 조회 |
 | 개발·배포 단위 | **모노레포 1개, 애플리케이션 2개**. Next.js는 Vercel 배포, 로컬 수집기는 npm 배포·`npx` 설치 |
@@ -146,7 +146,7 @@ agent-session-atlas/             # 이 저장소의 구현 구조 제안
 |---|---|
 | 1 | 공통 이벤트 계약 + Codex 어댑터 + 토큰·반복·오류 분석 |
 | 2 | 한국어 대시보드·GitHub 회원가입/로그인·개인 Workspace·언어/테마/개인정보/BYOK 설정 + Supabase 연결 + Vercel 원격 배포 |
-| 3 | 전체 세션 지금 분석·선택 세션·단일 세션 분석 + 일일 Workflow + 진행 상태·개별/종합 결과 + Z.ai 설명·재시도 검증 |
+| 3 | 전체 세션 지금 분석·선택 세션·단일 세션 분석 + 일일 Workflow + 진행 상태·개별/종합 결과 + 무료 제공자 풀 설명·재시도 검증 |
 | 4 | 기존 Codex 기록 최초 가져오기·npm 수집기 릴리스·npx setup·30분 전송·영속 Outbox. 깨끗한 macOS에서 설치·재부팅·업데이트·제거 확인 |
 | 5 | 인프라·배포 스크립트와 CI. 오프라인·ACK 유실·마스킹 실패 복구를 포함한 원격 검증 |
 | 이후 | Claude Code·Hermes 어댑터 → 팀 → 다른 사용자의 업로드 분석 |

@@ -1,5 +1,6 @@
 import { endpoint, owner } from "../../../lib/security";
 import { db } from "../../../lib/db";
+import { normalizeSettings, freeCandidates } from "../../../lib/ai-routing";
 export const GET = (req: Request) =>
   endpoint(async () => {
     let id;
@@ -10,5 +11,14 @@ export const GET = (req: Request) =>
     }
     const [user] =
       await db()`SELECT id,name,guest,settings,key_cipher IS NOT NULL AS has_key FROM atlas.users WHERE id=${id}`;
-    return Response.json({ user: user || null });
+    return Response.json({
+      user: user
+        ? { ...user, settings: normalizeSettings(user.settings) }
+        : null,
+      freeCandidates: freeCandidates().map(({ provider, model, endpoint }) => ({
+        provider,
+        model,
+        endpoint,
+      })),
+    });
   });

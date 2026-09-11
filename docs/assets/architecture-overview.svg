@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1100" viewBox="0 0 1480 1100" role="img" aria-labelledby="title desc">
-<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel이 서버 마스킹 설정을 적용하고 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고 기본 Z.ai 또는 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다.</desc>
+<title id="title">AgentSession Atlas · Seoul</title><desc id="desc">로컬 Collector는 30분마다 전송한다. GitHub Actions는 매시간 유지관리와 매일 분석을 Vercel 서울 API에 요청한다. Vercel이 서버 마스킹 설정을 적용하고 Supabase 서울의 비공개 Storage와 Postgres에 접수한다. Vercel Workflow가 분석하고, 설정된 서버 무료 제공자 풀을 한 번에 하나씩 사용하거나 사용자 설정 OpenAI 호환 BYOK endpoint로 허용한 근거만 전송한다.</desc>
 <rect width="1480" height="1100" fill="white"/>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#3B5BA5"/></marker></defs>
 <text x="24" y="45" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.35" fill="#16213E">AgentSession Atlas<tspan dx="10" font-size="17" font-weight="700" fill="#64748B">Seoul</tspan></text>
@@ -72,7 +72,7 @@
 <path d="M694 736 H724" fill="none" stroke="#3B5BA5" stroke-width="1.6" marker-end="url(#arrow)"/>
 <rect x="724" y="676" width="296" height="117" rx="10" fill="#FFFFFF" stroke="#C98A2B"/>
 <text x="740" y="705" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">AI 설명 · 근거 검증</text>
-<text x="740" y="737" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569"><tspan font-weight="700" fill="#6D28D9">한 번에 1개</tspan> · 새 분석만</text>
+<text x="740" y="737" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569"><tspan font-weight="700" fill="#6D28D9">무료 풀 공통 1개</tspan> · 새 분석만</text>
 <text x="740" y="766" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">실패 시 <tspan font-weight="700" fill="#9A620A">백오프</tspan> 후 재시도</text>
 <text x="400" y="825" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="17" font-weight="400" fill="#475569">공통: 멱등 실행 · 진행 상태 저장 · 중단 후 복구</text>
 
@@ -100,8 +100,8 @@
 <rect x="1100" y="700" width="356" height="225" rx="10" fill="#FBF5FF" stroke="#8B3DFF"/>
 <text x="1120" y="733" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">AI 설명 API</text>
 <rect x="1120" y="748" width="316" height="50" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
-<text x="1134" y="772" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="19" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">Z.ai · 기본 모델</text>
-<text x="1134" y="794" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#475569">glm-4.7-flash</text>
+<text x="1134" y="772" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="19" font-weight="700" letter-spacing="-0.35" fill="#6D28D9">서버 무료 제공자 풀</text>
+<text x="1134" y="794" font-family="Noto Sans KR, Noto Sans CJK KR, sans-serif" font-size="16" font-weight="400" fill="#475569">NVIDIA 3 · OpenRouter 2 · Z.ai 1</text>
 <rect x="1120" y="808" width="316" height="77" rx="10" fill="#FFFFFF" stroke="#B79BD9"/>
 <!-- Embedded from icons/openrouter.svg; see icons/SOURCES.md -->
 <svg x="1134" y="863" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><title>OpenRouter</title><path d="M16.778 1.844v1.919q-.569-.026-1.138-.032-.708-.008-1.415.037c-1.93.126-4.023.728-6.149 2.237-2.911 2.066-2.731 1.95-4.14 2.75-.396.223-1.342.574-2.185.798-.841.225-1.753.333-1.751.333v4.229s.768.108 1.61.333c.842.224 1.789.575 2.185.799 1.41.798 1.228.683 4.14 2.75 2.126 1.509 4.22 2.11 6.148 2.236.88.058 1.716.041 2.555.005v1.918l7.222-4.168-7.222-4.17v2.176c-.86.038-1.611.065-2.278.021-1.364-.09-2.417-.357-3.979-1.465-2.244-1.593-2.866-2.027-3.68-2.508.889-.518 1.449-.906 3.822-2.59 1.56-1.109 2.614-1.377 3.978-1.466.667-.044 1.418-.017 2.278.02v2.176L24 6.014Z"/></svg>

@@ -53,3 +53,15 @@ for (const name of [
   });
   console.log("Configured production variable:", name);
 }
+for (const name of ["NVIDIA_API_KEY", "OPENROUTER_API_KEY"]) {
+  if (!process.env[name]) continue;
+  execFileSync(
+    "vercel",
+    ["env", "add", name, "production", "--force", "--sensitive"],
+    {
+      input: process.env[name],
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  );
+  console.log("Configured optional free provider:", name);
+}

@@ -35,6 +35,10 @@ try {
   const me = await call("/api/me");
   assert.equal(me.user.guest, true);
   report.checks.push("guest isolated session");
+  const freeCandidates = me.freeCandidates || [];
+  assert.ok(freeCandidates.filter((c) => c.provider === "nvidia").length > 1);
+  assert.ok(freeCandidates.filter((c) => c.provider === "openrouter").length > 1);
+  report.checks.push("multiple free models per NVIDIA and OpenRouter provider");
   const sid = "synthetic-" + randomUUID(),
     generation = createHash("sha256").update(sid).digest("hex");
   const b = {
@@ -113,6 +117,21 @@ try {
   }
   const detail = await call("/api/sessions/" + session.id);
   assert.equal(detail.results[0].status, "completed");
+  const completed = detail.results[0].result;
+  assert.equal(completed.tier, "free");
+  assert.ok(["nvidia", "openrouter", "zai"].includes(completed.provider));
+  assert.ok(completed.model && completed.requestedModel && completed.endpoint);
+  assert.equal(completed.aiAttempts.at(-1).outcome, "success");
+  assert.equal(completed.aiAttempts.at(-1).provider, completed.provider);
+  report.provenance = {
+    tier: completed.tier,
+    provider: completed.provider,
+    model: completed.model,
+    requestedModel: completed.requestedModel,
+    endpoint: completed.endpoint,
+    attempts: completed.aiAttempts,
+  };
+  report.checks.push("free-tier provenance matches successful attempt");
   // Reuse validates selection/all orchestration without additional AI calls.
   const selectedJob = await call(
     "/api/analyses",
@@ -143,7 +162,7 @@ try {
   console.error(e.message);
 } finally {
   writeFileSync(
-    "ops/remote-smoke.json",
+    process.env.ATLAS_SMOKE_REPORT || "ops/remote-smoke.json",
     JSON.stringify(report, null, 2) + "\n",
   );
   console.log(JSON.stringify(report));

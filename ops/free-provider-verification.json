@@ -1,0 +1,37 @@
+{
+  "at": "2026-09-11T03:57:30.118Z",
+  "synthetic": true,
+  "results": [
+    {
+      "provider": "nvidia",
+      "requestedModel": "moonshotai/kimi-k3",
+      "ok": false,
+      "outcome": "connection_error",
+      "seconds": 120.122
+    },
+    {
+      "provider": "openrouter",
+      "requestedModel": "nex-agi/nex-n2.5-pro:free",
+      "ok": true,
+      "status": 200,
+      "outcome": "success",
+      "seconds": 21.828,
+      "tier": "free",
+      "model": "nex-agi/nex-n2.5-pro:free",
+      "endpoint": "openrouter.ai",
+      "summary": "사용자가 테스트 추가를 요청했고, 도구는 테스트가 통과했다고 반환했습니다."
+    },
+    {
+      "provider": "zai",
+      "requestedModel": "glm-4.7-flash",
+      "ok": true,
+      "status": 200,
+      "outcome": "success",
+      "seconds": 20.892,
+      "tier": "free",
+      "model": "glm-4.7-flash",
+      "endpoint": "api.z.ai",
+      "summary": "사용자가 테스트 추가를 요청했고, 도구가 테스트가 통과되었다는 결과를 반환했습니다."
+    }
+  ]
+}

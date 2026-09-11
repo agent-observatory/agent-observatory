@@ -2,14 +2,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { codexEvent, type AtlasBatch } from "@agent-observatory/contracts";
+import {
+  aiPendingLabel,
+  formatAiProvenance,
+  normalizedProvider,
+} from "../lib/ai-provenance";
 type Settings = {
   language: "ko" | "en";
   theme: "dark" | "light" | "system";
   masking: boolean;
-  provider: "zai" | "openrouter" | "custom";
+  provider: "free" | "openrouter" | "custom";
   endpoint: string;
   model: string;
 };
+type FreeCandidate = { provider: string; model: string; endpoint: string };
 type User = {
   id: string;
   name: string;
@@ -41,10 +47,15 @@ const defaults: Settings = {
   language: "ko",
   theme: "dark",
   masking: true,
-  provider: "zai",
-  endpoint: "https://api.z.ai/api/paas/v4",
-  model: "glm-4.7-flash",
+  provider: "free",
+  endpoint: "",
+  model: "auto",
 };
+const settingsFrom = (value?: Partial<Settings>): Settings => ({
+  ...defaults,
+  ...value,
+  provider: normalizedProvider(value?.provider) as Settings["provider"],
+});
 async function api(url: string, body?: unknown, method?: string) {
   const r = await fetch(url, {
     method: method || (body ? "POST" : "GET"),
@@ -85,6 +96,7 @@ export default function Atlas() {
     [error, setError] = useState(""),
     [key, setKey] = useState(""),
     [pair, setPair] = useState(""),
+    [freeCandidates, setFreeCandidates] = useState<FreeCandidate[]>([]),
     [ready, setReady] = useState(false);
   const t = (ko: string, en: string) => (settings.language === "ko" ? ko : en);
   const apply = (s: Settings) => {
@@ -102,6 +114,7 @@ export default function Atlas() {
   const load = useCallback(async () => {
     const me = await api("/api/me");
     setUser(me.user);
+    setFreeCandidates(me.freeCandidates || []);
     if (me.user) {
       const data = await api("/api/sessions");
       setSessions(data.sessions);
@@ -113,14 +126,22 @@ export default function Atlas() {
     api("/api/me")
       .then(async (m) => {
         setUser(m.user);
+        setFreeCandidates(m.freeCandidates || []);
         apply(
-          m.user?.settings || {
-            ...defaults,
-            language: localStorage.getItem("atlas-language") || "ko",
-            theme: localStorage.getItem("atlas-theme") || "dark",
-          },
+          m.user
+            ? settingsFrom(m.user.settings)
+            : {
+                ...defaults,
+                language:
+                  localStorage.getItem("atlas-language") === "en" ? "en" : "ko",
+                theme: (["dark", "light", "system"] as const).includes(
+                  localStorage.getItem("atlas-theme") as Settings["theme"],
+                )
+                  ? (localStorage.getItem("atlas-theme") as Settings["theme"])
+                  : "dark",
+              },
         );
-        setSavedSettings(m.user?.settings || defaults);
+        setSavedSettings(m.user ? settingsFrom(m.user.settings) : defaults);
         if (m.user) await load();
         setPair(new URLSearchParams(location.search).get("connect") || "");
       })
@@ -770,6 +791,21 @@ export default function Atlas() {
                         {r.error && <p className="muted">{r.error}</p>}
                         {r.result && (
                           <>
+                            <p>
+                              <strong>
+                                {r.result.ai
+                                  ? formatAiProvenance(
+                                      r.result,
+                                      settings.language,
+                                    )
+                                  : r.status === "failed"
+                                    ? t(
+                                        "AI 설명 생성 실패",
+                                        "AI explanation failed",
+                                      )
+                                    : aiPendingLabel(settings.language)}
+                              </strong>
+                            </p>
                             {!!r.result.ruleErrors?.length && (
                               <p className="muted">
                                 {t(
@@ -780,10 +816,15 @@ export default function Atlas() {
                             )}
                             <p>
                               {r.result.ai?.summary ||
-                                t(
-                                  "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
-                                  "Metrics are ready. Waiting for AI explanation.",
-                                )}
+                                (r.status === "failed"
+                                  ? t(
+                                      "지표는 저장되었습니다. AI 설명은 다시 분석할 수 있습니다.",
+                                      "Metrics are saved. You can retry the AI explanation.",
+                                    )
+                                  : t(
+                                      "지표를 계산했습니다. AI 설명을 기다리는 중입니다.",
+                                      "Metrics are ready. Waiting for AI explanation.",
+                                    ))}
                             </p>
                             {r.result.aiInput && (
                               <p className="muted">
@@ -856,9 +897,23 @@ export default function Atlas() {
                               </div>
                             </div>
                             <footer>
-                              {r.result.provider} · {r.result.model} ·{" "}
-                              {r.result.endpoint} · {t("비용", "Cost")}:{" "}
-                              {r.result.cost ?? t("미확인", "unknown")}
+                              {r.result.ai
+                                ? formatAiProvenance(
+                                    r.result,
+                                    settings.language,
+                                  )
+                                : r.status === "failed"
+                                  ? t(
+                                      "AI 설명 생성 실패",
+                                      "AI explanation failed",
+                                    )
+                                  : aiPendingLabel(settings.language)}
+                              {r.result.cost != null && (
+                                <>
+                                  {" · "}
+                                  {t("비용", "Cost")}: {r.result.cost}
+                                </>
+                              )}
                             </footer>
                           </>
                         )}
@@ -1073,43 +1128,76 @@ export default function Atlas() {
                         ...settings,
                         provider: p,
                         endpoint:
-                          p === "zai"
+                          p === "free"
                             ? defaults.endpoint
                             : p === "openrouter"
                               ? "https://openrouter.ai/api/v1"
                               : "",
-                        model: p === "zai" ? "glm-4.7-flash" : "",
+                        model: p === "free" ? defaults.model : "",
                       });
                     }}
                   >
-                    <option value="zai">
-                      Z.ai · {t("기본 무료 모델", "Default free model")}
+                    <option value="free">
+                      {t("무료 티어 · 자동 선택", "Free tier · Auto select")}
                     </option>
                     <option value="openrouter">OpenRouter · BYOK</option>
                     <option value="custom">Custom · OpenAI compatible</option>
                   </select>
                 </label>
-                <label>
-                  Endpoint
-                  <input
-                    value={settings.endpoint}
-                    disabled={settings.provider !== "custom"}
-                    onChange={(e) =>
-                      setSettings({ ...settings, endpoint: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Model
-                  <input
-                    value={settings.model}
-                    disabled={settings.provider === "zai"}
-                    onChange={(e) =>
-                      setSettings({ ...settings, model: e.target.value })
-                    }
-                  />
-                </label>
-                {settings.provider !== "zai" && (
+                {settings.provider === "free" ? (
+                  <div>
+                    <p className="muted">
+                      {t(
+                        "무료 티어는 현재 가능한 모델을 자동으로 선택합니다.",
+                        "The free tier automatically selects an available model.",
+                      )}
+                    </p>
+                    {freeCandidates.length ? (
+                      <ul className="muted">
+                        {freeCandidates.map((candidate) => (
+                          <li
+                            key={`${candidate.provider}:${candidate.model}:${candidate.endpoint}`}
+                          >
+                            {formatAiProvenance(
+                              { ...candidate, tier: "free" },
+                              settings.language,
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="muted">
+                        {t(
+                          "현재 확인된 무료 모델이 없습니다.",
+                          "No free model is currently available.",
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <label>
+                      Endpoint
+                      <input
+                        value={settings.endpoint}
+                        disabled={settings.provider !== "custom"}
+                        onChange={(e) =>
+                          setSettings({ ...settings, endpoint: e.target.value })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Model
+                      <input
+                        value={settings.model}
+                        onChange={(e) =>
+                          setSettings({ ...settings, model: e.target.value })
+                        }
+                      />
+                    </label>
+                  </>
+                )}
+                {settings.provider !== "free" && (
                   <label>
                     API key
                     <input
@@ -1163,8 +1251,8 @@ export default function Atlas() {
                         const result = await api("/api/settings/test", {});
                         setMessage(
                           t(
-                            `저장된 ${result.provider} 연결을 확인했습니다 (${result.model}). 합성 요청만 사용했으며 세션 데이터는 전송하지 않았습니다.`,
-                            `Saved ${result.provider} connection works (${result.model}). A synthetic request was used; no session data was sent.`,
+                            `저장된 ${formatAiProvenance(result, "ko")} 연결을 확인했습니다. 합성 요청만 사용했으며 세션 데이터는 전송하지 않았습니다.`,
+                            `Saved ${formatAiProvenance(result, "en")} connection works. A synthetic request was used; no session data was sent.`,
                           ),
                         );
                       })

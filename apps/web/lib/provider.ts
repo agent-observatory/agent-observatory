@@ -25,7 +25,12 @@ export async function validateEndpoint(value: string) {
     throw new Error("공개 서비스 주소만 사용할 수 있습니다");
   return { url, records };
 }
-export async function completion(endpoint: string, key: string, body: unknown) {
+export async function completion(
+  endpoint: string,
+  key: string,
+  body: unknown,
+  timeoutMs = 120000,
+) {
   const { url, records } = await validateEndpoint(endpoint);
   url.pathname = url.pathname.replace(/\/$/, "") + "/chat/completions";
   const record = records[0];
@@ -47,7 +52,7 @@ export async function completion(endpoint: string, key: string, body: unknown) {
       body: JSON.stringify(body),
       dispatcher: agent,
       redirect: "error",
-      signal: AbortSignal.timeout(120000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const reader = r.body?.getReader();
     let text = "",
@@ -77,6 +82,15 @@ export async function completion(endpoint: string, key: string, body: unknown) {
       status: r.status,
       retryAfter: r.headers.get("retry-after"),
       errorCode: /^[a-zA-Z0-9_-]{1,32}$/.test(code) ? code : null,
+      // OpenRouter explicitly identifies an upstream-limited provider in metadata.
+      // Otherwise a 429 may represent the shared account quota.
+      rateLimitScope:
+        r.status === 429
+          ? url.hostname === "openrouter.ai" &&
+            typeof data?.error?.metadata?.provider_name === "string"
+            ? ("model" as const)
+            : ("provider" as const)
+          : undefined,
       data: r.ok ? data : null,
     };
   } finally {
@@ -90,9 +104,7 @@ export function retryDelay(attempt: number, retryAfter?: string | null) {
     ? seconds
     : Math.max(0, (Date.parse(retryAfter || "") - Date.now()) / 1000) || 0;
   return (
-    Math.max(
-      [300, 1800, 7200, 21600][Math.min(attempt, 3)],
-      Math.min(requested, 86400),
-    ) + Math.floor(Math.random() * 30)
+    Math.max([300, 1800, 7200, 21600][Math.min(attempt, 3)], requested) +
+    Math.floor(Math.random() * 30)
   );
 }

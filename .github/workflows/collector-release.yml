@@ -1,40 +1,58 @@
 name: Collector release
 on:
-  push:
-    tags: ["collector-v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 permissions:
-  contents: write
-  id-token: write
+  contents: read
+concurrency:
+  group: collector-release-${{ github.event.release.tag_name || github.ref_name }}
+  cancel-in-progress: false
 jobs:
   release:
+    if: startsWith(github.event.release.tag_name || github.ref_name, 'collector-v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref_name }}
       - uses: pnpm/action-setup@v4
         with:
           version: 9.12.1
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: https://registry.npmjs.org
+      - name: Verify release and package version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node -e 'const p=require("./apps/collector/package.json");if(process.env.RELEASE_TAG!=="collector-v"+p.version)throw Error("Release tag must match package version")'
+          gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' | grep -qx false
+          node -e 'const {execSync}=require("node:child_process");const [major,minor,patch]=execSync("npm --version").toString().trim().split(".").map(Number);if(major<11||(major===11&&(minor<5||(minor===5&&patch<1))))throw Error("Trusted publishing requires npm >=11.5.1")'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @agent-observatory/collector test
-      - run: pnpm --filter @agent-observatory/collector build
-      - name: Verify tag matches package version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: node -e 'const p=require("./apps/collector/package.json");if(process.env.GITHUB_REF_NAME!=="collector-v"+p.version)process.exit(1)'
+      - run: pnpm --filter @agent-observatory/collector typecheck
       - run: pnpm --dir apps/collector pack --pack-destination "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
           name: collector-package
-          path: "*.tgz"
-      - name: Publish to npm when credentials are configured
+          path: "agent-observatory-collector-*.tgz"
+      - name: Attach package to GitHub Release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: gh release upload "$RELEASE_TAG" agent-observatory-collector-*.tgz --clobber
+      - name: Publish to npm using trusted publishing
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo 'npm authentication is not configured; the verified package is available as an artifact.' >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          if [[ "$RELEASE_TAG" == *-*.*.*-* ]]; then
+            npm publish agent-observatory-collector-*.tgz --access public --tag next
+          else
+            npm publish agent-observatory-collector-*.tgz --access public --tag latest
           fi
-          npm publish agent-observatory-collector-*.tgz --access public --provenance

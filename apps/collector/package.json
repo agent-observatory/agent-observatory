@@ -1,6 +1,6 @@
 {
   "name": "@agent-observatory/collector",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Codex and Claude Code session collector for AgentSession Atlas",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,8 @@
     "atlas-collector": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD-PARTY-LICENSES.txt"
   ],
   "engines": {
     "node": ">=22.15.0"
@@ -23,5 +24,18 @@
   "devDependencies": {
     "tsup": "^8.5.0",
     "@agent-observatory/contracts": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-observatory/agent-session-atlas.git",
+    "directory": "apps/collector"
+  },
+  "homepage": "https://agent-session-atlas.vercel.app/docs",
+  "bugs": {
+    "url": "https://github.com/agent-observatory/agent-session-atlas/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }

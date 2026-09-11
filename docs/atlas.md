@@ -302,7 +302,7 @@ Preview 환경은 아직 별도 DB·Storage·OAuth·키가 준비되지 않았�
 | CI               | `ci.yml`, main push·PR                            | 테스트·빌드·타입 검사. 웹 배포 단계 없음                                                                                                 |
 | 유지관리         | `maintenance.yml`, `17 * * * *`                   | [자연 예약 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34549506560) 확인. 정시 실행 보장은 아님          |
 | 일일 분석        | `analysis-daily.yml`, `37 18 * * *`               | KST 다음 날 03:37. [수동 실행 성공](https://github.com/agent-observatory/agent-session-atlas/actions/runs/34536855783), 자연 예약 미관찰 |
-| Collector 릴리스 | `collector-release.yml`, `collector-v*` 태그·수동 | tarball artifact 생성. 현재 `NPM_TOKEN` 부재로 npm 게시 단계는 건너뜀                                                                    |
+| Collector 릴리스 | `collector-release.yml`, `collector-v*` GitHub Release 발행·태그 지정 수동 | 테스트·패키징 → Release tarball 첨부 → npm OIDC 게시. npm Trusted Publisher 연결 필요                                                                    |
 
 `gh workflow run maintenance.yml`은 만료 정리를, `gh workflow run analysis-daily.yml`은 분석 기동을 실제 실행한다. 단순 상태 조회로 사용하지 않는다. Actions는 `SCHEDULER_SECRET`으로 고정 API만 호출하고, DB·AI 키는 Vercel에 둔다. 접수 `202`와 Workflow 분석 완료는 별개다.
 
@@ -367,3 +367,20 @@ DB CA 출처: [Supabase 공식 인증서](https://supabase-downloads.s3-ap-south
 목록의 접수 시작은 최초 배치의 서버 저장 시각이다. 접수 완료는 Collector가 수집 시점의 파일 끝까지 ACK를 확인하고 서버가 같은 offset을 검증한 시각이다. 마지막 배치 접수 시각과 구분하며, 새 배치가 오면 완료 표시를 비운다. 이전 데이터의 완료 시각은 추측하지 않는다. 보관 기한은 최초 접수 기준을 유지한다.
 
 시각은 설정의 타임존으로 표시하고 목록에 타임존 이름을 반복하지 않는다. 설정의 Collector 활동은 최근 확인 시각·성공 시각·버전·일시중지를 보여준다. 기기 heartbeat가 없거나 오래됐다는 사실은 전원이 꺼졌다는 확정 판정이 아니다.
+
+### Collector npm 게시 연결
+
+2026-09-11 기준 패키지는 `@agent-observatory/collector`, npm 조직은 `agent-observatory`다. 최초 게시는 조직 게시 권한이 있는 계정으로 `npm login` 후 검증한 tarball을 게시한다. 이후 npm 패키지 설정의 Trusted Publisher를 다음과 같이 연결한다.
+
+| 항목 | 값 |
+| --- | --- |
+| Provider | GitHub Actions |
+| Organization | `agent-observatory` |
+| Repository | `agent-session-atlas` |
+| Workflow filename | `collector-release.yml` |
+| Environment | 비움 |
+| Allowed actions | 직접 `npm publish` 허용 |
+
+워크플로는 Node 24·npm 11.5.1 이상과 `id-token: write`를 사용한다. 장기 `NPM_TOKEN`은 사용하지 않는다. Collector 버전과 일치하는 `collector-vX.Y.Z` GitHub Release를 발행하면 실행하며 웹의 `atlas-v*` 릴리스는 제외한다. 사전 릴리스는 npm `next`, 정식 릴리스는 `latest`로 게시한다. 동일 npm 버전은 덮어쓸 수 없으므로 실패 재시도 전에 게시 여부를 확인한다. Release와 npm의 성공 여부를 각각 확인한다.
+
+[공식 Trusted Publishing 안내](https://docs.npmjs.com/trusted-publishers/)

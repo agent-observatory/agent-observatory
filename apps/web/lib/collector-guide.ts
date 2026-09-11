@@ -319,7 +319,7 @@ export function collectorGuide(language: "ko" | "en" = "ko"): GuideSection[] {
 }
 export function collectorGuideMarkdown(language: "ko" | "en" = "ko") {
   return (
-    "# Atlas Collector\n\n" +
+    "# Atlas Collector\n\n## Overview\n\n![How Atlas works: collect, analyze, review, and improve the next session.](https://agent-session-atlas.vercel.app/overview-cycle.svg)\n\n" +
     collectorGuide(language)
       .map((section) =>
         [

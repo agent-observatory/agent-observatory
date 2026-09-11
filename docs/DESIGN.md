@@ -115,3 +115,9 @@ Atlas는 에이전트 세션을 검토하는 개발 도구다. 화면은 다음 
 - [IBM DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/ibm/DESIGN.md) — 평면적 정보 구조와 강한 주 행동
 - [Sentry DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/sentry/DESIGN.md) — 개발 도구의 의미별 상태색
 - [Supabase DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/supabase/DESIGN.md) — 조밀한 제품 UI와 코드 표현
+
+## 사용자 Overview
+
+README와 사용 가이드 첫머리에는 영어 Overview를 둔다. 코딩 세션 → Collector → Atlas 분석 → 개선안 확인·적용 → 다음 세션의 순환을 보여 준다. 인프라 상세 아키텍처와 별개이며 제공자·리전·내부 API는 넣지 않는다. 개선안 적용은 사용자와 코딩 에이전트의 행동으로 표현한다.
+
+`docs/assets/overview-cycle.svg`가 데스크톱용, `overview-cycle-mobile.svg`가 모바일용이다. 내용은 같고 모바일에서는 순환 배치로 읽기 크기를 유지한다. `scripts/generate-overview.mjs`가 두 SVG와 웹 공개 사본을 함께 생성하고 CI에서 일치를 검사한다. SVG의 text·tspan은 편집 가능하며 아이콘 출처는 기존 라이선스를 유지한다.

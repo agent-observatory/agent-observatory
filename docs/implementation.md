@@ -176,3 +176,9 @@ Claude Code의 `CLAUDE.md`가 `AGENTS.md`를 가져오도록 추가했다. 상�
 - 운영 화면에 합성 API 응답을 연결해 현재 설정·오프라인 안내·재조회 시 이전 결과 제거, 다크·라이트 모바일과 Docs 명령 복사를 검사했다. 사용자 로그인 쿠키나 개인 화면 캡처는 사용하지 않았다. 브라우저 예외는 없었다. 기록: `ops/device-inspection-verification.json`, `ops/device-docs-ui-verification.json`, `ops/collector-live-inspection-verification.json`.
 - 첫 구현 배포 `dpl_H7pGh9bqf3MV4P3EkqPPmY7CiD6D`가 Production Ready이며 런타임은 `icn1`이다. CI 34580654612에서 전체 69개 검사·타입 검사·빌드를 통과했다. 최종 표시 보완 배포 `dpl_3HAMUThGfhip5yCh1dwAiBDSH1pr`도 Ready이며, source `88192e6`의 CI 34580933584도 성공했다. 한국어·영어 공개 Markdown과 공유 문서 원본이 일치하는 것을 확인했다.
 - 소요 시간: 웹 현재 조회·CLI·Docs 작업은 2026-09-11 17:32경부터 17:49경까지 약 17분. 에이전트 병렬 작업과 원격 검증을 포함한 경과 시간이며, 앞선 평가 문서 통합은 제외했다.
+
+## 2026-09-11 · 사용자 관점 Overview
+
+- README와 공개 사용 가이드 첫머리에 영어 Overview를 추가했다. 코딩 세션 → Collector → Atlas → Review & apply → 다음 세션의 순환만 표현한다. 기존 인프라 아키텍처는 유지한다.
+- 데스크톱과 모바일은 같은 주요 흐름을 각 화면 폭에 맞게 배치한다. SVG의 text·tspan을 유지하고, 기존 Tabler 사용자 아이콘의 라이선스를 보존했다. 생성 스크립트가 문서용·웹용 사본을 함께 만들며 CI에서 일치 여부를 검사한다.
+- SVG XML 검사와 브라우저 렌더링, 웹 빌드·타입 검사를 확인했다. 공개 Markdown에도 같은 Overview 이미지를 연결했다. 원격 확인은 배포 후 기록한다.

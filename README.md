@@ -2,6 +2,8 @@
 
 Understand your coding agent sessions.
 
+![How Atlas works: collect coding sessions, analyze them, review actionable feedback, and improve the next session.](docs/assets/overview-cycle.svg)
+
 Our focus is evidence-preserving collection and distillation: keep the context needed to evaluate prompts, skills, and agent workflows.
 
 Collect Codex and Claude Code records, explore usage, and turn analysis into concrete actions with supporting evidence. Sign in with GitHub to keep your history and configure your own AI provider.

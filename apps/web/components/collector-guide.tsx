@@ -38,6 +38,13 @@ export function CollectorGuide({ language }: { language: "ko" | "en" }) {
   );
   return (
     <div className="collector-guide">
+      <section className="docs-overview" aria-labelledby="overview-title">
+        <h2 id="overview-title">Overview</h2>
+        <picture>
+          <source media="(max-width: 700px)" srcSet="/overview-cycle-mobile.svg" />
+          <img src="/overview-cycle.svg" width={1208} height={410} alt="Collect coding sessions, analyze them with Atlas, review issues and next steps, then apply changes with your coding agent." />
+        </picture>
+      </section>
       <div className="docs-guide-actions" aria-label={t("문서 링크", "Documentation links")}>
         <a href={`/docs/collector.md?lang=${language}`}>{t("Markdown 원문", "Markdown source")} ↗</a>
         <Link href="/settings">{t("연결된 기기", "Connected devices")} →</Link>
